@@ -28,6 +28,10 @@ local document_properties = {}
 local rt_properties = {}
 remote_implementation_chart = {}
 
+-- Reason only offers automation for properties that have a MIDI CC number.
+local FIRST_SELECTION_MIDI_CC = 12
+local midi_cc_chart = {}
+
 for track = 1, TRACK_COUNT do
 	-- What the user last chose on the track. Saved with the song, automatable,
 	-- and the only thing a control surface can write.
@@ -39,6 +43,7 @@ for track = 1, TRACK_COUNT do
 		ui_name = jbox.ui_text("text_" .. selection),
 		ui_type = jbox.ui_selector(selection_texts),
 	}
+	midi_cc_chart[FIRST_SELECTION_MIDI_CC + track - 1] = "/custom_properties/" .. selection
 	remote_implementation_chart["/custom_properties/" .. selection] = {
 		internal_name = "Track " .. track .. " Selection",
 		short_ui_name = jbox.ui_text("text_" .. selection .. "_short"),
@@ -87,6 +92,10 @@ custom_properties = jbox.property_set{
 			instance = jbox.native_object{},
 		}
 	},
+}
+
+midi_implementation_chart = {
+	midi_cc_chart = midi_cc_chart
 }
 
 cv_outputs = {}
