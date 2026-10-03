@@ -1,0 +1,3 @@
+-std=c++17
+-I../../API
+-DJUKEBOX_SDK=1

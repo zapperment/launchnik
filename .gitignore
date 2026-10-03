@@ -1,0 +1,6 @@
+GUI/
+Intermediate-llvm/
+Output/
+tests/build/
+*.plist
+.DS_Store
