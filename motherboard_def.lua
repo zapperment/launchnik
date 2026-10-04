@@ -28,8 +28,10 @@ local document_properties = {}
 local rt_properties = {}
 remote_implementation_chart = {}
 
--- Reason only offers automation for properties that have a MIDI CC number.
-local FIRST_SELECTION_MIDI_CC = 12
+-- Reason only offers automation for properties that have a number in the MIDI
+-- CC chart. Numbers from 256 upwards enable automation without responding to
+-- any MIDI CC, so nothing a Launchpad sends can reach a selection by accident.
+local FIRST_SELECTION_MIDI_CC = 256
 local midi_cc_chart = {}
 
 for track = 1, TRACK_COUNT do
