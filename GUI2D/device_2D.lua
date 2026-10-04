@@ -13,7 +13,7 @@ local STOP_TOP = 2113
 
 front = {
 	Bg = {
-		{ path = "Panel_Front_7U" },
+		{ path = "Panel_Front_7U_dark" },
 	},
 	Labels = {
 		offset = { 0, 0 },
@@ -23,8 +23,12 @@ front = {
 	ScrewTopRight = { offset = { 3637, 38 }, { path = "Screw_17_1frames" } },
 	ScrewBottomLeft = { offset = { 38, 2282 }, { path = "Screw_17_1frames" } },
 	ScrewBottomRight = { offset = { 3637, 2282 }, { path = "Screw_17_1frames" } },
+	Logo = {
+		offset = { 2980, 150 },
+		{ path = "Logo" },
+	},
 	DeviceName = {
-		offset = { 200, 520 },
+		offset = { 180, 160 },
 		{ path = "TapeHorz" },
 	},
 }
