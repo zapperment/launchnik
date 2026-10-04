@@ -75,6 +75,15 @@ After changing anything in `GUI2D`, regenerate the panel graphics first, from th
 ./RE2DRender ~/JukeboxSDK/SDK/Examples/Launchnik/GUI2D ~/JukeboxSDK/SDK/Examples/Launchnik/GUI
 ```
 
+Two things to know when changing panel graphics:
+
+- Image sizes in `GUI2D` must be multiples of 5 pixels. For any other size, RE2DRender writes a corrected `-reframed.png` copy next to the original and keeps using that copy on later runs, even after the original has changed.
+- Reason Recon caches panel graphics and does not refresh them on restart. If a changed image does not show up in the rack, quit Recon and clear the cache:
+
+```bash
+rm -rf ~/Library/Caches/"Reason Recon"/GraphicsCache
+```
+
 ## Testing
 
 The switching rules can be tested from the command line, without Reason:
