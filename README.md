@@ -12,13 +12,22 @@ A launch button either holds a **clip** or is **empty**. A clip is one of the Pl
 
 In **launch mode**, the normal way of working, a button is in one of three states:
 
-| State | Launch button with a clip | Stop button | Meaning |
-|---|---|---|---|
-| Off | Dim, in the clip's colour | Dark | Nothing pending. |
-| Queued | Flashing on the beat | Flashing on the beat | Clicked, waiting for the next switch point. |
-| Active | Vibrant | Lit | The track is emitting this button's CV value. |
+| State | Launch button with a clip | Meaning |
+|---|---|---|
+| Off | Dim, in the clip's colour | Nothing pending. |
+| Queued | Flashing on the beat | Clicked, waiting for the next switch point. |
+| Active | Vibrant | The track is emitting this button's CV value. |
 
 An empty launch button is unlit, and clicking it has the same effect as clicking the track's stop button. A track always has exactly one active button and at most one queued button. A new device starts with all stop buttons active.
+
+A stop button shows whether there is anything to stop, as in Ableton Live:
+
+| Stop button | Meaning |
+|---|---|
+| Unlit | The track has no clips. |
+| Dim red | The track is stopped. |
+| Vibrant red | A clip is active; clicking stops it. |
+| Flashing | Clicked, the track stops at the next switch point. |
 
 ## Connecting a track
 
@@ -38,16 +47,16 @@ Click the setup button to enter **setup mode**. Tracks go on playing and the sto
 
 | Where | What it does |
 |---|---|
-| Row 1, column 8 | Switches the clip on and off: vibrant white with a clip, dim white without. |
+| Row 1, column 8 | Switches the clip on and off: vibrant green with a clip, dim red without. |
 | Rows 2 and 3, columns 1–7 | The colour: white, red, orange, yellow, lime, green, turquoise in row 2; cyan, light blue, blue, dark blue, purple, fuchsia, pink in row 3. The chosen one is vibrant. |
 | Row 5 | The pattern, 1–8, in pink. The chosen one is vibrant. |
-| Row 8, column 8 | Dim white: back to clip picking. |
+| Row 8, column 8 | Dim blue: back to clip picking. |
 
-The colour and pattern rows only show while the launch button holds a clip. A new clip is white and plays the pattern of its row. A clip that is switched off and on again comes back with its pattern and colour.
+The colour and pattern rows only show while the launch button holds a clip. A new clip plays the pattern of its row and has the colour of its track: red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8. A clip that is switched off and on again comes back with its pattern and colour.
 
 Click the setup button again to return to launch mode, from either step.
 
-Changing the pattern of the clip that is playing takes effect at the next switch point; switching that clip off stops its track at the next switch point. While the transport is stopped, both happen at once.
+Changing the pattern of the clip that is playing takes effect at the next switch point, and its launch button flashes until then; switching that clip off stops its track at the next switch point. While the transport is stopped, both happen at once.
 
 Clips are saved with the song, and each change is a step in the undo history. Setup mode itself is not saved: a song always opens in launch mode.
 
@@ -71,7 +80,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | Remote item | Direction | Values |
 |---|---|---|
 | `Track N Selection` (8 items) | Input and output | 0 = stop, 1–8 = clip in that row |
-| `Track N Stop` (8 items) | Output only | 0 = off, 1 = queued, 2 = active |
+| `Track N Stop Light` (8 items) | Output only | 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing |
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
 | `Track N Clip M Present` (64 items) | Input and output | 0 = empty, 1 = holds a clip |
 | `Track N Clip M Pattern` (64 items) | Input and output | 0–7 for patterns 1–8 |
@@ -104,10 +113,14 @@ python3 build45.py local45 Testing
 
 This compiles the device and installs it for Reason Recon. Restart Recon to pick up a new build.
 
-The film strip of the launch buttons is built from the source graphics in `RE2D_Launchnik_Graphics` (needs ImageMagick):
+The film strip of the launch buttons is built from the source graphics in `RE2D_Launchnik_Graphics`, that of the stop buttons from the stock button image (both need ImageMagick):
 
 ```bash
 ./tools/make-launch-button-strip.sh
+```
+
+```bash
+./tools/make-stop-button-strip.sh
 ```
 
 After changing anything in `GUI2D`, regenerate the panel graphics first, from the `RE2DRender` directory of the SDK download:
@@ -149,7 +162,7 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
 | `GUI2D/` | Panel layout and the graphics it uses. |
 | `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
-| `tools/` | Script that builds the launch buttons' film strip. |
+| `tools/` | Scripts that build the film strips of the launch and stop buttons. |
 | `Resources/English/` | Texts shown by the host. |
 | `tests/` | Command-line tests for the rules. |
 | `CONTEXT.md` | Glossary of the terms used in the code and in this document. |

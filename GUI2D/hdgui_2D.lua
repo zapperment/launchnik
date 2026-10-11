@@ -17,7 +17,7 @@ table.insert(front_widgets, jbox.sequence_meter{
 for track = 1, TRACK_COUNT do
 	table.insert(front_widgets, jbox.sequence_meter{
 		graphics = { node = "lamp_track" .. track .. "_stop" },
-		value = "/custom_properties/track" .. track .. "_stop_lamp",
+		value = "/custom_properties/track" .. track .. "_stop_light_frame",
 	})
 	for row = 1, ROW_COUNT do
 		table.insert(front_widgets, jbox.sequence_meter{

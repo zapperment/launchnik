@@ -17,15 +17,15 @@ Said of a **launch button** that holds no **clip**. A new device has only empty 
 _Avoid_: Inactive, disabled, cleared
 
 **Colour**:
-One of fourteen hues that mark a **clip** so that it can be recognised: white, red, orange, yellow, lime, green, turquoise, cyan, light blue, blue, dark blue, purple, fuchsia, pink (numbered 1 to 14 in that order). It has no effect on what the clip does.
+One of fourteen hues that mark a **clip** so that it can be recognised: white, red, orange, yellow, lime, green, turquoise, cyan, light blue, blue, dark blue, purple, fuchsia, pink (numbered 1 to 14 in that order). It has no effect on what the clip does. A new clip has the colour of its track: red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8.
 _Avoid_: Tint, label
 
 **Unlit**, **dim**, **vibrant**:
-The three ways a **launch button** can look: showing no **colour** at all, showing a colour at low brightness, or showing it at full brightness. A flashing launch button alternates between dim and vibrant.
+The three ways a **launch button** can look: showing no **colour** at all, showing a colour at low brightness, or showing it at full brightness. A flashing launch button alternates between dim and vibrant. A **stop button** looks the same three ways, always in red.
 _Avoid_: Inactive (for unlit), bright, lit
 
 **Stop button**:
-The small button at the foot of a **track** that stands for the Player's pattern selection being "off".
+The small button at the foot of a **track** that stands for the Player's pattern selection being "off". Its **light** says whether there is anything to stop: unlit while the track has no **clips**, dim while the track is stopped, vibrant while a clip is **active**, flashing while the stop is **queued**.
 _Avoid_: Off button, mute button
 
 **Track**:
@@ -37,14 +37,14 @@ What the user last chose on a **track**: the **stop button** or one of the track
 _Avoid_: Target, request, choice
 
 **Off**:
-The state of a button that is neither **queued** nor **active**. An off launch button is **dim** if it holds a **clip** and **unlit** if it is **empty**; an off stop button is unlit.
+The state of a button that is neither **queued** nor **active**. An off launch button is **dim** if it holds a **clip** and **unlit** if it is **empty**. An off stop button is **vibrant**: a clip is active and can be stopped.
 
 **Queued**:
-The state of a button that has been clicked and is flashing while it waits for the next **switch point**; a track has at most one queued button.
+The state of a button that has been clicked and is flashing while it waits for the next **switch point**; a track has at most one queued button. An **active** launch button also flashes while a change of its clip's pattern waits for the switch point.
 _Avoid_: Pending, armed, flashing, cued
 
 **Active**:
-The state of a button whose value its track's CV output is currently emitting; a track always has exactly one active button. An active launch button is steadily **vibrant**; an active stop button is steadily lit.
+The state of a button whose value its track's CV output is currently emitting; a track always has exactly one active button. An active launch button is steadily **vibrant**; an active stop button is **dim**, or **unlit** if its track has no clips.
 _Avoid_: Static, on, playing; also "active" for a launch button that holds a clip (say it holds a clip, or is not **empty**)
 
 **Launch mode**:
@@ -67,7 +67,7 @@ The second step of **setup mode**, in which the **launch buttons** stand for the
 _Avoid_: Edit mode
 
 **Light**:
-What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. The front panel and a control surface show the same light for the same launch button.
+What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **stop button** has a light too, always red. The front panel and a control surface show the same light for the same button.
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Switch interval**:

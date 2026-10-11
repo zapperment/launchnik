@@ -26,8 +26,8 @@ class CLaunchnik {
 
 	// What was last written to the host, to avoid storing unchanged values.
 	private: TJBox_Int32 fWrittenSetupLamp;
-	private: TJBox_Int32 fWrittenStopStates[CLauncher::kTrackCount];
-	private: TJBox_Int32 fWrittenStopLamps[CLauncher::kTrackCount];
+	private: TJBox_Int32 fWrittenStopLights[CLauncher::kTrackCount];
+	private: TJBox_Int32 fWrittenStopLightFrames[CLauncher::kTrackCount];
 	private: TJBox_Int32 fWrittenLights[CLauncher::kTrackCount][CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenLightFrames[CLauncher::kTrackCount][CLauncher::kRowCount];
 	private: TJBox_Float64 fWrittenCVValues[CLauncher::kTrackCount];

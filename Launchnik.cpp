@@ -40,8 +40,8 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		fCVOutputs[track] = JBox_GetMotherboardObjectRef(cvOutputPaths[track]);
 		fWrittenCVValues[track] = -1.0;
-		fWrittenStopStates[track] = kNothingWritten;
-		fWrittenStopLamps[track] = kNothingWritten;
+		fWrittenStopLights[track] = kNothingWritten;
+		fWrittenStopLightFrames[track] = kNothingWritten;
 		for (int row = 0; row < CLauncher::kRowCount; ++row) {
 			fWrittenLights[track][row] = kNothingWritten;
 			fWrittenLightFrames[track][row] = kNothingWritten;
@@ -132,16 +132,16 @@ void CLaunchnik::WriteOutputs() {
 	}
 
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
-		const TJBox_Int32 stopState = fLauncher.GetButtonState(track, CLauncher::kSelectionStop);
-		if (stopState != fWrittenStopStates[track]) {
-			fWrittenStopStates[track] = stopState;
-			JBox_StoreMOMPropertyByTag(fCustomProps, StopStateTag(track), JBox_MakeNumber(stopState));
+		const TJBox_Int32 stopLight = fLauncher.GetStopLight(track);
+		if (stopLight != fWrittenStopLights[track]) {
+			fWrittenStopLights[track] = stopLight;
+			JBox_StoreMOMPropertyByTag(fCustomProps, StopLightTag(track), JBox_MakeNumber(stopLight));
 		}
 
-		const TJBox_Int32 stopLamp = fLauncher.IsStopLit(track) ? 1 : 0;
-		if (stopLamp != fWrittenStopLamps[track]) {
-			fWrittenStopLamps[track] = stopLamp;
-			JBox_StoreMOMPropertyByTag(fCustomProps, StopLampTag(track), JBox_MakeBoolean(stopLamp == 1));
+		const TJBox_Int32 stopFrame = fLauncher.GetStopLightFrame(track);
+		if (stopFrame != fWrittenStopLightFrames[track]) {
+			fWrittenStopLightFrames[track] = stopFrame;
+			JBox_StoreMOMPropertyByTag(fCustomProps, StopLightFrameTag(track), JBox_MakeNumber(stopFrame));
 		}
 
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {

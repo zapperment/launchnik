@@ -7,9 +7,10 @@ local COLOUR_NAMES = {
 
 texts = {
 	["text_stop"] = "Stop",
-	["text_off"] = "Off",
-	["text_queued"] = "Queued",
-	["text_active"] = "Active",
+	["text_unlit"] = "Unlit",
+	["text_dim"] = "Dim",
+	["text_vibrant"] = "Vibrant",
+	["text_flashing"] = "Flashing",
 
 	["text_setup"] = "Setup",
 	["text_setup_short"] = "Setup",
@@ -32,8 +33,8 @@ for track = 1, 8 do
 
 	local stop = "text_track" .. track .. "_stop"
 	texts[stop] = "Track " .. track .. " Stop"
-	texts[stop .. "_state_short"] = "T" .. track .. " Stop"
-	texts[stop .. "_state_shortest"] = "T" .. track .. "St"
+	texts[stop .. "_light_short"] = "T" .. track .. " Stop"
+	texts[stop .. "_light_shortest"] = "T" .. track .. "St"
 
 	texts["text_cv_out_track" .. track] = "Track " .. track .. " CV Out"
 

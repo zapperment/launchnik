@@ -19,6 +19,9 @@ CLauncher::TLight MakeLight(CLauncher::EBrightness iBrightness, int iColour) {
 
 const CLauncher::TLight kUnlitLight = { CLauncher::kUnlit, CLauncher::kColourWhite };
 
+// Red, orange, yellow, green, cyan, blue, purple and pink for tracks 1 to 8.
+const int kDefaultColours[CLauncher::kTrackCount] = { 1, 2, 3, 5, 7, 9, 11, 13 };
+
 } // namespace
 
 CLauncher::CLauncher()
@@ -37,9 +40,13 @@ CLauncher::CLauncher()
 			clip.fPresent = false;
 			// A new clip plays the pattern of its row.
 			clip.fPattern = row - 1;
-			clip.fColour = kColourWhite;
+			clip.fColour = DefaultColour(track);
 		}
 	}
+}
+
+int CLauncher::DefaultColour(int iTrack) {
+	return kDefaultColours[iTrack];
 }
 
 int CLauncher::ButtonIndex(int iTrack, int iRow) {
@@ -148,15 +155,37 @@ CLauncher::EButtonState CLauncher::GetButtonState(int iTrack, int iSelection) co
 	return kOff;
 }
 
-bool CLauncher::IsStopLit(int iTrack) const {
-	switch (GetButtonState(iTrack, kSelectionStop)) {
-		case kActive:
+bool CLauncher::HasClips(int iTrack) const {
+	for (int row = 1; row <= kRowCount; ++row) {
+		if (Clip(iTrack, row).fPresent) {
 			return true;
-		case kQueued:
-			return fFlashLit;
-		default:
-			return false;
+		}
 	}
+	return false;
+}
+
+bool CLauncher::HasPendingPattern(int iTrack) const {
+	const int active = fActive[iTrack];
+	return active != kSelectionStop && Clip(iTrack, active).fPresent && Clip(iTrack, active).fPattern + 1 != fEmitted[iTrack];
+}
+
+CLauncher::EBrightness CLauncher::GetStopLight(int iTrack) const {
+	switch (GetButtonState(iTrack, kSelectionStop)) {
+		case kQueued:
+			return kFlashing;
+		case kActive:
+			return HasClips(iTrack) ? kDim : kUnlit;
+		default:
+			return kVibrant;
+	}
+}
+
+int CLauncher::GetStopLightFrame(int iTrack) const {
+	const EBrightness light = GetStopLight(iTrack);
+	if (light == kFlashing) {
+		return fFlashLit ? kVibrant : kDim;
+	}
+	return light;
 }
 
 CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
@@ -174,8 +203,9 @@ CLauncher::TLight CLauncher::GetLaunchModeLight(int iTrack, int iRow) const {
 	switch (GetButtonState(iTrack, iRow)) {
 		// A clip that was switched off while active goes on showing its colour
 		// until its track has switched.
+		// It flashes while a change of its pattern waits for the switch point.
 		case kActive:
-			return MakeLight(kVibrant, clip.fColour);
+			return MakeLight(HasPendingPattern(iTrack) ? kFlashing : kVibrant, clip.fColour);
 		case kQueued:
 			return MakeLight(kFlashing, clip.fColour);
 		default:
@@ -193,10 +223,10 @@ CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
 	const TClip& clip = fClips[picked / kRowCount][picked % kRowCount];
 
 	if (iTrack == kEditingToggleTrack && iRow == kEditingToggleRow) {
-		return MakeLight(clip.fPresent ? kVibrant : kDim, kColourWhite);
+		return clip.fPresent ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
 	}
 	if (iTrack == kEditingBackTrack && iRow == kEditingBackRow) {
-		return MakeLight(kDim, kColourWhite);
+		return MakeLight(kDim, kColourBlue);
 	}
 	// The colour and pattern controls only show while there is a clip to set up.
 	if (!clip.fPresent) {

@@ -7,9 +7,9 @@ format_version = "3.0"
 --   setup state:                      50
 --   lamp of the setup button:         51
 --   selection of track t:            100 + t
---   state of the stop button:       1000 + 10 * t
+--   light of the stop button:       1000 + 10 * t
 --   light of a launch button:       1000 + 10 * t + r
---   lamp of the stop button:        2000 + 10 * t
+--   film strip frame of that light: 2000 + 10 * t
 --   film strip frame of a light:    2000 + 10 * t + r
 --   whether a launch button holds a clip: 3000 + 10 * t + r
 --   pattern of its clip:            4000 + 10 * t + r
@@ -46,6 +46,10 @@ end
 local function plain_number(max)
 	return jbox.ui_linear({ min = 0, max = max, units = { { decimals = 0 } } })
 end
+
+-- Red, orange, yellow, green, cyan, blue, purple and pink: the colour a clip
+-- has until another one is chosen, by track. Colours count from 0.
+local DEFAULT_COLOURS = { 1, 2, 3, 5, 7, 9, 11, 13 }
 
 local document_properties = {}
 local rt_properties = {}
@@ -100,24 +104,27 @@ for track = 1, TRACK_COUNT do
 	midi_cc_chart[FIRST_SELECTION_MIDI_CC + track - 1] = "/custom_properties/" .. selection
 	add_remote_item(selection, "Track " .. track .. " Selection")
 
-	-- 0 = off, 1 = queued, 2 = active. Computed by the realtime code and sent
-	-- to control surfaces; see docs/adr/0001.
+	-- What the stop button shows, for control surfaces: 0 = unlit (the track
+	-- has no clips), 1 = dim (stopped), 2 = vibrant (a clip is active), 3 =
+	-- flashing (about to stop). Computed by the realtime code.
 	local stop = "track" .. track .. "_stop"
-	rt_properties[stop .. "_state"] = jbox.number{
+	rt_properties[stop .. "_light"] = jbox.number{
 		property_tag = 1000 + 10 * track,
-		default = 2,
+		default = 0,
+		steps = 4,
+		ui_name = jbox.ui_text("text_" .. stop),
+		ui_type = jbox.ui_selector{ jbox.ui_text("text_unlit"), jbox.ui_text("text_dim"), jbox.ui_text("text_vibrant"), jbox.ui_text("text_flashing") },
+	}
+	add_remote_item(stop .. "_light", "Track " .. track .. " Stop Light")
+
+	-- The frame of the stop buttons' film strip the front panel shows right
+	-- now: unlit, dim or vibrant.
+	rt_properties[stop .. "_light_frame"] = jbox.number{
+		property_tag = 2000 + 10 * track,
+		default = 0,
 		steps = 3,
 		ui_name = jbox.ui_text("text_" .. stop),
-		ui_type = jbox.ui_selector{ jbox.ui_text("text_off"), jbox.ui_text("text_queued"), jbox.ui_text("text_active") },
-	}
-	add_remote_item(stop .. "_state", "Track " .. track .. " Stop")
-
-	-- Whether the stop button's light is shining; flashes while queued.
-	rt_properties[stop .. "_lamp"] = jbox.boolean{
-		property_tag = 2000 + 10 * track,
-		default = true,
-		ui_name = jbox.ui_text("text_" .. stop),
-		ui_type = plain_number(1),
+		ui_type = plain_number(2),
 	}
 
 	for row = 1, ROW_COUNT do
@@ -146,7 +153,7 @@ for track = 1, TRACK_COUNT do
 
 		document_properties[clip .. "_colour"] = jbox.number{
 			property_tag = 5000 + 10 * track + row,
-			default = 0,
+			default = DEFAULT_COLOURS[track],
 			steps = COLOUR_COUNT,
 			ui_name = jbox.ui_text("text_" .. clip .. "_colour"),
 			ui_type = jbox.ui_selector(colour_texts),

@@ -25,6 +25,9 @@ class CLauncher {
 
 	public: static const int kColourCount = 14;
 	public: static const int kColourWhite = 0;
+	public: static const int kColourRed = 1;
+	public: static const int kColourGreen = 5;
+	public: static const int kColourBlue = 9;
 	public: static const int kColourPink = 13;
 
 	// The setup state is one number: launch mode, clip picking, or clip editing
@@ -88,6 +91,10 @@ class CLauncher {
 
 	public: CLauncher();
 
+	// The colour a launch button's clip has until another one is chosen; each
+	// track has its own.
+	public: static int DefaultColour(int iTrack);
+
 	// The number of the launch button of a track and row, 0..63, and the setup
 	// state in which that launch button is being edited.
 	public: static int ButtonIndex(int iTrack, int iRow);
@@ -114,9 +121,13 @@ class CLauncher {
 
 	public: EButtonState GetButtonState(int iTrack, int iSelection) const;
 
-	// Whether the light of a stop button is shining right now; it flashes while
-	// queued.
-	public: bool IsStopLit(int iTrack) const;
+	// What a stop button shows, in red: flashing while the track is about to
+	// stop, vibrant while a clip is active and can be stopped, dim while the
+	// track is stopped, unlit while the track has no clips at all.
+	public: EBrightness GetStopLight(int iTrack) const;
+	// The frame of the stop buttons' film strip to show right now: unlit, dim
+	// or vibrant; a flashing light alternates between the last two.
+	public: int GetStopLightFrame(int iTrack) const;
 
 	public: TLight GetLight(int iTrack, int iRow) const;
 	public: int GetLightValue(int iTrack, int iRow) const;
@@ -142,6 +153,10 @@ class CLauncher {
 	// the stop button.
 	private: int Target(int iTrack) const;
 	private: void Switch();
+	private: bool HasClips(int iTrack) const;
+	// Whether the active clip's pattern has been changed and the track has not
+	// switched to it yet.
+	private: bool HasPendingPattern(int iTrack) const;
 	private: TLight GetLaunchModeLight(int iTrack, int iRow) const;
 	private: TLight GetClipPickingLight(int iTrack, int iRow) const;
 	private: TLight GetClipEditingLight(int iTrack, int iRow) const;

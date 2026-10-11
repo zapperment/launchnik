@@ -12,11 +12,11 @@ inline TJBox_Tag SelectionTag(int iTrack) {
 	return 100 + (iTrack + 1);
 }
 
-inline TJBox_Tag StopStateTag(int iTrack) {
+inline TJBox_Tag StopLightTag(int iTrack) {
 	return 1000 + 10 * (iTrack + 1);
 }
 
-inline TJBox_Tag StopLampTag(int iTrack) {
+inline TJBox_Tag StopLightFrameTag(int iTrack) {
 	return 2000 + 10 * (iTrack + 1);
 }
 

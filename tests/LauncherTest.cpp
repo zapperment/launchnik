@@ -62,7 +62,9 @@ void TestInitialState() {
 	CLauncher launcher;
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		CHECK(launcher.GetButtonState(track, CLauncher::kSelectionStop) == CLauncher::kActive);
-		CHECK(launcher.IsStopLit(track));
+		// With no clips to stop, the stop button is unlit.
+		CHECK(launcher.GetStopLight(track) == CLauncher::kUnlit);
+		CHECK(launcher.GetStopLightFrame(track) == 0);
 		CHECK(launcher.GetCVValue(track) == 0.0);
 		// A new device has only empty launch buttons.
 		for (int row = 1; row <= 8; ++row) {
@@ -97,7 +99,7 @@ void TestClickWhilePlayingQueuesUntilSwitchPoint() {
 	CHECK(launcher.GetButtonState(0, 3) == CLauncher::kQueued);
 	// The outgoing button stays active and the CV keeps its value.
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
-	CHECK(launcher.IsStopLit(0));
+	CHECK(launcher.GetStopLight(0) == CLauncher::kDim);
 	CHECK(launcher.GetCVValue(0) == 0.0);
 
 	// Still queued just before the switch point.
@@ -267,22 +269,23 @@ void TestQueuedButtonFlashesOnTheBeat() {
 	// Vibrant for the first quaver of a crotchet, dim for the second.
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
-	CHECK(launcher.IsStopLit(1));
+	CHECK(launcher.GetStopLightFrame(1) == 2);
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver - kBatch));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver));
 	CHECK(launcher.GetLightFrame(0, 3) == dimFrame);
-	CHECK(!launcher.IsStopLit(1));
+	CHECK(launcher.GetStopLightFrame(1) == 1);
 	launcher.Advance(Playing(2 * CLauncher::kPPQPerCrotchet));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
 
-	// To a control surface the light is steadily "flashing".
+	// To a control surface the lights are steadily "flashing".
 	CHECK(IsLight(launcher.GetLight(0, 3), CLauncher::kFlashing, 4));
+	CHECK(launcher.GetStopLight(1) == CLauncher::kFlashing);
 
-	// The active buttons do not flash.
+	// The active buttons do not flash. Track 2's clips are orange.
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver));
-	CHECK(launcher.IsStopLit(0));
-	CHECK(launcher.GetLightFrame(1, 2) == 2);
+	CHECK(launcher.GetStopLightFrame(0) == 1);
+	CHECK(launcher.GetLightFrame(1, 2) == 2 + 2 * 2);
 }
 
 void TestOpenMakesSelectionsActive() {
@@ -321,7 +324,8 @@ void TestNewClipPlaysThePatternOfItsRow() {
 	launcher.SetClipPresent(4, 6, true);
 	OpenWith(launcher, 4, 6);
 	CHECK(launcher.GetCVValue(4) == 6.0 / 8.0);
-	CHECK(IsLight(launcher.GetLight(4, 6), CLauncher::kVibrant, CLauncher::kColourWhite));
+	// ...and has the colour of its track.
+	CHECK(IsLight(launcher.GetLight(4, 6), CLauncher::kVibrant, CLauncher::DefaultColour(4)));
 }
 
 void TestSelectingEmptyLaunchButtonStopsTheTrack() {
@@ -376,12 +380,25 @@ void TestEditingActiveClipWaitsForSwitchPoint() {
 	launcher.SetClipPresent(0, 1, true);
 	OpenWith(launcher, 0, 1);
 	launcher.Advance(Playing(100));
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
 	launcher.SetClipPattern(0, 1, 4);
 	launcher.Advance(Playing(120));
 	CHECK(launcher.GetCVValue(0) == 1.0 / 8.0);
 	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+	// It flashes while the new pattern waits, as a queued clip would.
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kFlashing, CLauncher::DefaultColour(0)));
 	launcher.Advance(Playing(kInterval - 1));
 	CHECK(launcher.GetCVValue(0) == 5.0 / 8.0);
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
+
+	// Changing it back before the switch point leaves nothing to wait for.
+	launcher.Advance(Playing(kInterval + 2 * kBatch));
+	launcher.SetClipPattern(0, 1, 6);
+	launcher.Advance(Playing(kInterval + 3 * kBatch));
+	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kFlashing);
+	launcher.SetClipPattern(0, 1, 4);
+	launcher.Advance(Playing(kInterval + 4 * kBatch));
+	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kVibrant);
 
 	// While the transport is stopped the change is heard at once.
 	launcher.Advance(Stopped());
@@ -419,6 +436,54 @@ void TestSwitchingActiveClipOffStopsAtSwitchPoint() {
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kFlashing, 5));
 }
 
+void TestStopLights() {
+	CLauncher launcher;
+	launcher.SetClipPresent(0, 1, true);
+	launcher.SetClipPresent(1, 1, true);
+	OpenWith(launcher, 1, 1);
+	launcher.Advance(Playing(100));
+
+	// A track with clips, none playing: dim. One playing: vibrant. No clips: unlit.
+	CHECK(launcher.GetStopLight(0) == CLauncher::kDim);
+	CHECK(launcher.GetStopLight(1) == CLauncher::kVibrant);
+	CHECK(launcher.GetStopLight(2) == CLauncher::kUnlit);
+	CHECK(launcher.GetStopLightFrame(0) == 1);
+	CHECK(launcher.GetStopLightFrame(1) == 2);
+	CHECK(launcher.GetStopLightFrame(2) == 0);
+
+	// A queued clip does not change the stop button...
+	launcher.SetSelection(0, 1);
+	launcher.Advance(Playing(120));
+	CHECK(launcher.GetStopLight(0) == CLauncher::kDim);
+	// ...a queued stop makes it flash...
+	launcher.SetSelection(1, CLauncher::kSelectionStop);
+	launcher.Advance(Playing(140));
+	CHECK(launcher.GetStopLight(1) == CLauncher::kFlashing);
+	// ...until the track has stopped.
+	launcher.Advance(Playing(kInterval - 1));
+	CHECK(launcher.GetStopLight(0) == CLauncher::kVibrant);
+	CHECK(launcher.GetStopLight(1) == CLauncher::kDim);
+
+	// Losing its last clip while it plays, a track still has something to stop.
+	launcher.Advance(Playing(kInterval + 2 * kBatch));
+	launcher.SetClipPresent(0, 1, false);
+	launcher.Advance(Playing(kInterval + 3 * kBatch));
+	CHECK(launcher.GetStopLight(0) == CLauncher::kFlashing);
+	launcher.Advance(Playing(2 * kInterval - 1));
+	CHECK(launcher.GetStopLight(0) == CLauncher::kUnlit);
+}
+
+void TestDefaultColourFollowsTheTrack() {
+	// Red, orange, yellow, green, cyan, blue, purple, pink.
+	const int expected[CLauncher::kTrackCount] = { 1, 2, 3, 5, 7, 9, 11, 13 };
+	CLauncher launcher;
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		CHECK(CLauncher::DefaultColour(track) == expected[track]);
+		launcher.SetClipPresent(track, 3, true);
+		CHECK(IsLight(launcher.GetLight(track, 3), CLauncher::kDim, expected[track]));
+	}
+}
+
 void TestClipPickingFlashesEveryLaunchButton() {
 	CLauncher launcher;
 	launcher.SetClipPresent(2, 4, true);
@@ -433,10 +498,10 @@ void TestClipPickingFlashesEveryLaunchButton() {
 			CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kFlashing, isTheClip ? 7 : CLauncher::kColourWhite));
 		}
 	}
-	// Tracks go on playing and stop buttons go on showing their state.
+	// Tracks go on playing and stop buttons go on showing their light.
 	CHECK(launcher.GetCVValue(2) == 4.0 / 8.0);
-	CHECK(!launcher.IsStopLit(2));
-	CHECK(launcher.IsStopLit(3));
+	CHECK(launcher.GetStopLight(2) == CLauncher::kVibrant);
+	CHECK(launcher.GetStopLight(3) == CLauncher::kUnlit);
 }
 
 void TestFlashingGoesOnWhileStopped() {
@@ -465,8 +530,11 @@ void TestClipEditingOfEmptyLaunchButtonShowsOnlyToggleAndBack() {
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 			const bool isToggle = track == 7 && row == 1;
 			const bool isBack = track == 7 && row == 8;
-			if (isToggle || isBack) {
-				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kDim, CLauncher::kColourWhite));
+			if (isToggle) {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kDim, CLauncher::kColourRed));
+			}
+			else if (isBack) {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kDim, CLauncher::kColourBlue));
 			}
 			else {
 				CHECK(IsUnlit(launcher.GetLight(track, row)));
@@ -482,8 +550,8 @@ void TestClipEditingShowsColoursAndPatterns() {
 	launcher.SetClipPattern(3, 6, 2);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 6));
 
-	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourWhite));
-	CHECK(IsLight(launcher.GetLight(7, 8), CLauncher::kDim, CLauncher::kColourWhite));
+	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourGreen));
+	CHECK(IsLight(launcher.GetLight(7, 8), CLauncher::kDim, CLauncher::kColourBlue));
 
 	// Row 2 holds white to turquoise, row 3 cyan to pink, in columns 1 to 7.
 	for (int column = 0; column < 7; ++column) {
@@ -541,7 +609,7 @@ void TestOutOfRangeClipSettingsAreIgnored() {
 	launcher.SetClipPresent(0, 9, true);
 	launcher.SetSetup(CLauncher::kSetupCount);
 	OpenWith(launcher, 0, 1);
-	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::kColourWhite));
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
 	CHECK(launcher.GetCVValue(0) == 1.0 / 8.0);
 }
 
@@ -599,6 +667,8 @@ int main() {
 	TestLaunchModeLights();
 	TestEditingActiveClipWaitsForSwitchPoint();
 	TestSwitchingActiveClipOffStopsAtSwitchPoint();
+	TestStopLights();
+	TestDefaultColourFollowsTheTrack();
 	TestClipPickingFlashesEveryLaunchButton();
 	TestFlashingGoesOnWhileStopped();
 	TestClipEditingOfEmptyLaunchButtonShowsOnlyToggleAndBack();

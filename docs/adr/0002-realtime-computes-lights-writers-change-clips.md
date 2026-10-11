@@ -16,5 +16,5 @@ We chose this because the host leaves no alternative for input. Only two parties
 - What each launch button shows is decided in one place, in code that has no dependency on the SDK and is covered by the command-line tests.
 - The press rule exists once per writer, in different languages and repositories. They have to be kept in step by hand; the same table of cases should drive the tests of each.
 - Remote gains an input item for every clip setting, for the setup state and for the picked launch button. A Remote map could use them to change a clip without setup mode; nothing requires it to.
-- The 64 state items of the launch buttons (off, queued, active) are replaced by light items. "Flashing" is one steady value of a light, so a control surface flashes on its own clock and may be out of step with the panel.
+- The 72 state items of the launch and stop buttons (off, queued, active) are replaced by light items. "Flashing" is one steady value of a light, so a control surface flashes on its own clock and may be out of step with the panel.
 - A codec can only write while it handles MIDI from its surface, which is enough here: every write answers a press.

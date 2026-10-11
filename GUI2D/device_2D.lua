@@ -54,12 +54,13 @@ front.click_grid = {
 	{ size = { 1970, 1780 } },
 }
 
--- A stop button is a lamp with an invisible click area of the same size on top.
+-- A stop button is a lamp showing one of three frames (unlit, dim, vibrant)
+-- with an invisible click area of the same size on top.
 for track = 1, TRACK_COUNT do
 	local stop_offset = { STOP_LEFT + TRACK_PITCH * (track - 1), STOP_TOP }
 	front["lamp_track" .. track .. "_stop"] = {
 		offset = stop_offset,
-		{ path = "Button_21_2frames", frames = 2 },
+		{ path = "Stop_Button_3frames", frames = 3 },
 	}
 	front["click_track" .. track .. "_stop"] = {
 		offset = stop_offset,
