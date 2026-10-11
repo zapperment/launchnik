@@ -1,7 +1,6 @@
 format_version = "2.0"
 
 local TRACK_COUNT = 8
-local PATTERN_COUNT = 8
 
 -- Layout of the button grid, in pixels
 local LAUNCH_LEFT = 907
@@ -33,29 +32,51 @@ front = {
 	},
 }
 
--- Every button is a lamp with an invisible click area of the same size on top.
+local ROW_COUNT = 8
+local BUTTON_WIDTH = 205
+local BUTTON_HEIGHT = 135
+local SETUP_LEFT = 580
+
+-- The launch buttons are lamps showing one frame of a film strip: unlit, then
+-- dim and vibrant for each of the fourteen colours. One transparent display
+-- lies on top of all of them and takes the clicks; its size is rounded up to
+-- a multiple of 5 pixels.
+for track = 1, TRACK_COUNT do
+	for row = 1, ROW_COUNT do
+		front["lamp_track" .. track .. "_clip" .. row] = {
+			offset = { LAUNCH_LEFT + TRACK_PITCH * (track - 1), LAUNCH_TOP + ROW_PITCH * (row - 1) },
+			{ path = "Launch_Button_29frames", frames = 29 },
+		}
+	end
+end
+front.click_grid = {
+	offset = { LAUNCH_LEFT, LAUNCH_TOP },
+	{ size = { 1970, 1780 } },
+}
+
+-- A stop button is a lamp showing one of three frames (unlit, dim, vibrant)
+-- with an invisible click area of the same size on top.
 for track = 1, TRACK_COUNT do
 	local stop_offset = { STOP_LEFT + TRACK_PITCH * (track - 1), STOP_TOP }
 	front["lamp_track" .. track .. "_stop"] = {
 		offset = stop_offset,
-		{ path = "Button_21_2frames", frames = 2 },
+		{ path = "Stop_Button_3frames", frames = 3 },
 	}
 	front["click_track" .. track .. "_stop"] = {
 		offset = stop_offset,
 		{ path = "ClickArea_Stop_2frames", frames = 2 },
 	}
-	for pattern = 1, PATTERN_COUNT do
-		local launch_offset = { LAUNCH_LEFT + TRACK_PITCH * (track - 1), LAUNCH_TOP + ROW_PITCH * (pattern - 1) }
-		front["lamp_track" .. track .. "_pattern" .. pattern] = {
-			offset = launch_offset,
-			{ path = "Button_50_2frames", frames = 2 },
-		}
-		front["click_track" .. track .. "_pattern" .. pattern] = {
-			offset = launch_offset,
-			{ path = "ClickArea_Launch_2frames", frames = 2 },
-		}
-	end
 end
+
+-- The setup button is a lamp with a transparent display on top, like the grid.
+front.lamp_setup = {
+	offset = { SETUP_LEFT, STOP_TOP },
+	{ path = "Button_21_green_2frames", frames = 2 },
+}
+front.click_setup = {
+	offset = { SETUP_LEFT, STOP_TOP },
+	{ size = { 70, 75 } },
+}
 
 back = {
 	Bg = {

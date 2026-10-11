@@ -26,17 +26,20 @@ sample_rate_setup = {
 	},
 }
 
--- The realtime code hears about every change of a track's selection, whether
--- it comes from a click, automation or a control surface.
+-- The realtime code hears about every change of the setup state, of a track's
+-- selection and of what a launch button holds, whether it comes from a click,
+-- automation or a control surface.
+local notify = { "/custom_properties/setup" }
+for track = 1, 8 do
+	table.insert(notify, "/custom_properties/track" .. track .. "_selection")
+	for row = 1, 8 do
+		local clip = "/custom_properties/track" .. track .. "_clip" .. row
+		table.insert(notify, clip .. "_present")
+		table.insert(notify, clip .. "_pattern")
+		table.insert(notify, clip .. "_colour")
+	end
+end
+
 rt_input_setup = {
-	notify = {
-		"/custom_properties/track1_selection",
-		"/custom_properties/track2_selection",
-		"/custom_properties/track3_selection",
-		"/custom_properties/track4_selection",
-		"/custom_properties/track5_selection",
-		"/custom_properties/track6_selection",
-		"/custom_properties/track7_selection",
-		"/custom_properties/track8_selection",
-	}
+	notify = notify
 }

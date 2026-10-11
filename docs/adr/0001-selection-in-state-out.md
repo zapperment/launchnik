@@ -2,6 +2,8 @@
 
 A launch or stop button is not one property. Each track has a single **selection** (stop or pattern 1–8) that the user, automation and control surfaces write, and each of the 72 buttons has a separate **state** (off, queued, active) that the realtime code computes and nobody else can write. We chose this because the host only lets realtime code write realtime-owned properties, which are never saved, and only saves, automates and accepts input on document-owned properties, which realtime code cannot write; one property therefore cannot both take a click and report whether that click is still queued.
 
+Amended by [0002](0002-realtime-computes-lights-writers-change-clips.md): launch buttons now report a **light** instead of a state, and a selection of 1–8 names a clip, not a pattern. Stop buttons report a light as well (unlit, dim, vibrant, flashing), since what they show no longer follows from their state alone.
+
 ## Considered options
 
 - **72 momentary buttons plus 72 states.** More literal for a control surface (one pad, one input item), but nothing would be saved with the song, and automation would need 72 lanes.

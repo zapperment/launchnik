@@ -1,26 +1,20 @@
 #include "Launchnik.h"
 
+#include "Tags.h"
+
 namespace {
-
-// Tags configured in motherboard_def.lua; track is 1..8, selection is 0..8
-const TJBox_Tag kCustomPropsTag_FirstSelection = 101;
-
-TJBox_Tag SelectionTag(int iTrack) {
-	return kCustomPropsTag_FirstSelection + iTrack;
-}
-
-TJBox_Tag StateTag(int iTrack, int iSelection) {
-	return 1000 + 10 * (iTrack + 1) + iSelection;
-}
-
-TJBox_Tag LampTag(int iTrack, int iSelection) {
-	return 2000 + 10 * (iTrack + 1) + iSelection;
-}
 
 const TJBox_Float64 kBatchSize = 64.0;
 
 // Not a value any property can have, so the first batch writes everything.
 const TJBox_Int32 kNothingWritten = -1;
+
+// The tags of the launch buttons' properties are a base plus 10 for each track
+// plus the row; a base of its own for each kind of property.
+const TJBox_Tag kClipPresentBase = 3000;
+const TJBox_Tag kClipPatternBase = 4000;
+const TJBox_Tag kClipColourBase = 5000;
+const TJBox_Tag kClipTagSpan = 1000;
 
 } // namespace
 
@@ -29,7 +23,9 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fCustomProps(JBox_GetMotherboardObjectRef("/custom_properties")),
 	fTransport(JBox_GetMotherboardObjectRef("/transport")),
 	fSampleRate(iSampleRate),
-	fIsFirstBatch(true)
+	fIsFirstBatch(true),
+	fSetupLampLit(false),
+	fWrittenSetupLamp(kNothingWritten)
 {
 	const char* const cvOutputPaths[CLauncher::kTrackCount] = {
 		"/cv_outputs/track1",
@@ -44,9 +40,11 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		fCVOutputs[track] = JBox_GetMotherboardObjectRef(cvOutputPaths[track]);
 		fWrittenCVValues[track] = -1.0;
-		for (int selection = 0; selection < CLauncher::kSelectionCount; ++selection) {
-			fWrittenStates[track][selection] = kNothingWritten;
-			fWrittenLamps[track][selection] = kNothingWritten;
+		fWrittenStopLights[track] = kNothingWritten;
+		fWrittenStopLightFrames[track] = kNothingWritten;
+		for (int row = 0; row < CLauncher::kRowCount; ++row) {
+			fWrittenLights[track][row] = kNothingWritten;
+			fWrittenLightFrames[track][row] = kNothingWritten;
 		}
 	}
 }
@@ -54,33 +52,63 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 void CLaunchnik::RenderBatch(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UInt32 iDiffCount) {
 	if (fIsFirstBatch) {
 		// A song that has just been opened starts with its saved selections active.
-		LoadSelections();
+		LoadEverything();
+		fLauncher.Open();
 		fIsFirstBatch = false;
 	}
-	HandleSelectionChanges(iPropertyDiffs, iDiffCount);
+	HandleChanges(iPropertyDiffs, iDiffCount);
 	fLauncher.Advance(ReadTransport());
 	WriteOutputs();
 }
 
-void CLaunchnik::LoadSelections() {
-	int selections[CLauncher::kTrackCount];
+void CLaunchnik::LoadEverything() {
+	HandleChange(kCustomPropsTag_Setup, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Setup));
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
-		selections[track] = static_cast<int>(JBox_LoadMOMPropertyAsNumber(fCustomProps, SelectionTag(track)));
+		HandleChange(SelectionTag(track), JBox_LoadMOMPropertyByTag(fCustomProps, SelectionTag(track)));
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			const TJBox_Tag tags[] = { ClipPresentTag(track, row), ClipPatternTag(track, row), ClipColourTag(track, row) };
+			for (TJBox_Tag tag : tags) {
+				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
+			}
+		}
 	}
-	fLauncher.Reset(selections);
 }
 
-void CLaunchnik::HandleSelectionChanges(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UInt32 iDiffCount) {
+void CLaunchnik::HandleChanges(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UInt32 iDiffCount) {
 	for (TJBox_UInt32 i = 0; i < iDiffCount; ++i) {
 		const TJBox_PropertyDiff& diff = iPropertyDiffs[i];
-		if (diff.fObjectRef != fCustomProps) {
-			continue;
+		if (diff.fObjectRef == fCustomProps) {
+			HandleChange(diff.fPropertyTag, diff.fCurrentValue);
 		}
-		const TJBox_Tag lastSelectionTag = SelectionTag(CLauncher::kTrackCount - 1);
-		if (diff.fPropertyTag >= kCustomPropsTag_FirstSelection && diff.fPropertyTag <= lastSelectionTag) {
-			const int track = static_cast<int>(diff.fPropertyTag - kCustomPropsTag_FirstSelection);
-			fLauncher.SetSelection(track, static_cast<int>(JBox_GetNumber(diff.fCurrentValue)));
-		}
+	}
+}
+
+void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
+	if (iTag == kCustomPropsTag_Setup) {
+		const int setup = static_cast<int>(JBox_GetNumber(iValue));
+		fLauncher.SetSetup(setup);
+		fSetupLampLit = setup != CLauncher::kSetupLaunchMode;
+		return;
+	}
+	if (iTag >= SelectionTag(0) && iTag <= SelectionTag(CLauncher::kTrackCount - 1)) {
+		const int track = static_cast<int>(iTag - SelectionTag(0));
+		fLauncher.SetSelection(track, static_cast<int>(JBox_GetNumber(iValue)));
+		return;
+	}
+	if (iTag < kClipPresentBase || iTag >= kClipColourBase + kClipTagSpan) {
+		return;
+	}
+	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
+	const int track = static_cast<int>((iTag - base) / 10) - 1;
+	const int row = static_cast<int>((iTag - base) % 10);
+	if (base == kClipPresentBase) {
+		fLauncher.SetClipPresent(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kClipPatternBase) {
+		fLauncher.SetClipPattern(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	}
+	else if (base == kClipColourBase) {
+		fLauncher.SetClipColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
 	}
 }
 
@@ -97,18 +125,36 @@ CLauncher::TTransport CLaunchnik::ReadTransport() const {
 }
 
 void CLaunchnik::WriteOutputs() {
+	const TJBox_Int32 setupLamp = fSetupLampLit ? 1 : 0;
+	if (setupLamp != fWrittenSetupLamp) {
+		fWrittenSetupLamp = setupLamp;
+		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_SetupLamp, JBox_MakeBoolean(fSetupLampLit));
+	}
+
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
-		for (int selection = 0; selection < CLauncher::kSelectionCount; ++selection) {
-			const TJBox_Int32 state = fLauncher.GetButtonState(track, selection);
-			if (state != fWrittenStates[track][selection]) {
-				fWrittenStates[track][selection] = state;
-				JBox_StoreMOMPropertyByTag(fCustomProps, StateTag(track, selection), JBox_MakeNumber(state));
+		const TJBox_Int32 stopLight = fLauncher.GetStopLight(track);
+		if (stopLight != fWrittenStopLights[track]) {
+			fWrittenStopLights[track] = stopLight;
+			JBox_StoreMOMPropertyByTag(fCustomProps, StopLightTag(track), JBox_MakeNumber(stopLight));
+		}
+
+		const TJBox_Int32 stopFrame = fLauncher.GetStopLightFrame(track);
+		if (stopFrame != fWrittenStopLightFrames[track]) {
+			fWrittenStopLightFrames[track] = stopFrame;
+			JBox_StoreMOMPropertyByTag(fCustomProps, StopLightFrameTag(track), JBox_MakeNumber(stopFrame));
+		}
+
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			const TJBox_Int32 light = fLauncher.GetLightValue(track, row);
+			if (light != fWrittenLights[track][row - 1]) {
+				fWrittenLights[track][row - 1] = light;
+				JBox_StoreMOMPropertyByTag(fCustomProps, LightTag(track, row), JBox_MakeNumber(light));
 			}
 
-			const TJBox_Int32 lamp = fLauncher.IsLit(track, selection) ? 1 : 0;
-			if (lamp != fWrittenLamps[track][selection]) {
-				fWrittenLamps[track][selection] = lamp;
-				JBox_StoreMOMPropertyByTag(fCustomProps, LampTag(track, selection), JBox_MakeBoolean(lamp == 1));
+			const TJBox_Int32 frame = fLauncher.GetLightFrame(track, row);
+			if (frame != fWrittenLightFrames[track][row - 1]) {
+				fWrittenLightFrames[track][row - 1] = frame;
+				JBox_StoreMOMPropertyByTag(fCustomProps, LightFrameTag(track, row), JBox_MakeNumber(frame));
 			}
 		}
 

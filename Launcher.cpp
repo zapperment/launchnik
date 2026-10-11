@@ -2,26 +2,90 @@
 
 namespace {
 
-// Queued buttons are lit for the first quaver of every crotchet.
+// Flashing lights are vibrant for the first quaver of every crotchet.
 const long long kPPQPerQuaver = CLauncher::kPPQPerCrotchet / 2;
+
+bool IsFirstQuaver(double iPosition) {
+	const long long position = static_cast<long long>(iPosition);
+	return position >= 0 && (position % CLauncher::kPPQPerCrotchet) < kPPQPerQuaver;
+}
+
+CLauncher::TLight MakeLight(CLauncher::EBrightness iBrightness, int iColour) {
+	CLauncher::TLight light;
+	light.fBrightness = iBrightness;
+	light.fColour = iColour;
+	return light;
+}
+
+const CLauncher::TLight kUnlitLight = { CLauncher::kUnlit, CLauncher::kColourWhite };
+
+// Red, orange, yellow, green, cyan, blue, purple and pink for tracks 1 to 8.
+const int kDefaultColours[CLauncher::kTrackCount] = { 1, 2, 3, 5, 7, 9, 11, 13 };
 
 } // namespace
 
 CLauncher::CLauncher()
 	:
+	fSetup(kSetupLaunchMode),
 	fFlashLit(false),
+	fStoppedTime(0.0),
 	fSwitchPointInPreviousBatch(false)
 {
 	for (int track = 0; track < kTrackCount; ++track) {
 		fSelections[track] = kSelectionStop;
 		fActive[track] = kSelectionStop;
+		fEmitted[track] = 0;
+		for (int row = 1; row <= kRowCount; ++row) {
+			TClip& clip = fClips[track][row - 1];
+			clip.fPresent = false;
+			// A new clip plays the pattern of its row.
+			clip.fPattern = row - 1;
+			clip.fColour = DefaultColour(track);
+		}
 	}
 }
 
-void CLauncher::Reset(const int iSelections[kTrackCount]) {
-	for (int track = 0; track < kTrackCount; ++track) {
-		fSelections[track] = iSelections[track];
-		fActive[track] = iSelections[track];
+int CLauncher::DefaultColour(int iTrack) {
+	return kDefaultColours[iTrack];
+}
+
+int CLauncher::ButtonIndex(int iTrack, int iRow) {
+	return iTrack * kRowCount + (iRow - 1);
+}
+
+int CLauncher::SetupForClipEditing(int iTrack, int iRow) {
+	return kSetupFirstClipEditing + ButtonIndex(iTrack, iRow);
+}
+
+bool CLauncher::IsValidButton(int iTrack, int iRow) {
+	return iTrack >= 0 && iTrack < kTrackCount && iRow >= 1 && iRow <= kRowCount;
+}
+
+const CLauncher::TClip& CLauncher::Clip(int iTrack, int iRow) const {
+	return fClips[iTrack][iRow - 1];
+}
+
+void CLauncher::SetClipPresent(int iTrack, int iRow, bool iPresent) {
+	if (IsValidButton(iTrack, iRow)) {
+		fClips[iTrack][iRow - 1].fPresent = iPresent;
+	}
+}
+
+void CLauncher::SetClipPattern(int iTrack, int iRow, int iPattern) {
+	if (IsValidButton(iTrack, iRow) && iPattern >= 0 && iPattern < kPatternCount) {
+		fClips[iTrack][iRow - 1].fPattern = iPattern;
+	}
+}
+
+void CLauncher::SetClipColour(int iTrack, int iRow, int iColour) {
+	if (IsValidButton(iTrack, iRow) && iColour >= 0 && iColour < kColourCount) {
+		fClips[iTrack][iRow - 1].fColour = iColour;
+	}
+}
+
+void CLauncher::SetSetup(int iSetup) {
+	if (iSetup >= 0 && iSetup < kSetupCount) {
+		fSetup = iSetup;
 	}
 }
 
@@ -30,6 +94,25 @@ void CLauncher::SetSelection(int iTrack, int iSelection) {
 		return;
 	}
 	fSelections[iTrack] = iSelection;
+}
+
+int CLauncher::Target(int iTrack) const {
+	const int selection = fSelections[iTrack];
+	if (selection != kSelectionStop && !Clip(iTrack, selection).fPresent) {
+		return kSelectionStop;
+	}
+	return selection;
+}
+
+void CLauncher::Switch() {
+	for (int track = 0; track < kTrackCount; ++track) {
+		fActive[track] = Target(track);
+		fEmitted[track] = fActive[track] == kSelectionStop ? 0 : Clip(track, fActive[track]).fPattern + 1;
+	}
+}
+
+void CLauncher::Open() {
+	Switch();
 }
 
 void CLauncher::Advance(const TTransport& iTransport) {
@@ -42,16 +125,23 @@ void CLauncher::Advance(const TTransport& iTransport) {
 		// landing on it, since the host does not say where in a batch it happened.
 		switchNow = switchPointInBatch || fSwitchPointInPreviousBatch;
 
-		const long long position = static_cast<long long>(iTransport.fPlayPos);
-		fFlashLit = position >= 0 && (position % kPPQPerCrotchet) < kPPQPerQuaver;
+		fFlashLit = IsFirstQuaver(iTransport.fPlayPos);
+		fStoppedTime = 0.0;
+	}
+	else {
+		fFlashLit = IsFirstQuaver(fStoppedTime);
+		fStoppedTime += iTransport.fBatchLength;
+		// Keep the count small; only the place within a crotchet matters.
+		if (fStoppedTime >= kPPQPerCrotchet) {
+			fStoppedTime -= kPPQPerCrotchet;
+		}
 	}
 	fSwitchPointInPreviousBatch = switchPointInBatch;
 
-	// While the transport is stopped, selections take effect at once.
+	// While the transport is stopped, selections and changes to the active clip
+	// take effect at once.
 	if (switchNow) {
-		for (int track = 0; track < kTrackCount; ++track) {
-			fActive[track] = fSelections[track];
-		}
+		Switch();
 	}
 }
 
@@ -59,27 +149,121 @@ CLauncher::EButtonState CLauncher::GetButtonState(int iTrack, int iSelection) co
 	if (fActive[iTrack] == iSelection) {
 		return kActive;
 	}
-	if (fSelections[iTrack] == iSelection) {
+	if (Target(iTrack) == iSelection) {
 		return kQueued;
 	}
 	return kOff;
 }
 
-bool CLauncher::IsLit(int iTrack, int iSelection) const {
-	switch (GetButtonState(iTrack, iSelection)) {
-		case kActive:
+bool CLauncher::HasClips(int iTrack) const {
+	for (int row = 1; row <= kRowCount; ++row) {
+		if (Clip(iTrack, row).fPresent) {
 			return true;
-		case kQueued:
-			return fFlashLit;
-		default:
-			return false;
+		}
 	}
+	return false;
+}
+
+bool CLauncher::HasPendingPattern(int iTrack) const {
+	const int active = fActive[iTrack];
+	return active != kSelectionStop && Clip(iTrack, active).fPresent && Clip(iTrack, active).fPattern + 1 != fEmitted[iTrack];
+}
+
+CLauncher::EBrightness CLauncher::GetStopLight(int iTrack) const {
+	switch (GetButtonState(iTrack, kSelectionStop)) {
+		case kQueued:
+			return kFlashing;
+		case kActive:
+			return HasClips(iTrack) ? kDim : kUnlit;
+		default:
+			return kVibrant;
+	}
+}
+
+int CLauncher::GetStopLightFrame(int iTrack) const {
+	const EBrightness light = GetStopLight(iTrack);
+	if (light == kFlashing) {
+		return fFlashLit ? kVibrant : kDim;
+	}
+	return light;
+}
+
+CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
+	if (fSetup == kSetupLaunchMode) {
+		return GetLaunchModeLight(iTrack, iRow);
+	}
+	if (fSetup == kSetupClipPicking) {
+		return GetClipPickingLight(iTrack, iRow);
+	}
+	return GetClipEditingLight(iTrack, iRow);
+}
+
+CLauncher::TLight CLauncher::GetLaunchModeLight(int iTrack, int iRow) const {
+	const TClip& clip = Clip(iTrack, iRow);
+	switch (GetButtonState(iTrack, iRow)) {
+		// A clip that was switched off while active goes on showing its colour
+		// until its track has switched.
+		// It flashes while a change of its pattern waits for the switch point.
+		case kActive:
+			return MakeLight(HasPendingPattern(iTrack) ? kFlashing : kVibrant, clip.fColour);
+		case kQueued:
+			return MakeLight(kFlashing, clip.fColour);
+		default:
+			return clip.fPresent ? MakeLight(kDim, clip.fColour) : kUnlitLight;
+	}
+}
+
+CLauncher::TLight CLauncher::GetClipPickingLight(int iTrack, int iRow) const {
+	const TClip& clip = Clip(iTrack, iRow);
+	return MakeLight(kFlashing, clip.fPresent ? clip.fColour : kColourWhite);
+}
+
+CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
+	const int picked = fSetup - kSetupFirstClipEditing;
+	const TClip& clip = fClips[picked / kRowCount][picked % kRowCount];
+
+	if (iTrack == kEditingToggleTrack && iRow == kEditingToggleRow) {
+		return clip.fPresent ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
+	}
+	if (iTrack == kEditingBackTrack && iRow == kEditingBackRow) {
+		return MakeLight(kDim, kColourBlue);
+	}
+	// The colour and pattern controls only show while there is a clip to set up.
+	if (!clip.fPresent) {
+		return kUnlitLight;
+	}
+	const bool isColourRow = iRow == kEditingFirstColourRow || iRow == kEditingFirstColourRow + 1;
+	if (isColourRow && iTrack < kEditingColoursPerRow) {
+		const int colour = (iRow - kEditingFirstColourRow) * kEditingColoursPerRow + iTrack;
+		return MakeLight(colour == clip.fColour ? kVibrant : kDim, colour);
+	}
+	if (iRow == kEditingPatternRow) {
+		return MakeLight(iTrack == clip.fPattern ? kVibrant : kDim, kColourPink);
+	}
+	return kUnlitLight;
+}
+
+int CLauncher::GetLightValue(int iTrack, int iRow) const {
+	const TLight light = GetLight(iTrack, iRow);
+	if (light.fBrightness == kUnlit) {
+		return 0;
+	}
+	return 1 + 3 * light.fColour + (light.fBrightness - kDim);
+}
+
+int CLauncher::GetLightFrame(int iTrack, int iRow) const {
+	const TLight light = GetLight(iTrack, iRow);
+	if (light.fBrightness == kUnlit) {
+		return 0;
+	}
+	const bool vibrant = light.fBrightness == kVibrant || (light.fBrightness == kFlashing && fFlashLit);
+	return 1 + 2 * light.fColour + (vibrant ? 1 : 0);
 }
 
 double CLauncher::GetCVValue(int iTrack) const {
 	// The Combinator rounds its CV input to the nearest of nine evenly spaced
 	// steps (Off, 1..8), so these values sit in the middle of each step.
-	return static_cast<double>(fActive[iTrack]) / (kSelectionCount - 1);
+	return static_cast<double>(fEmitted[iTrack]) / kPatternCount;
 }
 
 long long CLauncher::ComputeSwitchIntervalLength(int iNumerator, int iDenominator) {

@@ -1,6 +1,7 @@
 #include <cstring> 
 #include "Jukebox.h"
 #include "Launchnik.h" 
+#include "Panel.h"
 
 void* JBox_Export_CreateNativeObject(const char iOperation[], const TJBox_Value iParams[], TJBox_UInt32 iCount) {
   if(std::strcmp(iOperation, "Instance") == 0){ 
@@ -22,9 +23,13 @@ void JBox_Export_RenderRealtime(void* privateState, const TJBox_PropertyDiff iPr
 }
 
 
+// The displays on the front panel are transparent and only take clicks; what
+// lies underneath them is drawn by lamps.
 void JBox_Export_Draw(const TJBox_DisplayArgs* /*iArgs*/) { }
 
-void JBox_Export_Gesture(TJBox_GestureArgs* /*iArgs*/) { }
+void JBox_Export_Gesture(TJBox_GestureArgs* iArgs) {
+	HandlePanelGesture(*iArgs);
+}
 
 void JBox_Export_DisplaySetup(const TJBox_DisplayArgs* /*iArgs*/) { }
 
