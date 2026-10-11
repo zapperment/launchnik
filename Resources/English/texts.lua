@@ -1,10 +1,27 @@
 format_version = "1.0"
 
+local COLOUR_NAMES = {
+	"White", "Red", "Orange", "Yellow", "Lime", "Green", "Turquoise",
+	"Cyan", "Light Blue", "Blue", "Dark Blue", "Purple", "Fuchsia", "Pink",
+}
+
 texts = {
 	["text_stop"] = "Stop",
 	["text_off"] = "Off",
 	["text_queued"] = "Queued",
 	["text_active"] = "Active",
+
+	["text_setup"] = "Setup",
+	["text_setup_short"] = "Setup",
+	["text_setup_shortest"] = "Set",
+
+	-- Names of the changes made by clicking the panel, as shown in the undo
+	-- history. The click handler refers to them by these keys.
+	["gesture_selection"] = "Change track selection",
+	["gesture_setup"] = "Change setup mode",
+	["gesture_clip_present"] = "Switch clip on or off",
+	["gesture_clip_pattern"] = "Change clip pattern",
+	["gesture_clip_colour"] = "Change clip colour",
 }
 
 for track = 1, 8 do
@@ -15,19 +32,40 @@ for track = 1, 8 do
 
 	local stop = "text_track" .. track .. "_stop"
 	texts[stop] = "Track " .. track .. " Stop"
-	texts[stop .. "_short"] = "T" .. track .. " Stop"
-	texts[stop .. "_shortest"] = "T" .. track .. "St"
+	texts[stop .. "_state_short"] = "T" .. track .. " Stop"
+	texts[stop .. "_state_shortest"] = "T" .. track .. "St"
 
 	texts["text_cv_out_track" .. track] = "Track " .. track .. " CV Out"
 
-	for pattern = 1, 8 do
-		local button = "text_track" .. track .. "_pattern" .. pattern
-		texts[button] = "Track " .. track .. " Pattern " .. pattern
-		texts[button .. "_short"] = "T" .. track .. " P" .. pattern
-		texts[button .. "_shortest"] = "T" .. track .. "P" .. pattern
+	for row = 1, 8 do
+		local clip = "text_track" .. track .. "_clip" .. row
+		local long = "Track " .. track .. " Clip " .. row
+		local short = "T" .. track .. "C" .. row
+		local digits = track .. row
+
+		texts[clip .. "_present"] = long .. " Present"
+		texts[clip .. "_present_short"] = short .. " On"
+		texts[clip .. "_present_shortest"] = "O" .. digits
+
+		texts[clip .. "_pattern"] = long .. " Pattern"
+		texts[clip .. "_pattern_short"] = short .. " Pat"
+		texts[clip .. "_pattern_shortest"] = "P" .. digits
+
+		texts[clip .. "_colour"] = long .. " Colour"
+		texts[clip .. "_colour_short"] = short .. " Col"
+		texts[clip .. "_colour_shortest"] = "C" .. digits
+
+		texts[clip .. "_light"] = long .. " Light"
+		texts[clip .. "_light_short"] = short .. " Lgt"
+		texts[clip .. "_light_shortest"] = "L" .. digits
 	end
 end
 
-for pattern = 1, 8 do
-	texts["text_pattern" .. pattern] = "Pattern " .. pattern
+for number = 1, 8 do
+	texts["text_clip" .. number] = "Clip " .. number
+	texts["text_pattern" .. number] = "Pattern " .. number
+end
+
+for colour, name in ipairs(COLOUR_NAMES) do
+	texts["text_colour" .. colour] = name
 end

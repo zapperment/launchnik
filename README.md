@@ -1,31 +1,55 @@
 # Launchnik
 
-Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only on four-bar boundaries so that everything stays in time.
+Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only on four-bar boundaries so that everything stays in time. Which pattern each launch button plays, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d3, a development build. Requires Reason 14 or later.
+Version 1.0.0d4, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons**, one per pattern, and a **stop button** underneath. The back panel has eight CV outputs, one per track.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. To the left of the stop buttons is the **setup button**. The back panel has eight CV outputs, one per track.
 
-A button is in one of three states:
+A launch button either holds a **clip** or is **empty**. A clip is one of the Player's patterns 1–8 together with one of fourteen colours. A new device has only empty launch buttons.
 
-| State | Light | Meaning |
-|---|---|---|
-| Off | Dark | Nothing pending. |
-| Queued | Flashing on the beat | Clicked, waiting for the next switch point. |
-| Active | Lit | The track is emitting this button's CV value. |
+In **launch mode**, the normal way of working, a button is in one of three states:
 
-A track always has exactly one active button and at most one queued button. A new device starts with all stop buttons active.
+| State | Launch button with a clip | Stop button | Meaning |
+|---|---|---|---|
+| Off | Dim, in the clip's colour | Dark | Nothing pending. |
+| Queued | Flashing on the beat | Flashing on the beat | Clicked, waiting for the next switch point. |
+| Active | Vibrant | Lit | The track is emitting this button's CV value. |
 
-## Setting up a track
+An empty launch button is unlit, and clicking it has the same effect as clicking the track's stop button. A track always has exactly one active button and at most one queued button. A new device starts with all stop buttons active.
+
+## Connecting a track
 
 1. Put a Player device (for example PolyStep Sequencer) and its instrument in a Combinator.
 2. Connect one of Launchnik's CV outputs to a CV input on the back of the Combinator.
 3. In the Combinator's editor, add a mapping with that CV input as the source and the Player's pattern selection as the target.
 4. Set the mapping to Min = Off, Max = 8, and leave the source range at 0 %–100 %.
 
-The launch button in row N of that track now selects pattern N, and the stop button selects Off.
+A clip with pattern N on that track now selects pattern N, and the stop button selects Off.
+
+## Setting up clips
+
+Click the setup button to enter **setup mode**. Tracks go on playing and the stop buttons go on working; only launching from the grid is unavailable.
+
+1. **Clip picking.** Every launch button flashes: in its clip's colour, or in white if it is empty. Click the one you want to set up.
+2. **Clip editing.** The grid now shows the settings of that one launch button:
+
+| Where | What it does |
+|---|---|
+| Row 1, column 8 | Switches the clip on and off: vibrant white with a clip, dim white without. |
+| Rows 2 and 3, columns 1–7 | The colour: white, red, orange, yellow, lime, green, turquoise in row 2; cyan, light blue, blue, dark blue, purple, fuchsia, pink in row 3. The chosen one is vibrant. |
+| Row 5 | The pattern, 1–8, in pink. The chosen one is vibrant. |
+| Row 8, column 8 | Dim white: back to clip picking. |
+
+The colour and pattern rows only show while the launch button holds a clip. A new clip is white and plays the pattern of its row. A clip that is switched off and on again comes back with its pattern and colour.
+
+Click the setup button again to return to launch mode, from either step.
+
+Changing the pattern of the clip that is playing takes effect at the next switch point; switching that clip off stops its track at the next switch point. While the transport is stopped, both happen at once.
+
+Clips are saved with the song, and each change is a step in the undo history. Setup mode itself is not saved: a song always opens in launch mode.
 
 ## How launching works
 
@@ -38,17 +62,25 @@ The launch button in row N of that track now selects pattern N, and the stop but
 
 ## Automation and Remote
 
-Each track has one automatable parameter, "Track N Selection", with nine values: Stop and Pattern 1–8. Automated changes behave like clicks. A change that falls exactly on a switch point takes effect there, not four bars later.
+Each track has one automatable parameter, "Track N Selection", with nine values: Stop and Clip 1–8, the clip being the one in that row. Automated changes behave like clicks. A change that falls exactly on a switch point takes effect there, not four bars later. A selection that names an empty launch button counts as Stop.
 
-For control surfaces, Launchnik provides these Remote items:
+Clips and setup mode cannot be automated.
+
+For control surfaces, Launchnik provides these Remote items (N is the track, M the row, both 1–8):
 
 | Remote item | Direction | Values |
 |---|---|---|
-| `Track N Selection` (8 items) | Input and output | 0 = stop, 1–8 = pattern |
-| `Track N Pattern M` (64 items) | Output only | 0 = off, 1 = queued, 2 = active |
+| `Track N Selection` (8 items) | Input and output | 0 = stop, 1–8 = clip in that row |
 | `Track N Stop` (8 items) | Output only | 0 = off, 1 = queued, 2 = active |
+| `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
+| `Track N Clip M Present` (64 items) | Input and output | 0 = empty, 1 = holds a clip |
+| `Track N Clip M Pattern` (64 items) | Input and output | 0–7 for patterns 1–8 |
+| `Track N Clip M Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Setup` | Input and output | 0 = launch mode, 1 = clip picking, 2–65 = clip editing for launch button 1–64, counted down track 1 first |
 
-The output-only items are meant for lighting pads. They can be used from a Remote map, but they do not appear in "Edit Remote Override Mapping". A codec has to translate a pad press into a selection value for the pad's track; see [the decision record](docs/adr/0001-selection-in-state-out.md) for why.
+A light is what the launch button shows on the panel, in launch mode and in setup mode alike, so a surface that shows the lights mirrors the panel. "Flashing" is one steady value; the surface flashes by itself.
+
+The output-only items can be used from a Remote map, but they do not appear in "Edit Remote Override Mapping". A codec has to translate a pad press into the property change the same press makes on the panel; see the decision records [0001](docs/adr/0001-selection-in-state-out.md) and [0002](docs/adr/0002-realtime-computes-lights-writers-change-clips.md) for why, and `Press.h` for the rules.
 
 Launchnik does not respond to MIDI CC messages.
 
@@ -57,6 +89,9 @@ Launchnik does not respond to MIDI CC messages.
 - The switch interval is fixed at four bars.
 - Switch points are worked out from the current time signature. In a song whose time signature changes part-way through, they may not line up with the bar numbers in the sequencer.
 - Only playing through a switch point fires a queued button. Dragging the song position past one does not, and a loop that neither contains nor ends on a switch point keeps a button queued indefinitely.
+- Clip editing does not show which launch button is being edited.
+- A clip that was switched off while its track's selection still named it is queued again as soon as it is switched back on.
+- Launch buttons have no context menu for automation or Remote; use a stop button's menu to reach the track's selection.
 - There is no scene launch and no stop-all button.
 
 ## Building
@@ -68,6 +103,12 @@ python3 build45.py local45 Testing
 ```
 
 This compiles the device and installs it for Reason Recon. Restart Recon to pick up a new build.
+
+The film strip of the launch buttons is built from the source graphics in `RE2D_Launchnik_Graphics` (needs ImageMagick):
+
+```bash
+./tools/make-launch-button-strip.sh
+```
 
 After changing anything in `GUI2D`, regenerate the panel graphics first, from the `RE2DRender` directory of the SDK download:
 
@@ -86,7 +127,7 @@ rm -rf ~/Library/Caches/"Reason Recon"/GraphicsCache
 
 ## Testing
 
-The switching rules can be tested from the command line, without Reason:
+The rules for switching, lights and presses can be tested from the command line, without Reason:
 
 ```bash
 ./tests/run.sh
@@ -98,13 +139,18 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 
 | Path | Contents |
 |---|---|
-| `Launcher.h`, `Launcher.cpp` | The switching rules. Plain C++ with no dependency on the SDK. |
-| `Launchnik.h`, `Launchnik.cpp` | Connects the rules to the host: reads selections and the transport, writes states, lamps and CV. |
+| `Launcher.h`, `Launcher.cpp` | The rules: when a track switches, what it emits, what every button shows. Plain C++ with no dependency on the SDK. |
+| `Press.h`, `Press.cpp` | What a press of a button changes, in launch mode and in setup mode. Also free of the SDK. |
+| `Launchnik.h`, `Launchnik.cpp` | Connects the rules to the host: reads selections, clips, the setup state and the transport, writes states, lights, lamps and CV. |
+| `Panel.h`, `Panel.cpp` | The click handler of the launch buttons and the setup button. |
+| `Tags.h` | The property tags shared by the two. |
 | `JukeBoxExports.cpp` | Entry points the host calls. |
 | `motherboard_def.lua` | Properties, Remote items, automation and CV outputs. |
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
-| `GUI2D/` | Panel layout and source graphics. |
+| `GUI2D/` | Panel layout and the graphics it uses. |
+| `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
+| `tools/` | Script that builds the launch buttons' film strip. |
 | `Resources/English/` | Texts shown by the host. |
-| `tests/` | Command-line tests for the switching rules. |
+| `tests/` | Command-line tests for the rules. |
 | `CONTEXT.md` | Glossary of the terms used in the code and in this document. |
 | `docs/adr/` | Records of design decisions. |
