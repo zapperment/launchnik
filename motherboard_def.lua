@@ -92,12 +92,14 @@ rt_properties.setup_lamp = jbox.boolean{
 }
 
 for track = 1, TRACK_COUNT do
-	-- What the user last chose on the track. Saved with the song, automatable.
+	-- What the user last chose on the track. Saved with the song, automatable,
+	-- but not part of a patch (see docs/adr/0003).
 	local selection = "track" .. track .. "_selection"
 	document_properties[selection] = jbox.number{
 		property_tag = 100 + track,
 		default = 0,
 		steps = ROW_COUNT + 1,
+		persistence = "song",
 		ui_name = jbox.ui_text("text_" .. selection),
 		ui_type = jbox.ui_selector(selection_texts),
 	}
@@ -132,7 +134,7 @@ for track = 1, TRACK_COUNT do
 		local remote_name = "Track " .. track .. " Clip " .. row
 
 		-- What the launch button holds. Pattern and colour are kept while it is
-		-- empty, so that a clip comes back as it was.
+		-- empty, so that a clip comes back as it was. These three make up a patch.
 		document_properties[clip .. "_present"] = jbox.boolean{
 			property_tag = 3000 + 10 * track + row,
 			default = false,

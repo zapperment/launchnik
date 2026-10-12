@@ -2,13 +2,35 @@ format_version = "2.0"
 
 local TRACK_COUNT = 8
 
--- Layout of the button grid, in pixels
+-- Layout of the button grid, in pixels. Together with its labels the grid is
+-- vertically centred in the main section below the header.
 local LAUNCH_LEFT = 907
-local LAUNCH_TOP = 237
+local LAUNCH_TOP = 342
 local TRACK_PITCH = 252
 local ROW_PITCH = 235
 local STOP_LEFT = 974
-local STOP_TOP = 2113
+local STOP_TOP = 2218
+
+-- The header is the strip above the divider on the front panel. It is as high
+-- as the folded panel, so the logo sits at the same place on both.
+local LOGO_OFFSET = { 3385, 20 }
+
+-- The tape, the patch name display and the patch browse group also sit at the
+-- same place on both. The name itself is drawn by the host inside the area.
+local TAPE_OFFSET = { 180, 42 }
+local PATCH_DISPLAY_OFFSET = { 620, 30 }
+local PATCH_NAME_OFFSET = { 635, 50 }
+local PATCH_BROWSE_OFFSET = { 1345, 20 }
+
+-- The upper screws sit below the divider, which ends at 160 pixels. The left
+-- screws line up with the fold button that Reason draws in the header, and
+-- the right ones are as far from their edge.
+local PANEL_WIDTH = 3770
+local SCREW_SIZE = 95
+local SCREW_LEFT = 65
+local SCREW_RIGHT = PANEL_WIDTH - SCREW_LEFT - SCREW_SIZE
+local SCREW_TOP = 198
+local SCREW_BOTTOM = 2272
 
 front = {
 	Bg = {
@@ -18,17 +40,29 @@ front = {
 		offset = { 0, 0 },
 		{ path = "Labels_Front" },
 	},
-	ScrewTopLeft = { offset = { 38, 38 }, { path = "Screw_17_1frames" } },
-	ScrewTopRight = { offset = { 3637, 38 }, { path = "Screw_17_1frames" } },
-	ScrewBottomLeft = { offset = { 38, 2282 }, { path = "Screw_17_1frames" } },
-	ScrewBottomRight = { offset = { 3637, 2282 }, { path = "Screw_17_1frames" } },
+	ScrewTopLeft = { offset = { SCREW_LEFT, SCREW_TOP }, { path = "Screw_17_1frames" } },
+	ScrewTopRight = { offset = { SCREW_RIGHT, SCREW_TOP }, { path = "Screw_17_1frames" } },
+	ScrewBottomLeft = { offset = { SCREW_LEFT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
+	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
 	Logo = {
-		offset = { 2874, 107 },
+		offset = LOGO_OFFSET,
 		{ path = "Logo" },
 	},
 	DeviceName = {
-		offset = { 180, 160 },
+		offset = TAPE_OFFSET,
 		{ path = "TapeHorz" },
+	},
+	PatchDisplay = {
+		offset = PATCH_DISPLAY_OFFSET,
+		{ path = "Display_Patch_Name" },
+	},
+	PatchName = {
+		offset = PATCH_NAME_OFFSET,
+		{ path = "Patch_Name_Area" },
+	},
+	PatchBrowseGroup = {
+		offset = PATCH_BROWSE_OFFSET,
+		{ path = "PatchBrowseGroup" },
 	},
 }
 
@@ -87,8 +121,12 @@ back = {
 		{ path = "Labels_Back" },
 	},
 	DeviceName = {
-		offset = { 200, 150 },
+		offset = { 240, 42 },
 		{ path = "TapeHorz" },
+	},
+	PowerCord = {
+		offset = { 3170, 2060 },
+		{ path = "Powercord_11_1frames" },
 	},
 }
 
@@ -101,20 +139,36 @@ end
 
 folded_front = {
 	Bg = {
-		{ path = "Panel_Folded_Front" },
+		{ path = "Panel_Folded_Front_dark" },
+	},
+	Logo = {
+		offset = LOGO_OFFSET,
+		{ path = "Logo" },
 	},
 	DeviceName = {
-		offset = { 400, 42 },
+		offset = TAPE_OFFSET,
 		{ path = "TapeHorz" },
+	},
+	PatchDisplay = {
+		offset = PATCH_DISPLAY_OFFSET,
+		{ path = "Display_Patch_Name" },
+	},
+	PatchName = {
+		offset = PATCH_NAME_OFFSET,
+		{ path = "Patch_Name_Area" },
+	},
+	PatchBrowseGroup = {
+		offset = PATCH_BROWSE_OFFSET,
+		{ path = "PatchBrowseGroup" },
 	},
 }
 
 folded_back = {
 	Bg = {
-		{ path = "Panel_Folded_Back" },
+		{ path = "Panel_Folded_Back_dark" },
 	},
 	DeviceName = {
-		offset = { 400, 42 },
+		offset = { 240, 42 },
 		{ path = "TapeHorz" },
 	},
 	CableOrigin = {
