@@ -105,6 +105,10 @@ back = {
 		offset = { 240, 42 },
 		{ path = "TapeHorz" },
 	},
+	PowerCord = {
+		offset = { 2995, 2060 },
+		{ path = "Powercord_11_1frames" },
+	},
 }
 
 for track = 1, TRACK_COUNT do
