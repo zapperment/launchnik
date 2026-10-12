@@ -106,7 +106,7 @@ back = {
 		{ path = "TapeHorz" },
 	},
 	PowerCord = {
-		offset = { 2995, 2060 },
+		offset = { 3170, 2060 },
 		{ path = "Powercord_11_1frames" },
 	},
 }
