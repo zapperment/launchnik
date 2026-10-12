@@ -23,7 +23,7 @@ front = {
 	ScrewBottomLeft = { offset = { 38, 2282 }, { path = "Screw_17_1frames" } },
 	ScrewBottomRight = { offset = { 3637, 2282 }, { path = "Screw_17_1frames" } },
 	Logo = {
-		offset = { 2874, 107 },
+		offset = { 2960, 160 },
 		{ path = "Logo" },
 	},
 	DeviceName = {
