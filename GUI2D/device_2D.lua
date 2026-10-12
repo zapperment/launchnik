@@ -2,24 +2,28 @@ format_version = "2.0"
 
 local TRACK_COUNT = 8
 
--- Layout of the button grid, in pixels
+-- Layout of the button grid, in pixels. Together with its labels the grid is
+-- vertically centred in the main section below the header.
 local LAUNCH_LEFT = 907
-local LAUNCH_TOP = 237
+local LAUNCH_TOP = 342
 local TRACK_PITCH = 252
 local ROW_PITCH = 235
 local STOP_LEFT = 974
-local STOP_TOP = 2113
+local STOP_TOP = 2218
 
 -- The header is the strip above the divider on the front panel. It is as high
 -- as the folded panel, so the logo sits at the same place on both.
 local LOGO_OFFSET = { 3385, 20 }
 
--- The upper screws sit below the divider, which ends at 160 pixels; the lower
--- screws are as far from the bottom edge as the upper ones are from the top.
-local PANEL_HEIGHT = 2415
+-- The upper screws sit below the divider, which ends at 160 pixels. The left
+-- screws line up with the fold button that Reason draws in the header, and
+-- the right ones are as far from their edge.
+local PANEL_WIDTH = 3770
 local SCREW_SIZE = 95
+local SCREW_LEFT = 65
+local SCREW_RIGHT = PANEL_WIDTH - SCREW_LEFT - SCREW_SIZE
 local SCREW_TOP = 198
-local SCREW_BOTTOM = PANEL_HEIGHT - SCREW_TOP - SCREW_SIZE
+local SCREW_BOTTOM = 2272
 
 front = {
 	Bg = {
@@ -29,16 +33,16 @@ front = {
 		offset = { 0, 0 },
 		{ path = "Labels_Front" },
 	},
-	ScrewTopLeft = { offset = { 38, SCREW_TOP }, { path = "Screw_17_1frames" } },
-	ScrewTopRight = { offset = { 3637, SCREW_TOP }, { path = "Screw_17_1frames" } },
-	ScrewBottomLeft = { offset = { 38, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
-	ScrewBottomRight = { offset = { 3637, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
+	ScrewTopLeft = { offset = { SCREW_LEFT, SCREW_TOP }, { path = "Screw_17_1frames" } },
+	ScrewTopRight = { offset = { SCREW_RIGHT, SCREW_TOP }, { path = "Screw_17_1frames" } },
+	ScrewBottomLeft = { offset = { SCREW_LEFT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
+	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
 	Logo = {
 		offset = LOGO_OFFSET,
 		{ path = "Logo" },
 	},
 	DeviceName = {
-		offset = { 180, 160 },
+		offset = { 180, 42 },
 		{ path = "TapeHorz" },
 	},
 }
