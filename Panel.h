@@ -9,5 +9,6 @@
 // Identifiers of the displays, as given in hdgui_2D.lua.
 const TJBox_DisplayID kDisplayID_Grid = 1;
 const TJBox_DisplayID kDisplayID_SetupButton = 2;
+const TJBox_DisplayID kDisplayID_SceneButtons = 3;
 
 void HandlePanelGesture(TJBox_GestureArgs& iArgs);

@@ -10,7 +10,7 @@ _Avoid_: Clip button, pad, cell
 
 **Clip**:
 One pattern (1 to 8) of the track's Player together with a **colour**, held by a **launch button**; launching the clip makes the track's Player play that pattern. Several clips on a track may use the same pattern.
-_Avoid_: Slot, scene, pattern (for the clip itself)
+_Avoid_: Slot, pattern (for the clip itself); a **scene** is a row of launch buttons, not a clip
 
 **Empty**:
 Said of a **launch button** that holds no **clip**. A new device has only empty launch buttons. Choosing an empty launch button counts as choosing the track's **stop button**.
@@ -21,7 +21,7 @@ One of fourteen hues that mark a **clip** so that it can be recognised: white, r
 _Avoid_: Tint, label
 
 **Patch**:
-What all 64 **launch buttons** hold, saved as a file that can be loaded into any Launchnik, in any song. It holds the **clips** only, not what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
+What all 64 **launch buttons** hold, together with the **length** of the switch interval, saved as a file that can be loaded into any Launchnik, in any song. It does not hold what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
 _Avoid_: Template, preset, layout
 
 **Unlit**, **dim**, **vibrant**:
@@ -35,6 +35,14 @@ _Avoid_: Off button, mute button
 **Track**:
 One column of the front panel: eight **launch buttons**, one **stop button** and the one CV output they drive.
 _Avoid_: Column, channel, lane
+
+**Scene**:
+One row of the front panel: the eight **launch buttons** at the same height on the eight **tracks**. Scenes are numbered 1 to 8 from the top.
+_Avoid_: Row (in prose), line
+
+**Scene button**:
+The button to the right of a **scene**. In **launch mode**, clicking it means clicking all eight **launch buttons** of its scene at once, so a track whose launch button in that scene is **empty** stops. In **clip picking** the eight scene buttons stand for the eight **lengths** instead, immediate at the bottom and sixteen bars at the top: clicking one chooses that length and returns to launch mode. In **clip editing** a click does nothing. It never shows which scene was last chosen; outside clip picking its **light** belongs to the **interval meter**.
+_Avoid_: Scene launch button, row button
 
 **Selection**:
 What the user last chose on a **track**: the **stop button** or one of the track's **clips**. Choosing an **empty** launch button is a selection of the stop button. It is what is saved with the song; a selection that the track is not yet emitting is **queued**.
@@ -56,14 +64,14 @@ The normal way of working, in which clicking a **launch button** selects its **c
 _Avoid_: Performance mode, play mode, normal mode
 
 **Setup mode**:
-The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing, and **stop buttons** go on working, while it lasts.
+The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing and **stop buttons** go on working while it lasts; **scene buttons** launch nothing. The logo on the panel is green for as long as it lasts.
 _Avoid_: Edit mode, config mode
 
 **Setup button**:
 The button to the left of the **stop buttons** that switches between **launch mode** and **setup mode**.
 
 **Clip picking**:
-The first step of **setup mode**, in which every **launch button** flashes (in its **clip's** **colour**, or in white if it is **empty**) and the user chooses the one to set up.
+The first step of **setup mode**, in which every **launch button** flashes (in its **clip's** **colour**, or in white if it is **empty**) and the user chooses the one to set up. The **scene buttons** flash as well, the one that stands for the current **length** in green and the others in white, and the user may choose a length instead.
 _Avoid_: Clip selection (a **selection** is what a track has chosen to play)
 
 **Clip editing**:
@@ -71,13 +79,29 @@ The second step of **setup mode**, in which the **launch buttons** stand for the
 _Avoid_: Edit mode
 
 **Light**:
-What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **stop button** has a light too, always red. The front panel and a control surface show the same light for the same button.
+What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **stop button** has a light too, always red, and so has a **scene button**, as part of the **interval meter**. The front panel and a control surface show the same light for the same button.
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Switch interval**:
-One of the equal, consecutive segments, four bars long, into which the host's song position is divided.
+One of the equal, consecutive stretches into which the host's song position is divided, counted from the start of the song. How long they are is the **length**.
 _Avoid_: Quantisation period, launch quantise, phrase
 
+**Length**:
+How long every **switch interval** is; one of eight settings: **immediate**, one beat, half a bar, one bar, two, four, eight or sixteen bars. A beat is the beat of the time signature, so all of them line up with the bars; where a bar has an odd number of beats, half a bar falls between two beats. A new device has four bars. The length is part of a **patch**.
+_Avoid_: Quantisation, launch quantise, interval size, resolution
+
+**Immediate**:
+The **length** with which there are no **switch intervals** and no **switch points**: a selection takes effect at once, and nothing is ever **queued**.
+_Avoid_: Off (an **off** button is something else), none, unquantised
+
 **Switch point**:
-The moment in musical time at which one **switch interval** ends and the next begins; the only moment at which a track's selection changes.
+The moment in musical time at which one **switch interval** ends and the next begins; while the song plays, the only moment at which a track's selection takes effect, unless the **length** is **immediate**.
 _Avoid_: Boundary, downbeat, launch point
+
+**Segment**:
+One of the eight equal parts of a **switch interval**; with a **length** of four bars in 4/4 time, two beats. A segment need not begin on a beat.
+_Avoid_: Step, slice, division
+
+**Interval meter**:
+The **lights** of the eight **scene buttons** read together, showing how far the song position is into the current **switch interval**, whether the song is playing or not, in **launch mode** and in **clip editing**. One scene button stands for each **segment**, counted from the bottom; a scene button is lit once the song position has reached its segment, so the meter fills from the bottom and starts again with one lit button at each **switch point**. The lower five are green, the next two yellow and the top one red. Before the start of the song, and while the **length** is **immediate**, all are **unlit**.
+_Avoid_: Progress bar, position meter, countdown

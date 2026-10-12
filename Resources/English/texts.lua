@@ -16,9 +16,23 @@ texts = {
 	["text_setup_short"] = "Setup",
 	["text_setup_shortest"] = "Set",
 
+	["text_switch_interval"] = "Switch Interval",
+	["text_switch_interval_short"] = "Interval",
+	["text_switch_interval_shortest"] = "Int",
+	["text_length1"] = "Immediate",
+	["text_length2"] = "1 Beat",
+	["text_length3"] = "1/2 Bar",
+	["text_length4"] = "1 Bar",
+	["text_length5"] = "2 Bars",
+	["text_length6"] = "4 Bars",
+	["text_length7"] = "8 Bars",
+	["text_length8"] = "16 Bars",
+
 	-- Names of the changes made by clicking the panel, as shown in the undo
 	-- history. The click handler refers to them by these keys.
 	["gesture_selection"] = "Change track selection",
+	["gesture_scene"] = "Launch scene",
+	["gesture_length"] = "Change switch interval",
 	["gesture_setup"] = "Change setup mode",
 	["gesture_clip_present"] = "Switch clip on or off",
 	["gesture_clip_pattern"] = "Change clip pattern",
@@ -60,6 +74,13 @@ for track = 1, 8 do
 		texts[clip .. "_light_short"] = short .. " Lgt"
 		texts[clip .. "_light_shortest"] = "L" .. digits
 	end
+end
+
+for scene = 1, 8 do
+	local light = "text_scene" .. scene .. "_light"
+	texts[light] = "Scene " .. scene .. " Light"
+	texts[light .. "_short"] = "Sc" .. scene .. " Lgt"
+	texts[light .. "_shortest"] = "SL" .. scene
 end
 
 for number = 1, 8 do

@@ -31,6 +31,20 @@ bool FindLaunchButton(const TJBox_Point& iPoint, int& oTrack, int& oRow) {
 	return true;
 }
 
+// Finds the scene button under a point of the scene buttons' display. Returns
+// false for a point in the gaps between scene buttons.
+bool FindSceneButton(const TJBox_Point& iPoint, int& oScene) {
+	if (iPoint.fX < 0.0f || iPoint.fY < 0.0f) {
+		return false;
+	}
+	const int line = static_cast<int>(iPoint.fY / kRowPitch);
+	if (line >= CLauncher::kRowCount || iPoint.fY - line * kRowPitch >= kButtonHeight) {
+		return false;
+	}
+	oScene = line + 1;
+	return true;
+}
+
 bool HoldsClip(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
@@ -51,6 +65,10 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 		case CPress::kSetup:
 			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_Setup, JBox_MakeNumber(iChange.fValue));
 			iArgs.fGestureNameKey = "gesture_setup";
+			break;
+		case CPress::kLength:
+			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_Length, JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_length";
 			break;
 		case CPress::kClipPresent:
 			JBox_StoreMOMPropertyByTag(iCustomProps, ClipPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
@@ -81,6 +99,28 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SetupButton) {
 		iArgs.fConsumeFlag = true;
 		Apply(CPress::SetupButton(setup), customProps, iArgs);
+		return;
+	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
+		int scene = 0;
+		if (!FindSceneButton(iArgs.fStartState.fPoint, scene)) {
+			return;
+		}
+		iArgs.fConsumeFlag = true;
+
+		bool holdsClip[CLauncher::kTrackCount];
+		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+			holdsClip[track] = HoldsClip(customProps, CLauncher::ButtonIndex(track, scene));
+		}
+		const CPress::TChanges changes = CPress::SceneButton(setup, scene, holdsClip);
+		for (int i = 0; i < changes.fCount; ++i) {
+			Apply(changes.fChanges[i], customProps, iArgs);
+		}
+		// All the changes of a press are one step of the undo history, named
+		// after what the press was for.
+		if (changes.fCount > 0) {
+			iArgs.fGestureNameKey = changes.fChanges[0].fProperty == CPress::kLength ? "gesture_length" : "gesture_scene";
+		}
 		return;
 	}
 	if (iArgs.fDisplayInfo.fID != kDisplayID_Grid) {

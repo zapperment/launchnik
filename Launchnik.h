@@ -30,5 +30,7 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenStopLightFrames[CLauncher::kTrackCount];
 	private: TJBox_Int32 fWrittenLights[CLauncher::kTrackCount][CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenLightFrames[CLauncher::kTrackCount][CLauncher::kRowCount];
+	private: TJBox_Int32 fWrittenSceneLights[CLauncher::kRowCount];
+	private: TJBox_Int32 fWrittenSceneLightFrames[CLauncher::kRowCount];
 	private: TJBox_Float64 fWrittenCVValues[CLauncher::kTrackCount];
 };

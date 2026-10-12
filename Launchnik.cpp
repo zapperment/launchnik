@@ -47,6 +47,10 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 			fWrittenLightFrames[track][row] = kNothingWritten;
 		}
 	}
+	for (int scene = 0; scene < CLauncher::kRowCount; ++scene) {
+		fWrittenSceneLights[scene] = kNothingWritten;
+		fWrittenSceneLightFrames[scene] = kNothingWritten;
+	}
 }
 
 void CLaunchnik::RenderBatch(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UInt32 iDiffCount) {
@@ -63,6 +67,7 @@ void CLaunchnik::RenderBatch(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UI
 
 void CLaunchnik::LoadEverything() {
 	HandleChange(kCustomPropsTag_Setup, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Setup));
+	HandleChange(kCustomPropsTag_Length, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Length));
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		HandleChange(SelectionTag(track), JBox_LoadMOMPropertyByTag(fCustomProps, SelectionTag(track)));
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
@@ -88,6 +93,10 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		const int setup = static_cast<int>(JBox_GetNumber(iValue));
 		fLauncher.SetSetup(setup);
 		fSetupLampLit = setup != CLauncher::kSetupLaunchMode;
+		return;
+	}
+	if (iTag == kCustomPropsTag_Length) {
+		fLauncher.SetLength(static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
 	if (iTag >= SelectionTag(0) && iTag <= SelectionTag(CLauncher::kTrackCount - 1)) {
@@ -162,6 +171,20 @@ void CLaunchnik::WriteOutputs() {
 		if (cvValue != fWrittenCVValues[track]) {
 			fWrittenCVValues[track] = cvValue;
 			JBox_StoreMOMPropertyAsNumber(fCVOutputs[track], kJBox_CVOutputValue, cvValue);
+		}
+	}
+
+	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
+		const TJBox_Int32 light = fLauncher.GetSceneLightValue(scene);
+		if (light != fWrittenSceneLights[scene - 1]) {
+			fWrittenSceneLights[scene - 1] = light;
+			JBox_StoreMOMPropertyByTag(fCustomProps, SceneLightTag(scene), JBox_MakeNumber(light));
+		}
+
+		const TJBox_Int32 frame = fLauncher.GetSceneLightFrame(scene);
+		if (frame != fWrittenSceneLightFrames[scene - 1]) {
+			fWrittenSceneLightFrames[scene - 1] = frame;
+			JBox_StoreMOMPropertyByTag(fCustomProps, SceneLightFrameTag(scene), JBox_MakeNumber(frame));
 		}
 	}
 }

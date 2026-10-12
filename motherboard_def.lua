@@ -6,9 +6,12 @@ format_version = "3.0"
 -- Property tags, as used by Tags.h, for track t and row r, both from 1:
 --   setup state:                      50
 --   lamp of the setup button:         51
+--   length of the switch interval:    52
 --   selection of track t:            100 + t
 --   light of the stop button:       1000 + 10 * t
 --   light of a launch button:       1000 + 10 * t + r
+--   light of the scene button of row r:      1090 + r
+--   film strip frame of that light:          2090 + r
 --   film strip frame of that light: 2000 + 10 * t
 --   film strip frame of a light:    2000 + 10 * t + r
 --   whether a launch button holds a clip: 3000 + 10 * t + r
@@ -27,6 +30,12 @@ local SETUP_COUNT = 2 + TRACK_COUNT * ROW_COUNT
 local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
 -- Unlit, then dim and vibrant for each colour
 local LIGHT_FRAME_COUNT = 1 + 2 * COLOUR_COUNT
+-- Unlit, then dim and vibrant for red, green, yellow and white
+local SCENE_LIGHT_FRAME_COUNT = 9
+
+-- Immediate, one beat, half a bar, then 1, 2, 4, 8 and 16 bars
+local LENGTH_COUNT = 8
+local DEFAULT_LENGTH = 5
 
 local selection_texts = { jbox.ui_text("text_stop") }
 for row = 1, ROW_COUNT do
@@ -36,6 +45,11 @@ end
 local pattern_texts = {}
 for pattern = 1, PATTERN_COUNT do
 	table.insert(pattern_texts, jbox.ui_text("text_pattern" .. pattern))
+end
+
+local length_texts = {}
+for length = 1, LENGTH_COUNT do
+	table.insert(length_texts, jbox.ui_text("text_length" .. length))
 end
 
 local colour_texts = {}
@@ -83,7 +97,19 @@ document_properties.setup = jbox.number{
 }
 add_remote_item("setup", "Setup")
 
--- Whether the setup button is lit.
+-- The length of the switch interval: 0 = immediate, 1 = one beat, 2 = half a
+-- bar, 3..7 = 1, 2, 4, 8 and 16 bars. Saved with the song and in patches (see
+-- docs/adr/0003), but not automatable.
+document_properties.switch_interval = jbox.number{
+	property_tag = 52,
+	default = DEFAULT_LENGTH,
+	steps = LENGTH_COUNT,
+	ui_name = jbox.ui_text("text_switch_interval"),
+	ui_type = jbox.ui_selector(length_texts),
+}
+add_remote_item("switch_interval", "Switch Interval")
+
+-- Whether the setup button is lit and the logo is green.
 rt_properties.setup_lamp = jbox.boolean{
 	property_tag = 51,
 	default = false,
@@ -182,6 +208,32 @@ for track = 1, TRACK_COUNT do
 			ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 		}
 	end
+end
+
+for scene = 1, ROW_COUNT do
+	-- What the scene button shows as its part of the interval meter, for
+	-- control surfaces; encoded like the light of a launch button. A scene
+	-- button has no property for presses: a press writes the selection of
+	-- every track (see docs/adr/0004).
+	local light = "scene" .. scene .. "_light"
+	rt_properties[light] = jbox.number{
+		property_tag = 1090 + scene,
+		default = 0,
+		steps = LIGHT_COUNT,
+		ui_name = jbox.ui_text("text_" .. light),
+		ui_type = plain_number(LIGHT_COUNT - 1),
+	}
+	add_remote_item(light, "Scene " .. scene .. " Light")
+
+	-- The frame of the scene buttons' film strip the front panel shows right
+	-- now.
+	rt_properties[light .. "_frame"] = jbox.number{
+		property_tag = 2090 + scene,
+		default = 0,
+		steps = SCENE_LIGHT_FRAME_COUNT,
+		ui_name = jbox.ui_text("text_" .. light),
+		ui_type = plain_number(SCENE_LIGHT_FRAME_COUNT - 1),
+	}
 end
 
 custom_properties = jbox.property_set{

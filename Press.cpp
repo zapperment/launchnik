@@ -51,6 +51,23 @@ CPress::TChange CPress::StopButton(int iTrack) {
 	return MakeChange(kSelection, iTrack, CLauncher::kSelectionStop);
 }
 
+CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsClip[]) {
+	TChanges changes;
+	changes.fCount = 0;
+	if (iSetup == CLauncher::kSetupClipPicking) {
+		changes.fChanges[changes.fCount++] = MakeChange(kLength, 0, CLauncher::LengthForScene(iScene));
+		changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+		return changes;
+	}
+	if (iSetup != CLauncher::kSetupLaunchMode) {
+		return changes;
+	}
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		changes.fChanges[changes.fCount++] = LaunchButton(iSetup, track, iScene, iHoldsClip[track], false);
+	}
+	return changes;
+}
+
 CPress::TChange CPress::SetupButton(int iSetup) {
 	const bool inSetupMode = iSetup != CLauncher::kSetupLaunchMode;
 	return MakeChange(kSetup, 0, inSetupMode ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);

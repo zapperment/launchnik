@@ -12,7 +12,8 @@ local STOP_LEFT = 974
 local STOP_TOP = 2218
 
 -- The header is the strip above the divider on the front panel. It is as high
--- as the folded panel, so the logo sits at the same place on both.
+-- as the folded panel, so the logo sits at the same place on both. It is a
+-- lamp with two frames: light grey in launch mode, green in setup mode.
 local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
@@ -46,7 +47,7 @@ front = {
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo" },
+		{ path = "Logo_2frames", frames = 2 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -86,6 +87,23 @@ end
 front.click_grid = {
 	offset = { LAUNCH_LEFT, LAUNCH_TOP },
 	{ size = { 1970, 1780 } },
+}
+
+-- The scene buttons stand one track further to the right, each centred in the
+-- width of a launch button and level with its scene. They are lamps as well,
+-- showing one of nine frames (unlit, then dim and vibrant for red, green,
+-- yellow and white), with one transparent display on top of all eight.
+local SCENE_WIDTH = 130
+local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * TRACK_COUNT + 35
+for scene = 1, ROW_COUNT do
+	front["lamp_scene" .. scene] = {
+		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
+		{ path = "Scene_Button_9frames", frames = 9 },
+	}
+end
+front.click_scenes = {
+	offset = { SCENE_LEFT, LAUNCH_TOP },
+	{ size = { SCENE_WIDTH, 1780 } },
 }
 
 -- A stop button is a lamp showing one of three frames (unlit, dim, vibrant)
@@ -143,7 +161,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo" },
+		{ path = "Logo_2frames", frames = 2 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,

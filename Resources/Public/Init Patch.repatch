@@ -5,6 +5,9 @@
     </DeviceNameInEnglish>
     <Properties deviceProductID="rocks.zapperment.Launchnik"  deviceVersion="1.0.0d5" >
         <Object name="custom_properties" >
+            <Value property="switch_interval"  type="number" >
+                5
+            </Value>
             <Value property="track1_clip1_present"  type="boolean" >
                 false
             </Value>
