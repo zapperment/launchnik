@@ -102,7 +102,7 @@ back = {
 		{ path = "Labels_Back" },
 	},
 	DeviceName = {
-		offset = { 200, 150 },
+		offset = { 240, 42 },
 		{ path = "TapeHorz" },
 	},
 }
@@ -133,7 +133,7 @@ folded_back = {
 		{ path = "Panel_Folded_Back_dark" },
 	},
 	DeviceName = {
-		offset = { 400, 42 },
+		offset = { 240, 42 },
 		{ path = "TapeHorz" },
 	},
 	CableOrigin = {
