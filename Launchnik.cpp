@@ -67,6 +67,7 @@ void CLaunchnik::RenderBatch(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UI
 
 void CLaunchnik::LoadEverything() {
 	HandleChange(kCustomPropsTag_Setup, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Setup));
+	HandleChange(kCustomPropsTag_Length, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Length));
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		HandleChange(SelectionTag(track), JBox_LoadMOMPropertyByTag(fCustomProps, SelectionTag(track)));
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
@@ -92,6 +93,10 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		const int setup = static_cast<int>(JBox_GetNumber(iValue));
 		fLauncher.SetSetup(setup);
 		fSetupLampLit = setup != CLauncher::kSetupLaunchMode;
+		return;
+	}
+	if (iTag == kCustomPropsTag_Length) {
+		fLauncher.SetLength(static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
 	if (iTag >= SelectionTag(0) && iTag <= SelectionTag(CLauncher::kTrackCount - 1)) {

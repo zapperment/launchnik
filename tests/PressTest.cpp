@@ -122,10 +122,20 @@ void TestSceneButtonOfAnEmptySceneStopsEveryTrack() {
 	}
 }
 
-void TestSceneButtonDoesNothingInSetupMode() {
+void TestSceneButtonDoesNothingInClipEditing() {
 	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
-	CHECK(CPress::SceneButton(kClipPicking, 3, holdsClip).fCount == 0);
 	CHECK(CPress::SceneButton(CLauncher::SetupForClipEditing(3, 6), 3, holdsClip).fCount == 0);
+}
+
+void TestSceneButtonInClipPickingChoosesItsLengthAndLeavesSetupMode() {
+	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
+	// From the bottom: immediate, one beat, half a bar, 1, 2, 4, 8 and 16 bars.
+	for (int scene = 1; scene <= 8; ++scene) {
+		const CPress::TChanges changes = CPress::SceneButton(kClipPicking, scene, holdsClip);
+		CHECK(changes.fCount == 2);
+		CHECK(IsChange(changes.fChanges[0], CPress::kLength, 0, 8 - scene));
+		CHECK(IsChange(changes.fChanges[1], CPress::kSetup, 0, kLaunchMode));
+	}
 }
 
 } // namespace
@@ -145,7 +155,8 @@ int main() {
 	TestSceneButtonSelectsItsRowOnEveryTrack();
 	TestSceneButtonStopsTracksWithAnEmptyLaunchButton();
 	TestSceneButtonOfAnEmptySceneStopsEveryTrack();
-	TestSceneButtonDoesNothingInSetupMode();
+	TestSceneButtonDoesNothingInClipEditing();
+	TestSceneButtonInClipPickingChoosesItsLengthAndLeavesSetupMode();
 
 	return ReportChecks("Press");
 }

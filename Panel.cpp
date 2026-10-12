@@ -66,6 +66,10 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_Setup, JBox_MakeNumber(iChange.fValue));
 			iArgs.fGestureNameKey = "gesture_setup";
 			break;
+		case CPress::kLength:
+			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_Length, JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_length";
+			break;
 		case CPress::kClipPresent:
 			JBox_StoreMOMPropertyByTag(iCustomProps, ClipPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_clip_present";
@@ -112,9 +116,10 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		for (int i = 0; i < changes.fCount; ++i) {
 			Apply(changes.fChanges[i], customProps, iArgs);
 		}
-		// All eight selections change in one step of the undo history.
+		// All the changes of a press are one step of the undo history, named
+		// after what the press was for.
 		if (changes.fCount > 0) {
-			iArgs.fGestureNameKey = "gesture_scene";
+			iArgs.fGestureNameKey = changes.fChanges[0].fProperty == CPress::kLength ? "gesture_length" : "gesture_scene";
 		}
 		return;
 	}

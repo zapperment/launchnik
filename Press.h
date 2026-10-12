@@ -13,6 +13,8 @@ class CPress {
 		kSelection,
 		// fValue is the setup state.
 		kSetup,
+		// fValue is the length of the switch interval.
+		kLength,
 		// fIndex is the number of the launch button, see CLauncher::ButtonIndex.
 		kClipPresent,
 		kClipPattern,
@@ -27,8 +29,8 @@ class CPress {
 		int fValue;
 	};
 
-	// What a press of a scene button changes: the selection of every track, or
-	// nothing at all (see docs/adr/0004).
+	// What a press of a scene button changes: the selection of every track,
+	// the length and the setup state, or nothing at all (see docs/adr/0004).
 	public: static const int kMaxChangeCount = 8;
 	public: struct TChanges {
 		int fCount;
@@ -45,7 +47,8 @@ class CPress {
 	public: static TChange SetupButton(int iSetup);
 
 	// In launch mode, a scene button means what the eight launch buttons of
-	// its scene mean, track by track; in setup mode it does nothing.
+	// its scene mean, track by track. In clip picking it chooses the length it
+	// stands for and returns to launch mode. In clip editing it does nothing.
 	// iHoldsClip says of each track whether its launch button in the scene
 	// holds a clip.
 	public: static TChanges SceneButton(int iSetup, int iScene, const bool iHoldsClip[]);

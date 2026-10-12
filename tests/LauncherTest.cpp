@@ -237,10 +237,11 @@ void TestSelectionChangeOnSwitchPointIsImmediate() {
 }
 
 void TestSwitchPointsFollowTimeSignature() {
-	CHECK(CLauncher::ComputeSwitchIntervalLength(4, 4) == 16 * CLauncher::kPPQPerCrotchet);
-	CHECK(CLauncher::ComputeSwitchIntervalLength(3, 4) == 12 * CLauncher::kPPQPerCrotchet);
-	CHECK(CLauncher::ComputeSwitchIntervalLength(6, 8) == 12 * CLauncher::kPPQPerCrotchet);
-	CHECK(CLauncher::ComputeSwitchIntervalLength(7, 8) == 14 * CLauncher::kPPQPerCrotchet);
+	const int fourBars = CLauncher::kLengthFourBars;
+	CHECK(CLauncher::ComputeSwitchIntervalLength(fourBars, 4, 4) == 16 * CLauncher::kPPQPerCrotchet);
+	CHECK(CLauncher::ComputeSwitchIntervalLength(fourBars, 3, 4) == 12 * CLauncher::kPPQPerCrotchet);
+	CHECK(CLauncher::ComputeSwitchIntervalLength(fourBars, 6, 8) == 12 * CLauncher::kPPQPerCrotchet);
+	CHECK(CLauncher::ComputeSwitchIntervalLength(fourBars, 7, 8) == 14 * CLauncher::kPPQPerCrotchet);
 
 	// In 3/4 the first switch point after the start is twelve crotchets in.
 	const long long interval = 12 * CLauncher::kPPQPerCrotchet;
@@ -743,14 +744,173 @@ void TestIntervalMeterDividesAnyTimeSignatureIntoEight() {
 	CHECK(CountLitSceneButtons(launcher) == 1);
 }
 
-void TestIntervalMeterRunsInSetupMode() {
+void TestIntervalMeterRunsInClipEditing() {
 	CLauncher launcher;
-	launcher.SetSetup(CLauncher::kSetupClipPicking);
-	launcher.Advance(Playing(static_cast<double>(kBar)));
-	CHECK(CountLitSceneButtons(launcher) == 3);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
 	launcher.Advance(Playing(static_cast<double>(2 * kBar)));
 	CHECK(CountLitSceneButtons(launcher) == 5);
+}
+
+void TestLengthsInFourFour() {
+	const long long crotchet = CLauncher::kPPQPerCrotchet;
+	const long long expected[CLauncher::kLengthCount] = { 0, crotchet, 2 * crotchet, kBar, 2 * kBar, 4 * kBar, 8 * kBar, 16 * kBar };
+	for (int length = 0; length < CLauncher::kLengthCount; ++length) {
+		CHECK(CLauncher::ComputeSwitchIntervalLength(length, 4, 4) == expected[length]);
+	}
+}
+
+void TestBeatAndHalfBarFollowTheTimeSignature() {
+	const long long crotchet = CLauncher::kPPQPerCrotchet;
+	// In 6/8 a beat is a quaver and half a bar three of them.
+	CHECK(CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthBeat, 6, 8) == crotchet / 2);
+	CHECK(CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthHalfBar, 6, 8) == 3 * crotchet / 2);
+	// In 3/4 half a bar is one and a half crotchets.
+	CHECK(CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthBeat, 3, 4) == crotchet);
+	CHECK(CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthHalfBar, 3, 4) == 3 * crotchet / 2);
+	CHECK(CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthFirstBars, 3, 4) == 3 * crotchet);
+	// In any signature a bar is a whole number of beats and two half bars, and
+	// each longer length is twice the one before, so all of them line up with
+	// the bars. Half a bar need not be a whole number of beats.
+	const int signatures[][2] = { { 4, 4 }, { 3, 4 }, { 6, 8 }, { 7, 8 }, { 5, 4 }, { 9, 16 } };
+	for (const auto& signature : signatures) {
+		const long long beat = CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthBeat, signature[0], signature[1]);
+		const long long halfBar = CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthHalfBar, signature[0], signature[1]);
+		const long long bar = CLauncher::ComputeSwitchIntervalLength(CLauncher::kLengthFirstBars, signature[0], signature[1]);
+		CHECK(beat > 0 && bar == signature[0] * beat);
+		CHECK(bar == 2 * halfBar);
+		for (int length = CLauncher::kLengthFirstBars + 1; length < CLauncher::kLengthCount; ++length) {
+			const long long longer = CLauncher::ComputeSwitchIntervalLength(length, signature[0], signature[1]);
+			const long long shorter = CLauncher::ComputeSwitchIntervalLength(length - 1, signature[0], signature[1]);
+			CHECK(longer == 2 * shorter);
+		}
+	}
+}
+
+void TestNewDeviceHasFourBars() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.Advance(Playing(100));
+	launcher.SetSelection(0, 1);
+	PlayThrough(launcher, 120, static_cast<double>(kInterval) - 40);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kQueued);
+	PlayThrough(launcher, static_cast<double>(kInterval) - 40, static_cast<double>(kInterval) + 40);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+}
+
+void TestShorterLengthSwitchesSooner() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.SetLength(CLauncher::kLengthFirstBars);
+	launcher.Advance(Playing(100));
+	launcher.SetSelection(0, 1);
+	PlayThrough(launcher, 120, static_cast<double>(kBar) - 40);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kQueued);
+	PlayThrough(launcher, static_cast<double>(kBar) - 40, static_cast<double>(kBar) + 40);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+}
+
+void TestImmediateNeverQueues() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	launcher.Advance(Playing(100));
+	launcher.SetSelection(0, 1);
+	launcher.Advance(Playing(120));
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+	CHECK(launcher.GetCVValue(0) == 1.0 / 8);
+	// There is no interval to measure.
+	CHECK(CountLitSceneButtons(launcher) == 0);
+}
+
+void TestChangingLengthMovesTheNextSwitchPoint() {
+	// From four bars to sixteen in bar 6: the next switch point is bar 17, not 9.
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.Advance(Playing(static_cast<double>(5 * kBar)));
+	launcher.SetSelection(0, 1);
+	launcher.SetLength(7);
+	PlayThrough(launcher, static_cast<double>(8 * kBar) - 40, static_cast<double>(8 * kBar) + 40);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kQueued);
+	PlayThrough(launcher, static_cast<double>(16 * kBar) - 40, static_cast<double>(16 * kBar) + 40);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+}
+
+void TestChangingToImmediateFiresWhatIsQueued() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.Advance(Playing(100));
+	launcher.SetSelection(0, 1);
+	launcher.Advance(Playing(120));
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kQueued);
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	launcher.Advance(Playing(140));
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+}
+
+void TestIntervalMeterFollowsTheLength() {
+	CLauncher launcher;
+	// Sixteen bars: a segment is two bars.
+	launcher.SetLength(7);
+	launcher.Advance(Playing(static_cast<double>(2 * kBar - 1)));
+	CHECK(CountLitSceneButtons(launcher) == 1);
+	launcher.Advance(Playing(static_cast<double>(2 * kBar)));
+	CHECK(CountLitSceneButtons(launcher) == 2);
+	// One bar: a segment is a quaver.
+	launcher.SetLength(CLauncher::kLengthFirstBars);
+	launcher.Advance(Playing(static_cast<double>(3 * kBar + 3 * CLauncher::kPPQPerCrotchet / 2)));
+	CHECK(CountLitSceneButtons(launcher) == 4);
+	// One beat: a segment is a demisemiquaver.
+	launcher.SetLength(CLauncher::kLengthBeat);
+	launcher.Advance(Playing(static_cast<double>(CLauncher::kPPQPerCrotchet - 1)));
+	CHECK(CountLitSceneButtons(launcher) == 8);
+}
+
+void TestClipPickingShowsTheLengthOnTheSceneButtons() {
+	CLauncher launcher;
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	launcher.Advance(Playing(static_cast<double>(kBar)));
+
+	// A new device has four bars, the third scene button from the top.
+	for (int scene = 1; scene <= 8; ++scene) {
+		CHECK(IsLight(launcher.GetSceneLight(scene), CLauncher::kFlashing, scene == 3 ? CLauncher::kColourGreen : CLauncher::kColourWhite));
+	}
+	// Flashing white is light value 3, flashing green 18.
+	CHECK(launcher.GetSceneLightValue(1) == 3);
+	CHECK(launcher.GetSceneLightValue(3) == 18);
+
+	// Immediate is the bottom scene button, sixteen bars the top one.
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	CHECK(IsLight(launcher.GetSceneLight(8), CLauncher::kFlashing, CLauncher::kColourGreen));
+	CHECK(IsLight(launcher.GetSceneLight(3), CLauncher::kFlashing, CLauncher::kColourWhite));
+	launcher.SetLength(7);
+	CHECK(IsLight(launcher.GetSceneLight(1), CLauncher::kFlashing, CLauncher::kColourGreen));
+	for (int length = 0; length < CLauncher::kLengthCount; ++length) {
+		CHECK(CLauncher::LengthForScene(CLauncher::SceneForLength(length)) == length);
+	}
+}
+
+void TestSceneButtonsFlashWithTheLaunchButtons() {
+	CLauncher launcher;
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	launcher.SetLength(7);
+
+	// The film strip: 3 and 4 are dim and vibrant green, 7 and 8 white.
+	launcher.Advance(Playing(100));
+	CHECK(launcher.GetSceneLightFrame(1) == 4);
+	CHECK(launcher.GetSceneLightFrame(2) == 8);
+	CHECK(launcher.GetLightFrame(0, 1) == 2);
+	launcher.Advance(Playing(static_cast<double>(CLauncher::kPPQPerCrotchet / 2 + 100)));
+	CHECK(launcher.GetSceneLightFrame(1) == 3);
+	CHECK(launcher.GetSceneLightFrame(2) == 7);
+	CHECK(launcher.GetLightFrame(0, 1) == 1);
+}
+
+void TestOutOfRangeLengthIsIgnored() {
+	CLauncher launcher;
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	launcher.SetLength(8);
+	launcher.SetLength(-1);
+	CHECK(IsLight(launcher.GetSceneLight(3), CLauncher::kFlashing, CLauncher::kColourGreen));
 }
 
 } // namespace
@@ -792,7 +952,18 @@ int main() {
 	TestIntervalMeterFollowsTheSongPositionWhileStopped();
 	TestIntervalMeterIsUnlitBeforeTheSongStarts();
 	TestIntervalMeterDividesAnyTimeSignatureIntoEight();
-	TestIntervalMeterRunsInSetupMode();
+	TestIntervalMeterRunsInClipEditing();
+	TestLengthsInFourFour();
+	TestBeatAndHalfBarFollowTheTimeSignature();
+	TestNewDeviceHasFourBars();
+	TestShorterLengthSwitchesSooner();
+	TestImmediateNeverQueues();
+	TestChangingLengthMovesTheNextSwitchPoint();
+	TestChangingToImmediateFiresWhatIsQueued();
+	TestIntervalMeterFollowsTheLength();
+	TestClipPickingShowsTheLengthOnTheSceneButtons();
+	TestSceneButtonsFlashWithTheLaunchButtons();
+	TestOutOfRangeLengthIsIgnored();
 
 	return ReportChecks("Launcher");
 }

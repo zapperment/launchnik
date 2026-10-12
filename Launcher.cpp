@@ -36,6 +36,7 @@ const int kDefaultColours[CLauncher::kTrackCount] = { 1, 2, 3, 5, 7, 9, 11, 13 }
 CLauncher::CLauncher()
 	:
 	fSetup(kSetupLaunchMode),
+	fLength(kDefaultLength),
 	fFlashLit(false),
 	fStoppedTime(0.0),
 	fSwitchPointInPreviousBatch(false),
@@ -99,6 +100,20 @@ void CLauncher::SetSetup(int iSetup) {
 	}
 }
 
+void CLauncher::SetLength(int iLength) {
+	if (iLength >= 0 && iLength < kLengthCount) {
+		fLength = iLength;
+	}
+}
+
+int CLauncher::SceneForLength(int iLength) {
+	return kRowCount - iLength;
+}
+
+int CLauncher::LengthForScene(int iScene) {
+	return kRowCount - iScene;
+}
+
 void CLauncher::SetSelection(int iTrack, int iSelection) {
 	if (iTrack < 0 || iTrack >= kTrackCount || iSelection < 0 || iSelection >= kSelectionCount) {
 		return;
@@ -133,7 +148,8 @@ void CLauncher::Advance(const TTransport& iTransport) {
 		switchPointInBatch = ContainsSwitchPoint(iTransport);
 		// A change that arrives one batch after a switch point still counts as
 		// landing on it, since the host does not say where in a batch it happened.
-		switchNow = switchPointInBatch || fSwitchPointInPreviousBatch;
+		// With the length immediate, nothing waits for a switch point.
+		switchNow = switchPointInBatch || fSwitchPointInPreviousBatch || fLength == kLengthImmediate;
 
 		fFlashLit = IsFirstQuaver(iTransport.fPlayPos);
 		fStoppedTime = 0.0;
@@ -151,8 +167,8 @@ void CLauncher::Advance(const TTransport& iTransport) {
 	// The interval meter follows the song position whether it moves or not.
 	fReachedSegments = CountReachedSegments(iTransport);
 
-	// While the transport is stopped, selections and changes to the active clip
-	// take effect at once.
+	// While the transport is stopped, and with the length immediate, selections
+	// and changes to the active clip take effect at once.
 	if (switchNow) {
 		Switch();
 	}
@@ -270,6 +286,9 @@ int CLauncher::GetLightFrame(int iTrack, int iRow) const {
 }
 
 CLauncher::TLight CLauncher::GetSceneLight(int iScene) const {
+	if (fSetup == kSetupClipPicking) {
+		return MakeLight(kFlashing, iScene == SceneForLength(fLength) ? kColourGreen : kColourWhite);
+	}
 	// The bottom scene button stands for the first segment.
 	const int segment = kSegmentCount + 1 - iScene;
 	if (segment < 1 || segment > fReachedSegments) {
@@ -293,8 +312,17 @@ int CLauncher::GetSceneLightFrame(int iScene) const {
 	if (light.fBrightness == kUnlit) {
 		return 0;
 	}
-	// The film strip holds red, green and yellow, in that order.
-	const int stripColour = light.fColour == kColourRed ? 0 : (light.fColour == kColourGreen ? 1 : 2);
+	// The film strip holds red, green, yellow and white, in that order.
+	int stripColour = 3;
+	if (light.fColour == kColourRed) {
+		stripColour = 0;
+	}
+	else if (light.fColour == kColourGreen) {
+		stripColour = 1;
+	}
+	else if (light.fColour == kColourYellow) {
+		stripColour = 2;
+	}
 	const bool vibrant = light.fBrightness == kVibrant || (light.fBrightness == kFlashing && fFlashLit);
 	return 1 + 2 * stripColour + (vibrant ? 1 : 0);
 }
@@ -305,31 +333,45 @@ double CLauncher::GetCVValue(int iTrack) const {
 	return static_cast<double>(fEmitted[iTrack]) / kPatternCount;
 }
 
-long long CLauncher::ComputeSwitchIntervalLength(int iNumerator, int iDenominator) {
+long long CLauncher::ComputeSwitchIntervalLength(int iLength, int iNumerator, int iDenominator) {
 	if (iNumerator <= 0 || iDenominator <= 0) {
 		iNumerator = 4;
 		iDenominator = 4;
 	}
-	const long long barLength = iNumerator * (kPPQPerCrotchet * 4 / iDenominator);
-	return barLength * kBarsPerSwitchInterval;
-}
-
-int CLauncher::CountReachedSegments(const TTransport& iTransport) {
-	if (iTransport.fPlayPos < 0.0) {
+	// A beat is the beat of the time signature, so that every length divides
+	// the bar or is a whole number of bars, and all of them line up with the
+	// bars.
+	const long long beatLength = kPPQPerCrotchet * 4 / iDenominator;
+	const long long barLength = iNumerator * beatLength;
+	if (iLength <= kLengthImmediate || iLength >= kLengthCount) {
 		return 0;
 	}
-	const long long intervalLength = ComputeSwitchIntervalLength(iTransport.fTimeSignatureNumerator, iTransport.fTimeSignatureDenominator);
+	if (iLength == kLengthBeat) {
+		return beatLength;
+	}
+	if (iLength == kLengthHalfBar) {
+		return barLength / 2;
+	}
+	// 1, 2, 4, 8 and 16 bars.
+	return barLength << (iLength - kLengthFirstBars);
+}
+
+int CLauncher::CountReachedSegments(const TTransport& iTransport) const {
+	const long long intervalLength = ComputeSwitchIntervalLength(fLength, iTransport.fTimeSignatureNumerator, iTransport.fTimeSignatureDenominator);
+	if (iTransport.fPlayPos < 0.0 || intervalLength == 0) {
+		return 0;
+	}
 	const long long position = static_cast<long long>(iTransport.fPlayPos) % intervalLength;
 	// Multiplying first keeps this exact where a segment is not a whole number
 	// of PPQ.
 	return static_cast<int>(position * kSegmentCount / intervalLength) + 1;
 }
 
-bool CLauncher::ContainsSwitchPoint(const TTransport& iTransport) {
-	if (iTransport.fPlayPos < 0.0) {
+bool CLauncher::ContainsSwitchPoint(const TTransport& iTransport) const {
+	const long long intervalLength = ComputeSwitchIntervalLength(fLength, iTransport.fTimeSignatureNumerator, iTransport.fTimeSignatureDenominator);
+	if (iTransport.fPlayPos < 0.0 || intervalLength == 0) {
 		return false;
 	}
-	const long long intervalLength = ComputeSwitchIntervalLength(iTransport.fTimeSignatureNumerator, iTransport.fTimeSignatureDenominator);
 	const double batchEnd = iTransport.fPlayPos + iTransport.fBatchLength;
 
 	// Switch points are counted from the start of the song. Find the first one

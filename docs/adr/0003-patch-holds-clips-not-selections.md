@@ -15,3 +15,8 @@ We chose this because a patch is meant as a reusable layout of the grid that is 
 - Loading a patch, or stepping to the previous or next one, replaces the clips without asking. That is the host's behaviour for every device, and one step in its undo history.
 - The setup state is not saved at all, so a load during setup mode leaves the device in setup mode, showing the loaded clips.
 - Once patches have been shared, adding selections to them would make old patches incomplete and new ones disruptive. Treat the contents of a patch as fixed.
+
+Amended on 2026-10-12: a patch also holds the **length** of the switch interval, since a patch is meant as a complete setup of the device, minus what is playing. This goes against the last consequence above, knowingly:
+
+- Loading a patch may now change the timing of a running song: the switch points move to the grid of the patch's length, and with **immediate** whatever is queued takes effect at once. No selection changes, so nothing starts or stops that the user had not already chosen.
+- Patches saved before version 1.0.0d6 carry no length. The default, four bars, is what those versions always used, so such a patch is expected to load with four bars.

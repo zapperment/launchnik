@@ -6,8 +6,8 @@
 // and in setup mode.
 //
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
-// active, light, switch interval, switch point, clip picking, clip editing,
-// scene, segment, interval meter.
+// active, light, switch interval, switch point, length, immediate, clip
+// picking, clip editing, scene, segment, interval meter.
 //
 // Tracks are numbered from 0 here. Rows are numbered from 1, so that a row is
 // also the selection that chooses its launch button, and the number of its
@@ -49,7 +49,16 @@ class CLauncher {
 	public: static const int kEditingBackTrack = 7;
 	public: static const int kEditingBackRow = 8;
 
-	public: static const int kBarsPerSwitchInterval = 4;
+	// The length of the switch interval is one of eight settings: immediate,
+	// one beat, half a bar, then 1, 2, 4, 8 and 16 bars. In clip picking the
+	// scene buttons stand for them, from the bottom.
+	public: static const int kLengthImmediate = 0;
+	public: static const int kLengthBeat = 1;
+	public: static const int kLengthHalfBar = 2;
+	public: static const int kLengthFirstBars = 3;
+	public: static const int kLengthFourBars = 5;
+	public: static const int kLengthCount = 8;
+	public: static const int kDefaultLength = kLengthFourBars;
 
 	// The interval meter has one scene button for each segment of the switch
 	// interval. Counted from the bottom, the first five are green, the next two
@@ -89,8 +98,8 @@ class CLauncher {
 	public: static const int kLightFrameCount = 1 + 2 * kColourCount;
 
 	// The film strip of the scene buttons: frame 0 is unlit, then dim and
-	// vibrant for red, green and yellow.
-	public: static const int kSceneLightFrameCount = 7;
+	// vibrant for red, green, yellow and white.
+	public: static const int kSceneLightFrameCount = 9;
 
 	// What the host's transport looks like for one batch of audio.
 	public: struct TTransport {
@@ -122,6 +131,13 @@ class CLauncher {
 
 	public: void SetSetup(int iSetup);
 
+	public: void SetLength(int iLength);
+
+	// The scene whose scene button stands for a length in clip picking, and
+	// the other way round.
+	public: static int SceneForLength(int iLength);
+	public: static int LengthForScene(int iScene);
+
 	// Records what the user chose on a track. Call before Advance() for changes
 	// that arrived in the same batch.
 	public: void SetSelection(int iTrack, int iSelection);
@@ -148,9 +164,11 @@ class CLauncher {
 	// The frame to show right now; a flashing light alternates.
 	public: int GetLightFrame(int iTrack, int iRow) const;
 
-	// What a scene button shows as its part of the interval meter. Scenes are
-	// numbered like rows, 1..8 from the top, so the meter fills from scene 8
-	// upwards. The value is encoded like the light of a launch button.
+	// What a scene button shows: its part of the interval meter, or in clip
+	// picking the length it stands for, flashing in green if that is the
+	// current length and in white otherwise. Scenes are numbered like rows,
+	// 1..8 from the top, so the meter fills from scene 8 upwards. The value is
+	// encoded like the light of a launch button.
 	public: TLight GetSceneLight(int iScene) const;
 	public: int GetSceneLightValue(int iScene) const;
 	public: int GetSceneLightFrame(int iScene) const;
@@ -158,7 +176,8 @@ class CLauncher {
 	// The CV value a track emits, in the range 0..1.
 	public: double GetCVValue(int iTrack) const;
 
-	public: static long long ComputeSwitchIntervalLength(int iNumerator, int iDenominator);
+	// A length in PPQ; 0 for immediate, which has no switch intervals.
+	public: static long long ComputeSwitchIntervalLength(int iLength, int iNumerator, int iDenominator);
 
 	private: struct TClip {
 		bool fPresent;
@@ -166,10 +185,10 @@ class CLauncher {
 		int fColour;
 	};
 
-	private: static bool ContainsSwitchPoint(const TTransport& iTransport);
+	private: bool ContainsSwitchPoint(const TTransport& iTransport) const;
 	// How many segments of its switch interval a song position has reached,
-	// 1..8, or 0 before the start of the song.
-	private: static int CountReachedSegments(const TTransport& iTransport);
+	// 1..8, or 0 before the start of the song and with the length immediate.
+	private: int CountReachedSegments(const TTransport& iTransport) const;
 	private: static bool IsValidButton(int iTrack, int iRow);
 
 	private: const TClip& Clip(int iTrack, int iRow) const;
@@ -187,6 +206,7 @@ class CLauncher {
 
 	private: TClip fClips[kTrackCount][kRowCount];
 	private: int fSetup;
+	private: int fLength;
 	private: int fSelections[kTrackCount];
 	private: int fActive[kTrackCount];
 	// 0 for nothing, 1..8 for the pattern each track is emitting. Changes only

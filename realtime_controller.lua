@@ -26,10 +26,11 @@ sample_rate_setup = {
 	},
 }
 
--- The realtime code hears about every change of the setup state, of a track's
--- selection and of what a launch button holds, whether it comes from a click,
+-- The realtime code hears about every change of the setup state, of the length
+-- of the switch interval, of a track's selection and of what a launch button
+-- holds, whether it comes from a click,
 -- automation or a control surface.
-local notify = { "/custom_properties/setup" }
+local notify = { "/custom_properties/setup", "/custom_properties/switch_interval" }
 for track = 1, 8 do
 	table.insert(notify, "/custom_properties/track" .. track .. "_selection")
 	for row = 1, 8 do

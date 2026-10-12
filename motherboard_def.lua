@@ -6,6 +6,7 @@ format_version = "3.0"
 -- Property tags, as used by Tags.h, for track t and row r, both from 1:
 --   setup state:                      50
 --   lamp of the setup button:         51
+--   length of the switch interval:    52
 --   selection of track t:            100 + t
 --   light of the stop button:       1000 + 10 * t
 --   light of a launch button:       1000 + 10 * t + r
@@ -29,8 +30,12 @@ local SETUP_COUNT = 2 + TRACK_COUNT * ROW_COUNT
 local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
 -- Unlit, then dim and vibrant for each colour
 local LIGHT_FRAME_COUNT = 1 + 2 * COLOUR_COUNT
--- Unlit, then dim and vibrant for red, green and yellow
-local SCENE_LIGHT_FRAME_COUNT = 7
+-- Unlit, then dim and vibrant for red, green, yellow and white
+local SCENE_LIGHT_FRAME_COUNT = 9
+
+-- Immediate, one beat, half a bar, then 1, 2, 4, 8 and 16 bars
+local LENGTH_COUNT = 8
+local DEFAULT_LENGTH = 5
 
 local selection_texts = { jbox.ui_text("text_stop") }
 for row = 1, ROW_COUNT do
@@ -40,6 +45,11 @@ end
 local pattern_texts = {}
 for pattern = 1, PATTERN_COUNT do
 	table.insert(pattern_texts, jbox.ui_text("text_pattern" .. pattern))
+end
+
+local length_texts = {}
+for length = 1, LENGTH_COUNT do
+	table.insert(length_texts, jbox.ui_text("text_length" .. length))
 end
 
 local colour_texts = {}
@@ -86,6 +96,18 @@ document_properties.setup = jbox.number{
 	ui_type = plain_number(SETUP_COUNT - 1),
 }
 add_remote_item("setup", "Setup")
+
+-- The length of the switch interval: 0 = immediate, 1 = one beat, 2 = half a
+-- bar, 3..7 = 1, 2, 4, 8 and 16 bars. Saved with the song and in patches (see
+-- docs/adr/0003), but not automatable.
+document_properties.switch_interval = jbox.number{
+	property_tag = 52,
+	default = DEFAULT_LENGTH,
+	steps = LENGTH_COUNT,
+	ui_name = jbox.ui_text("text_switch_interval"),
+	ui_type = jbox.ui_selector(length_texts),
+}
+add_remote_item("switch_interval", "Switch Interval")
 
 -- Whether the setup button is lit and the logo is green.
 rt_properties.setup_lamp = jbox.boolean{

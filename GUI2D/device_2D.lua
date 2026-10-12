@@ -91,14 +91,14 @@ front.click_grid = {
 
 -- The scene buttons stand one track further to the right, each centred in the
 -- width of a launch button and level with its scene. They are lamps as well,
--- showing one of seven frames (unlit, then dim and vibrant for red, green and
--- yellow), with one transparent display on top of all eight.
+-- showing one of nine frames (unlit, then dim and vibrant for red, green,
+-- yellow and white), with one transparent display on top of all eight.
 local SCENE_WIDTH = 130
 local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * TRACK_COUNT + 35
 for scene = 1, ROW_COUNT do
 	front["lamp_scene" .. scene] = {
 		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
-		{ path = "Scene_Button_7frames", frames = 7 },
+		{ path = "Scene_Button_9frames", frames = 9 },
 	}
 end
 front.click_scenes = {

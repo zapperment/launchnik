@@ -7,6 +7,7 @@
 
 const TJBox_Tag kCustomPropsTag_Setup = 50;
 const TJBox_Tag kCustomPropsTag_SetupLamp = 51;
+const TJBox_Tag kCustomPropsTag_Length = 52;
 
 inline TJBox_Tag SelectionTag(int iTrack) {
 	return 100 + (iTrack + 1);

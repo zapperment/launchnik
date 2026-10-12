@@ -54,6 +54,11 @@ CPress::TChange CPress::StopButton(int iTrack) {
 CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsClip[]) {
 	TChanges changes;
 	changes.fCount = 0;
+	if (iSetup == CLauncher::kSetupClipPicking) {
+		changes.fChanges[changes.fCount++] = MakeChange(kLength, 0, CLauncher::LengthForScene(iScene));
+		changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+		return changes;
+	}
 	if (iSetup != CLauncher::kSetupLaunchMode) {
 		return changes;
 	}

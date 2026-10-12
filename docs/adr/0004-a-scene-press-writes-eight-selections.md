@@ -12,5 +12,5 @@ A **scene button** stands for the eight launch buttons of its row, so a press of
 - A scene launch recorded as automation lands in the selection lanes of up to eight tracks.
 - On the panel a scene press is one step in the undo history. A codec hands the host eight inputs for one press.
 - The rule "a press changes one property" of [0002](0002-realtime-computes-lights-writers-change-clips.md) becomes "a press yields a list of changes", in the panel's code and in every codec.
-- Scene buttons launch in **launch mode** only. In **setup mode** a press does nothing; clip picking is held free for choosing the length of the switch interval in a later version.
-- Remote gains eight output-only items, "Scene N Light", encoded like the light of a launch button, and no input items.
+- Scene buttons launch in **launch mode** only. In **clip picking** a press chooses the **length** of the switch interval and returns to launch mode, which is two writes: the length and the setup state. In **clip editing** a press does nothing.
+- Remote gains eight output-only items, "Scene N Light", encoded like the light of a launch button, and no input items for scenes. The length has an item of its own, "Switch Interval".
