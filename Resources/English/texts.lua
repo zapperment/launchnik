@@ -19,6 +19,7 @@ texts = {
 	-- Names of the changes made by clicking the panel, as shown in the undo
 	-- history. The click handler refers to them by these keys.
 	["gesture_selection"] = "Change track selection",
+	["gesture_scene"] = "Launch scene",
 	["gesture_setup"] = "Change setup mode",
 	["gesture_clip_present"] = "Switch clip on or off",
 	["gesture_clip_pattern"] = "Change clip pattern",
@@ -60,6 +61,13 @@ for track = 1, 8 do
 		texts[clip .. "_light_short"] = short .. " Lgt"
 		texts[clip .. "_light_shortest"] = "L" .. digits
 	end
+end
+
+for scene = 1, 8 do
+	local light = "text_scene" .. scene .. "_light"
+	texts[light] = "Scene " .. scene .. " Light"
+	texts[light .. "_short"] = "Sc" .. scene .. " Lgt"
+	texts[light .. "_shortest"] = "SL" .. scene
 end
 
 for number = 1, 8 do

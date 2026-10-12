@@ -19,11 +19,20 @@ class CPress {
 		kClipColour
 	};
 
-	// One property and its new value; a press never changes more than one.
+	// One property and its new value. A press of a launch button, a stop
+	// button or the setup button never changes more than one.
 	public: struct TChange {
 		EProperty fProperty;
 		int fIndex;
 		int fValue;
+	};
+
+	// What a press of a scene button changes: the selection of every track, or
+	// nothing at all (see docs/adr/0004).
+	public: static const int kMaxChangeCount = 8;
+	public: struct TChanges {
+		int fCount;
+		TChange fChanges[kMaxChangeCount];
 	};
 
 	// iPressedHoldsClip says whether the pressed launch button holds a clip.
@@ -34,4 +43,10 @@ class CPress {
 	public: static TChange StopButton(int iTrack);
 
 	public: static TChange SetupButton(int iSetup);
+
+	// In launch mode, a scene button means what the eight launch buttons of
+	// its scene mean, track by track; in setup mode it does nothing.
+	// iHoldsClip says of each track whether its launch button in the scene
+	// holds a clip.
+	public: static TChanges SceneButton(int iSetup, int iScene, const bool iHoldsClip[]);
 };

@@ -19,6 +19,15 @@ CLauncher::TLight MakeLight(CLauncher::EBrightness iBrightness, int iColour) {
 
 const CLauncher::TLight kUnlitLight = { CLauncher::kUnlit, CLauncher::kColourWhite };
 
+// A light as one number: 0 is unlit, then dim, vibrant and flashing for each
+// colour.
+int LightValue(const CLauncher::TLight& iLight) {
+	if (iLight.fBrightness == CLauncher::kUnlit) {
+		return 0;
+	}
+	return 1 + 3 * iLight.fColour + (iLight.fBrightness - CLauncher::kDim);
+}
+
 // Red, orange, yellow, green, cyan, blue, purple and pink for tracks 1 to 8.
 const int kDefaultColours[CLauncher::kTrackCount] = { 1, 2, 3, 5, 7, 9, 11, 13 };
 
@@ -29,7 +38,8 @@ CLauncher::CLauncher()
 	fSetup(kSetupLaunchMode),
 	fFlashLit(false),
 	fStoppedTime(0.0),
-	fSwitchPointInPreviousBatch(false)
+	fSwitchPointInPreviousBatch(false),
+	fReachedSegments(0)
 {
 	for (int track = 0; track < kTrackCount; ++track) {
 		fSelections[track] = kSelectionStop;
@@ -138,6 +148,9 @@ void CLauncher::Advance(const TTransport& iTransport) {
 	}
 	fSwitchPointInPreviousBatch = switchPointInBatch;
 
+	// The interval meter follows the song position whether it moves or not.
+	fReachedSegments = CountReachedSegments(iTransport);
+
 	// While the transport is stopped, selections and changes to the active clip
 	// take effect at once.
 	if (switchNow) {
@@ -244,11 +257,7 @@ CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
 }
 
 int CLauncher::GetLightValue(int iTrack, int iRow) const {
-	const TLight light = GetLight(iTrack, iRow);
-	if (light.fBrightness == kUnlit) {
-		return 0;
-	}
-	return 1 + 3 * light.fColour + (light.fBrightness - kDim);
+	return LightValue(GetLight(iTrack, iRow));
 }
 
 int CLauncher::GetLightFrame(int iTrack, int iRow) const {
@@ -258,6 +267,36 @@ int CLauncher::GetLightFrame(int iTrack, int iRow) const {
 	}
 	const bool vibrant = light.fBrightness == kVibrant || (light.fBrightness == kFlashing && fFlashLit);
 	return 1 + 2 * light.fColour + (vibrant ? 1 : 0);
+}
+
+CLauncher::TLight CLauncher::GetSceneLight(int iScene) const {
+	// The bottom scene button stands for the first segment.
+	const int segment = kSegmentCount + 1 - iScene;
+	if (segment < 1 || segment > fReachedSegments) {
+		return kUnlitLight;
+	}
+	if (segment <= kGreenSegmentCount) {
+		return MakeLight(kDim, kColourGreen);
+	}
+	if (segment <= kGreenSegmentCount + kYellowSegmentCount) {
+		return MakeLight(kDim, kColourYellow);
+	}
+	return MakeLight(kDim, kColourRed);
+}
+
+int CLauncher::GetSceneLightValue(int iScene) const {
+	return LightValue(GetSceneLight(iScene));
+}
+
+int CLauncher::GetSceneLightFrame(int iScene) const {
+	const TLight light = GetSceneLight(iScene);
+	if (light.fBrightness == kUnlit) {
+		return 0;
+	}
+	// The film strip holds red, green and yellow, in that order.
+	const int stripColour = light.fColour == kColourRed ? 0 : (light.fColour == kColourGreen ? 1 : 2);
+	const bool vibrant = light.fBrightness == kVibrant || (light.fBrightness == kFlashing && fFlashLit);
+	return 1 + 2 * stripColour + (vibrant ? 1 : 0);
 }
 
 double CLauncher::GetCVValue(int iTrack) const {
@@ -273,6 +312,17 @@ long long CLauncher::ComputeSwitchIntervalLength(int iNumerator, int iDenominato
 	}
 	const long long barLength = iNumerator * (kPPQPerCrotchet * 4 / iDenominator);
 	return barLength * kBarsPerSwitchInterval;
+}
+
+int CLauncher::CountReachedSegments(const TTransport& iTransport) {
+	if (iTransport.fPlayPos < 0.0) {
+		return 0;
+	}
+	const long long intervalLength = ComputeSwitchIntervalLength(iTransport.fTimeSignatureNumerator, iTransport.fTimeSignatureDenominator);
+	const long long position = static_cast<long long>(iTransport.fPlayPos) % intervalLength;
+	// Multiplying first keeps this exact where a segment is not a whole number
+	// of PPQ.
+	return static_cast<int>(position * kSegmentCount / intervalLength) + 1;
 }
 
 bool CLauncher::ContainsSwitchPoint(const TTransport& iTransport) {

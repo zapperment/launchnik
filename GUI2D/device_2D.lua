@@ -88,6 +88,23 @@ front.click_grid = {
 	{ size = { 1970, 1780 } },
 }
 
+-- The scene buttons stand one track further to the right, each centred in the
+-- width of a launch button and level with its scene. They are lamps as well,
+-- showing one of seven frames (unlit, then dim and vibrant for red, green and
+-- yellow), with one transparent display on top of all eight.
+local SCENE_WIDTH = 130
+local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * TRACK_COUNT + 35
+for scene = 1, ROW_COUNT do
+	front["lamp_scene" .. scene] = {
+		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
+		{ path = "Scene_Button_7frames", frames = 7 },
+	}
+end
+front.click_scenes = {
+	offset = { SCENE_LEFT, LAUNCH_TOP },
+	{ size = { SCENE_WIDTH, 1780 } },
+}
+
 -- A stop button is a lamp showing one of three frames (unlit, dim, vibrant)
 -- with an invisible click area of the same size on top.
 for track = 1, TRACK_COUNT do

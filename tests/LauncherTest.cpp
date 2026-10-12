@@ -644,6 +644,115 @@ void TestOutOfRangeSelectionIsIgnored() {
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
 }
 
+// How many scene buttons the interval meter has lit, checking on the way that
+// they are the lowest ones.
+int CountLitSceneButtons(const CLauncher& iLauncher) {
+	int count = 0;
+	bool unlitSeen = false;
+	for (int scene = CLauncher::kRowCount; scene >= 1; --scene) {
+		if (IsUnlit(iLauncher.GetSceneLight(scene))) {
+			unlitSeen = true;
+		}
+		else {
+			CHECK(!unlitSeen);
+			++count;
+		}
+	}
+	return count;
+}
+
+void TestIntervalMeterFillsFromTheBottom() {
+	CLauncher launcher;
+	const long long kMinim = CLauncher::kPPQPerCrotchet * 2;
+
+	// One more scene button for every two beats in 4/4.
+	for (int segment = 0; segment < 8; ++segment) {
+		launcher.Advance(Playing(static_cast<double>(segment * kMinim)));
+		CHECK(CountLitSceneButtons(launcher) == segment + 1);
+		launcher.Advance(Playing(static_cast<double>((segment + 1) * kMinim - 1)));
+		CHECK(CountLitSceneButtons(launcher) == segment + 1);
+	}
+
+	// It starts again at the switch point, in every switch interval.
+	launcher.Advance(Playing(static_cast<double>(kInterval)));
+	CHECK(CountLitSceneButtons(launcher) == 1);
+	launcher.Advance(Playing(static_cast<double>(5 * kInterval + 3 * kMinim)));
+	CHECK(CountLitSceneButtons(launcher) == 4);
+}
+
+void TestIntervalMeterColours() {
+	CLauncher launcher;
+	launcher.Advance(Playing(static_cast<double>(kInterval - 1)));
+
+	// Scene 8 is the bottom scene button: five green, two yellow, one red, all
+	// dim.
+	for (int scene = 8; scene >= 4; --scene) {
+		CHECK(IsLight(launcher.GetSceneLight(scene), CLauncher::kDim, CLauncher::kColourGreen));
+	}
+	CHECK(IsLight(launcher.GetSceneLight(3), CLauncher::kDim, CLauncher::kColourYellow));
+	CHECK(IsLight(launcher.GetSceneLight(2), CLauncher::kDim, CLauncher::kColourYellow));
+	CHECK(IsLight(launcher.GetSceneLight(1), CLauncher::kDim, CLauncher::kColourRed));
+
+	// Encoded like the light of a launch button: dim green, dim yellow, dim red.
+	CHECK(launcher.GetSceneLightValue(8) == 1 + 3 * CLauncher::kColourGreen);
+	CHECK(launcher.GetSceneLightValue(3) == 1 + 3 * CLauncher::kColourYellow);
+	CHECK(launcher.GetSceneLightValue(1) == 1 + 3 * CLauncher::kColourRed);
+
+	// The film strip: unlit, then dim and vibrant for red, green and yellow.
+	CHECK(launcher.GetSceneLightFrame(8) == 3);
+	CHECK(launcher.GetSceneLightFrame(3) == 5);
+	CHECK(launcher.GetSceneLightFrame(1) == 1);
+
+	launcher.Advance(Playing(0.0));
+	CHECK(launcher.GetSceneLightValue(7) == 0);
+	CHECK(launcher.GetSceneLightFrame(7) == 0);
+}
+
+void TestIntervalMeterFollowsTheSongPositionWhileStopped() {
+	CLauncher launcher;
+	const long long kMinim = CLauncher::kPPQPerCrotchet * 2;
+
+	launcher.Advance(Stopped(0.0));
+	CHECK(CountLitSceneButtons(launcher) == 1);
+	launcher.Advance(Stopped(static_cast<double>(2 * kInterval + 5 * kMinim + 100)));
+	CHECK(CountLitSceneButtons(launcher) == 6);
+	launcher.Advance(Stopped(static_cast<double>(kMinim)));
+	CHECK(CountLitSceneButtons(launcher) == 2);
+}
+
+void TestIntervalMeterIsUnlitBeforeTheSongStarts() {
+	CLauncher launcher;
+	CHECK(CountLitSceneButtons(launcher) == 0);
+	launcher.Advance(Playing(-100.0));
+	CHECK(CountLitSceneButtons(launcher) == 0);
+	launcher.Advance(Stopped(-1.0));
+	CHECK(CountLitSceneButtons(launcher) == 0);
+}
+
+void TestIntervalMeterDividesAnyTimeSignatureIntoEight() {
+	CLauncher launcher;
+	// Four bars of 3/4 are twelve crotchets, so a segment is one and a half.
+	const long long kSegment = CLauncher::kPPQPerCrotchet * 3 / 2;
+	launcher.Advance(Playing(static_cast<double>(kSegment - 1), 3, 4));
+	CHECK(CountLitSceneButtons(launcher) == 1);
+	launcher.Advance(Playing(static_cast<double>(kSegment), 3, 4));
+	CHECK(CountLitSceneButtons(launcher) == 2);
+	launcher.Advance(Playing(static_cast<double>(8 * kSegment - 1), 3, 4));
+	CHECK(CountLitSceneButtons(launcher) == 8);
+	launcher.Advance(Playing(static_cast<double>(8 * kSegment), 3, 4));
+	CHECK(CountLitSceneButtons(launcher) == 1);
+}
+
+void TestIntervalMeterRunsInSetupMode() {
+	CLauncher launcher;
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	launcher.Advance(Playing(static_cast<double>(kBar)));
+	CHECK(CountLitSceneButtons(launcher) == 3);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
+	launcher.Advance(Playing(static_cast<double>(2 * kBar)));
+	CHECK(CountLitSceneButtons(launcher) == 5);
+}
+
 } // namespace
 
 int main() {
@@ -678,6 +787,12 @@ int main() {
 	TestOutOfRangeClipSettingsAreIgnored();
 	TestOneActiveAndAtMostOneQueuedPerTrack();
 	TestOutOfRangeSelectionIsIgnored();
+	TestIntervalMeterFillsFromTheBottom();
+	TestIntervalMeterColours();
+	TestIntervalMeterFollowsTheSongPositionWhileStopped();
+	TestIntervalMeterIsUnlitBeforeTheSongStarts();
+	TestIntervalMeterDividesAnyTimeSignatureIntoEight();
+	TestIntervalMeterRunsInSetupMode();
 
 	return ReportChecks("Launcher");
 }

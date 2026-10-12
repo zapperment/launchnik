@@ -28,6 +28,16 @@ inline TJBox_Tag LightFrameTag(int iTrack, int iRow) {
 	return 2000 + 10 * (iTrack + 1) + iRow;
 }
 
+// The scene buttons use the tags a ninth track's launch buttons would have.
+// Scenes are numbered from 1, like rows.
+inline TJBox_Tag SceneLightTag(int iScene) {
+	return 1090 + iScene;
+}
+
+inline TJBox_Tag SceneLightFrameTag(int iScene) {
+	return 2090 + iScene;
+}
+
 inline TJBox_Tag ClipPresentTag(int iTrack, int iRow) {
 	return 3000 + 10 * (iTrack + 1) + iRow;
 }

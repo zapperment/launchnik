@@ -95,6 +95,39 @@ void TestClipEditingWithoutClipHasNoColourOrPatternControls() {
 	CHECK(IsNoChange(CPress::LaunchButton(editing, 2, 5, false, false)));
 }
 
+void TestSceneButtonSelectsItsRowOnEveryTrack() {
+	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
+	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 3, holdsClip);
+	CHECK(changes.fCount == 8);
+	for (int track = 0; track < 8; ++track) {
+		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, 3));
+	}
+}
+
+void TestSceneButtonStopsTracksWithAnEmptyLaunchButton() {
+	const bool holdsClip[8] = { true, false, false, true, false, false, false, true };
+	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 8, holdsClip);
+	CHECK(changes.fCount == 8);
+	for (int track = 0; track < 8; ++track) {
+		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, holdsClip[track] ? 8 : CLauncher::kSelectionStop));
+	}
+}
+
+void TestSceneButtonOfAnEmptySceneStopsEveryTrack() {
+	const bool holdsClip[8] = { false, false, false, false, false, false, false, false };
+	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 1, holdsClip);
+	CHECK(changes.fCount == 8);
+	for (int track = 0; track < 8; ++track) {
+		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, CLauncher::kSelectionStop));
+	}
+}
+
+void TestSceneButtonDoesNothingInSetupMode() {
+	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
+	CHECK(CPress::SceneButton(kClipPicking, 3, holdsClip).fCount == 0);
+	CHECK(CPress::SceneButton(CLauncher::SetupForClipEditing(3, 6), 3, holdsClip).fCount == 0);
+}
+
 } // namespace
 
 int main() {
@@ -109,6 +142,10 @@ int main() {
 	TestClipEditingPatternRow();
 	TestClipEditingUnusedLaunchButtonsDoNothing();
 	TestClipEditingWithoutClipHasNoColourOrPatternControls();
+	TestSceneButtonSelectsItsRowOnEveryTrack();
+	TestSceneButtonStopsTracksWithAnEmptyLaunchButton();
+	TestSceneButtonOfAnEmptySceneStopsEveryTrack();
+	TestSceneButtonDoesNothingInSetupMode();
 
 	return ReportChecks("Press");
 }

@@ -2,11 +2,11 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only on four-bar boundaries so that everything stays in time. Which pattern each launch button plays, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d5, a development build. Requires Reason 14 or later.
+Version 1.0.0d6, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. To the left of the stop buttons is the **setup button**. The back panel has eight CV outputs, one per track.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the stop buttons is the **setup button**. The back panel has eight CV outputs, one per track.
 
 A launch button either holds a **clip** or is **empty**. A clip is one of the Player's patterns 1–8 together with one of fourteen colours. A new device has only empty launch buttons.
 
@@ -29,6 +29,14 @@ A stop button shows whether there is anything to stop, as in Ableton Live:
 | Vibrant red | A clip is active; clicking stops it. |
 | Flashing | Clicked, the track stops at the next switch point. |
 
+## Scenes and the interval meter
+
+Clicking a scene button has the same effect as clicking all eight launch buttons of its scene: every track with a clip in that row is queued to play it, and every track whose launch button in that row is empty is queued to stop. Scene buttons launch in launch mode only.
+
+A scene button does not show which scene was launched; the launch buttons do that. Together, the eight scene buttons are the **interval meter**, which shows how far the song position is into the current switch interval. Each stands for one eighth of the interval, a **segment**: two beats in 4/4. They light up from the bottom, the lower five in green, the next two in yellow and the top one in red, so a red button means that the switch point is less than a segment away. At the switch point the meter starts again with the bottom button.
+
+The meter follows the song position whether the song plays or not, and in setup mode too. Before the start of the song, all scene buttons are unlit.
+
 ## Connecting a track
 
 1. Put a Player device (for example PolyStep Sequencer) and its instrument in a Combinator.
@@ -40,7 +48,7 @@ A clip with pattern N on that track now selects pattern N, and the stop button s
 
 ## Setting up clips
 
-Click the setup button to enter **setup mode**. Tracks go on playing and the stop buttons go on working; only launching from the grid is unavailable.
+Click the setup button to enter **setup mode**. Tracks go on playing, the stop buttons go on working and the interval meter goes on running; only launching, from the grid or the scene buttons, is unavailable.
 
 1. **Clip picking.** Every launch button flashes: in its clip's colour, or in white if it is empty. Click the one you want to set up.
 2. **Clip editing.** The grid now shows the settings of that one launch button:
@@ -90,6 +98,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Selection` (8 items) | Input and output | 0 = stop, 1–8 = clip in that row |
 | `Track N Stop Light` (8 items) | Output only | 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing |
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
+| `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green |
 | `Track N Clip M Present` (64 items) | Input and output | 0 = empty, 1 = holds a clip |
 | `Track N Clip M Pattern` (64 items) | Input and output | 0–7 for patterns 1–8 |
 | `Track N Clip M Colour` (64 items) | Input and output | 0–13 for white to pink |
@@ -97,7 +106,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 
 A light is what the launch button shows on the panel, in launch mode and in setup mode alike, so a surface that shows the lights mirrors the panel. "Flashing" is one steady value; the surface flashes by itself.
 
-The output-only items can be used from a Remote map, but they do not appear in "Edit Remote Override Mapping". A codec has to translate a pad press into the property change the same press makes on the panel; see the decision records [0001](docs/adr/0001-selection-in-state-out.md) and [0002](docs/adr/0002-realtime-computes-lights-writers-change-clips.md) for why, and `Press.h` for the rules.
+The output-only items can be used from a Remote map, but they do not appear in "Edit Remote Override Mapping". A codec has to translate a pad press into the property change the same press makes on the panel; see the decision records [0001](docs/adr/0001-selection-in-state-out.md) and [0002](docs/adr/0002-realtime-computes-lights-writers-change-clips.md) for why, and `Press.h` for the rules. A scene button has no Remote item for presses: a codec writes the eight selections itself, see [0004](docs/adr/0004-a-scene-press-writes-eight-selections.md).
 
 Launchnik does not respond to MIDI CC messages.
 
@@ -109,7 +118,8 @@ Launchnik does not respond to MIDI CC messages.
 - Clip editing does not show which launch button is being edited.
 - A clip that was switched off while its track's selection still named it is queued again as soon as it is switched back on.
 - Launch buttons have no context menu for automation or Remote; use a stop button's menu to reach the track's selection.
-- There is no scene launch and no stop-all button.
+- There is no stop-all button.
+- A scene launch is recorded as automation of each track's selection, not as one event.
 - Patches cannot be loaded or saved from a control surface.
 - Only one patch besides the empty one is included; the Shop expects more.
 
@@ -123,10 +133,14 @@ python3 build45.py local45 Testing
 
 This compiles the device and installs it for Reason Recon. Restart Recon to pick up a new build.
 
-The film strip of the launch buttons is built from the source graphics in `RE2D_Launchnik_Graphics`, that of the stop buttons from the stock button image (both need ImageMagick):
+The film strips of the launch buttons and the scene buttons are built from the source graphics in `RE2D_Launchnik_Graphics`, that of the stop buttons from the stock button image (all need ImageMagick):
 
 ```bash
 ./tools/make-launch-button-strip.sh
+```
+
+```bash
+./tools/make-scene-button-strip.sh
 ```
 
 ```bash
@@ -165,14 +179,14 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `Launcher.h`, `Launcher.cpp` | The rules: when a track switches, what it emits, what every button shows. Plain C++ with no dependency on the SDK. |
 | `Press.h`, `Press.cpp` | What a press of a button changes, in launch mode and in setup mode. Also free of the SDK. |
 | `Launchnik.h`, `Launchnik.cpp` | Connects the rules to the host: reads selections, clips, the setup state and the transport, writes states, lights, lamps and CV. |
-| `Panel.h`, `Panel.cpp` | The click handler of the launch buttons and the setup button. |
+| `Panel.h`, `Panel.cpp` | The click handler of the launch buttons, the scene buttons and the setup button. |
 | `Tags.h` | The property tags shared by the two. |
 | `JukeBoxExports.cpp` | Entry points the host calls. |
 | `motherboard_def.lua` | Properties, Remote items, automation and CV outputs. |
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
 | `GUI2D/` | Panel layout and the graphics it uses. |
 | `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
-| `tools/` | Scripts that build the film strips of the launch and stop buttons. |
+| `tools/` | Scripts that build the film strips of the launch, scene and stop buttons. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |

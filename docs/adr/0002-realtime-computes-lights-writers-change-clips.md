@@ -18,3 +18,5 @@ We chose this because the host leaves no alternative for input. Only two parties
 - Remote gains an input item for every clip setting, for the setup state and for the picked launch button. A Remote map could use them to change a clip without setup mode; nothing requires it to.
 - The 72 state items of the launch and stop buttons (off, queued, active) are replaced by light items. "Flashing" is one steady value of a light, so a control surface flashes on its own clock and may be out of step with the panel.
 - A codec can only write while it handles MIDI from its surface, which is enough here: every write answers a press.
+
+Amended by [0004](0004-a-scene-press-writes-eight-selections.md): a press may change more than one property, since a scene button writes the selection of every track. The scene buttons' lights are computed by the realtime code like all others.
