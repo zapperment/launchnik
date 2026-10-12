@@ -64,7 +64,7 @@ The normal way of working, in which clicking a **launch button** selects its **c
 _Avoid_: Performance mode, play mode, normal mode
 
 **Setup mode**:
-The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing, **stop buttons** go on working and the **interval meter** goes on running while it lasts; **scene buttons** launch nothing.
+The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing, **stop buttons** go on working and the **interval meter** goes on running while it lasts; **scene buttons** launch nothing. The logo on the panel is green for as long as it lasts.
 _Avoid_: Edit mode, config mode
 
 **Setup button**:

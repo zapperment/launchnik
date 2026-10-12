@@ -87,7 +87,7 @@ document_properties.setup = jbox.number{
 }
 add_remote_item("setup", "Setup")
 
--- Whether the setup button is lit.
+-- Whether the setup button is lit and the logo is green.
 rt_properties.setup_lamp = jbox.boolean{
 	property_tag = 51,
 	default = false,

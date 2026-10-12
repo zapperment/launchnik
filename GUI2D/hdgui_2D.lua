@@ -4,9 +4,14 @@ local TRACK_COUNT = 8
 local ROW_COUNT = 8
 
 -- The header is the same on the front and the folded front: the tape, the
--- name of the patch and the buttons for browsing and saving patches.
+-- name of the patch, the buttons for browsing and saving patches, and the
+-- logo, which turns green in setup mode.
 local function header_widgets()
 	return {
+		jbox.sequence_meter{
+			graphics = { node = "Logo" },
+			value = "/custom_properties/setup_lamp",
+		},
 		jbox.device_name{
 			graphics = { node = "DeviceName" },
 		},

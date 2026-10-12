@@ -48,7 +48,7 @@ A clip with pattern N on that track now selects pattern N, and the stop button s
 
 ## Setting up clips
 
-Click the setup button to enter **setup mode**. Tracks go on playing, the stop buttons go on working and the interval meter goes on running; only launching, from the grid or the scene buttons, is unavailable.
+Click the setup button to enter **setup mode**; the logo in the header turns green for as long as it lasts. Tracks go on playing, the stop buttons go on working and the interval meter goes on running; only launching, from the grid or the scene buttons, is unavailable.
 
 1. **Clip picking.** Every launch button flashes: in its clip's colour, or in white if it is empty. Click the one you want to set up.
 2. **Clip editing.** The grid now shows the settings of that one launch button:
@@ -147,6 +147,12 @@ The film strips of the launch buttons and the scene buttons are built from the s
 ./tools/make-stop-button-strip.sh
 ```
 
+The logo's two frames, light grey and green, are built from the two versions of the lettering:
+
+```bash
+./tools/make-logo-strip.sh
+```
+
 After changing anything in `GUI2D`, regenerate the panel graphics first, from the `RE2DRender` directory of the SDK download:
 
 ```bash
@@ -186,7 +192,7 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
 | `GUI2D/` | Panel layout and the graphics it uses. |
 | `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
-| `tools/` | Scripts that build the film strips of the launch, scene and stop buttons. |
+| `tools/` | Scripts that build the film strips of the launch, scene and stop buttons and of the logo. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |

@@ -12,7 +12,8 @@ local STOP_LEFT = 974
 local STOP_TOP = 2218
 
 -- The header is the strip above the divider on the front panel. It is as high
--- as the folded panel, so the logo sits at the same place on both.
+-- as the folded panel, so the logo sits at the same place on both. It is a
+-- lamp with two frames: light grey in launch mode, green in setup mode.
 local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
@@ -46,7 +47,7 @@ front = {
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo" },
+		{ path = "Logo_2frames", frames = 2 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -160,7 +161,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo" },
+		{ path = "Logo_2frames", frames = 2 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
