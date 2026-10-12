@@ -111,7 +111,7 @@ folded_front = {
 
 folded_back = {
 	Bg = {
-		{ path = "Panel_Folded_Back" },
+		{ path = "Panel_Folded_Back_dark" },
 	},
 	DeviceName = {
 		offset = { 400, 42 },
