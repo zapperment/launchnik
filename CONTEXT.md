@@ -20,6 +20,10 @@ _Avoid_: Inactive, disabled, cleared
 One of fourteen hues that mark a **clip** so that it can be recognised: white, red, orange, yellow, lime, green, turquoise, cyan, light blue, blue, dark blue, purple, fuchsia, pink (numbered 1 to 14 in that order). It has no effect on what the clip does. A new clip has the colour of its track: red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8.
 _Avoid_: Tint, label
 
+**Patch**:
+What all 64 **launch buttons** hold, saved as a file that can be loaded into any Launchnik, in any song. It holds the **clips** only, not what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
+_Avoid_: Template, preset, layout
+
 **Unlit**, **dim**, **vibrant**:
 The three ways a **launch button** can look: showing no **colour** at all, showing a colour at low brightness, or showing it at full brightness. A flashing launch button alternates between dim and vibrant. A **stop button** looks the same three ways, always in red.
 _Avoid_: Inactive (for unlit), bright, lit

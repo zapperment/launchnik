@@ -3,11 +3,27 @@ format_version = "2.0"
 local TRACK_COUNT = 8
 local ROW_COUNT = 8
 
-local front_widgets = {
-	jbox.device_name{
-		graphics = { node = "DeviceName" },
-	},
-}
+-- The header is the same on the front and the folded front: the tape, the
+-- name of the patch and the buttons for browsing and saving patches.
+local function header_widgets()
+	return {
+		jbox.device_name{
+			graphics = { node = "DeviceName" },
+		},
+		jbox.patch_name{
+			graphics = { node = "PatchName" },
+			fg_color = { 225, 225, 220 },
+			loader_alt_color = { 120, 120, 115 },
+			center = false,
+			text_style = "Bold LCD font",
+		},
+		jbox.patch_browse_group{
+			graphics = { node = "PatchBrowseGroup" },
+		},
+	}
+end
+
+local front_widgets = header_widgets()
 
 -- Lamps first, whatever takes the clicks afterwards: later widgets are on top.
 table.insert(front_widgets, jbox.sequence_meter{
@@ -82,11 +98,7 @@ back = jbox.panel{
 
 folded_front = jbox.panel{
 	graphics = { node = "Bg" },
-	widgets = {
-		jbox.device_name{
-			graphics = { node = "DeviceName" },
-		},
-	},
+	widgets = header_widgets(),
 }
 
 folded_back = jbox.panel{

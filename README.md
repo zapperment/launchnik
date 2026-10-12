@@ -2,7 +2,7 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only on four-bar boundaries so that everything stays in time. Which pattern each launch button plays, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d4, a development build. Requires Reason 14 or later.
+Version 1.0.0d5, a development build. Requires Reason 14 or later.
 
 ## The panel
 
@@ -60,6 +60,14 @@ Changing the pattern of the clip that is playing takes effect at the next switch
 
 Clips are saved with the song, and each change is a step in the undo history. Setup mode itself is not saved: a song always opens in launch mode.
 
+## Patches
+
+A **patch** is what all 64 launch buttons hold, saved as a file, so that the same set of clips can be used in any song. The header of the panel, folded or not, shows the name of the patch and Reason's buttons for stepping through patches, browsing and saving.
+
+A patch holds the clips only. Loading one does not change what any track has selected, so it can be loaded while the song plays: a clip whose pattern changes switches at the next switch point, and a track whose selected launch button is now empty stops there.
+
+Launchnik comes with two patches: "Init Patch", in which every launch button is empty and which a new device starts with, and "All Patterns", in which every launch button holds a clip, with patterns 1–8 in rows 1–8 and each track in its own colour.
+
 ## How launching works
 
 - The song is divided into **switch intervals** of four bars, counted from the start of the song. The moment one ends and the next begins is a **switch point** (bars 1, 5, 9, 13 and so on in 4/4).
@@ -102,6 +110,8 @@ Launchnik does not respond to MIDI CC messages.
 - A clip that was switched off while its track's selection still named it is queued again as soon as it is switched back on.
 - Launch buttons have no context menu for automation or Remote; use a stop button's menu to reach the track's selection.
 - There is no scene launch and no stop-all button.
+- Patches cannot be loaded or saved from a control surface.
+- Only one patch besides the empty one is included; the Shop expects more.
 
 ## Building
 
@@ -164,6 +174,7 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
 | `tools/` | Scripts that build the film strips of the launch and stop buttons. |
 | `Resources/English/` | Texts shown by the host. |
+| `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |
 | `CONTEXT.md` | Glossary of the terms used in the code and in this document. |
 | `docs/adr/` | Records of design decisions. |

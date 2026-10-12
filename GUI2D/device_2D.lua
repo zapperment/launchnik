@@ -15,6 +15,13 @@ local STOP_TOP = 2218
 -- as the folded panel, so the logo sits at the same place on both.
 local LOGO_OFFSET = { 3385, 20 }
 
+-- The tape, the patch name display and the patch browse group also sit at the
+-- same place on both. The name itself is drawn by the host inside the area.
+local TAPE_OFFSET = { 180, 42 }
+local PATCH_DISPLAY_OFFSET = { 620, 30 }
+local PATCH_NAME_OFFSET = { 635, 50 }
+local PATCH_BROWSE_OFFSET = { 1345, 20 }
+
 -- The upper screws sit below the divider, which ends at 160 pixels. The left
 -- screws line up with the fold button that Reason draws in the header, and
 -- the right ones are as far from their edge.
@@ -42,8 +49,20 @@ front = {
 		{ path = "Logo" },
 	},
 	DeviceName = {
-		offset = { 180, 42 },
+		offset = TAPE_OFFSET,
 		{ path = "TapeHorz" },
+	},
+	PatchDisplay = {
+		offset = PATCH_DISPLAY_OFFSET,
+		{ path = "Display_Patch_Name" },
+	},
+	PatchName = {
+		offset = PATCH_NAME_OFFSET,
+		{ path = "Patch_Name_Area" },
+	},
+	PatchBrowseGroup = {
+		offset = PATCH_BROWSE_OFFSET,
+		{ path = "PatchBrowseGroup" },
 	},
 }
 
@@ -127,8 +146,20 @@ folded_front = {
 		{ path = "Logo" },
 	},
 	DeviceName = {
-		offset = { 180, 42 },
+		offset = TAPE_OFFSET,
 		{ path = "TapeHorz" },
+	},
+	PatchDisplay = {
+		offset = PATCH_DISPLAY_OFFSET,
+		{ path = "Display_Patch_Name" },
+	},
+	PatchName = {
+		offset = PATCH_NAME_OFFSET,
+		{ path = "Patch_Name_Area" },
+	},
+	PatchBrowseGroup = {
+		offset = PATCH_BROWSE_OFFSET,
+		{ path = "PatchBrowseGroup" },
 	},
 }
 
