@@ -12,8 +12,8 @@ local function header_widgets()
 		},
 		jbox.patch_name{
 			graphics = { node = "PatchName" },
-			fg_color = { 255, 0, 255 },
-			loader_alt_color = { 130, 0, 130 },
+			fg_color = { 0, 179, 179 },
+			loader_alt_color = { 0, 90, 90 },
 			center = false,
 			text_style = "Bold LCD font",
 		},
