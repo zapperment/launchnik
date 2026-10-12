@@ -10,6 +10,17 @@ local ROW_PITCH = 235
 local STOP_LEFT = 974
 local STOP_TOP = 2113
 
+-- The header is the strip above the divider on the front panel. It is as high
+-- as the folded panel, so the logo sits at the same place on both.
+local LOGO_OFFSET = { 3385, 20 }
+
+-- The upper screws sit below the divider, which ends at 160 pixels; the lower
+-- screws are as far from the bottom edge as the upper ones are from the top.
+local PANEL_HEIGHT = 2415
+local SCREW_SIZE = 95
+local SCREW_TOP = 198
+local SCREW_BOTTOM = PANEL_HEIGHT - SCREW_TOP - SCREW_SIZE
+
 front = {
 	Bg = {
 		{ path = "Panel_Front_7U_dark" },
@@ -18,12 +29,12 @@ front = {
 		offset = { 0, 0 },
 		{ path = "Labels_Front" },
 	},
-	ScrewTopLeft = { offset = { 38, 38 }, { path = "Screw_17_1frames" } },
-	ScrewTopRight = { offset = { 3637, 38 }, { path = "Screw_17_1frames" } },
-	ScrewBottomLeft = { offset = { 38, 2282 }, { path = "Screw_17_1frames" } },
-	ScrewBottomRight = { offset = { 3637, 2282 }, { path = "Screw_17_1frames" } },
+	ScrewTopLeft = { offset = { 38, SCREW_TOP }, { path = "Screw_17_1frames" } },
+	ScrewTopRight = { offset = { 3637, SCREW_TOP }, { path = "Screw_17_1frames" } },
+	ScrewBottomLeft = { offset = { 38, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
+	ScrewBottomRight = { offset = { 3637, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
 	Logo = {
-		offset = { 2960, 160 },
+		offset = LOGO_OFFSET,
 		{ path = "Logo" },
 	},
 	DeviceName = {
@@ -101,7 +112,11 @@ end
 
 folded_front = {
 	Bg = {
-		{ path = "Panel_Folded_Front" },
+		{ path = "Panel_Folded_Front_dark" },
+	},
+	Logo = {
+		offset = LOGO_OFFSET,
+		{ path = "Logo" },
 	},
 	DeviceName = {
 		offset = { 400, 42 },
