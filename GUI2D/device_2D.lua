@@ -123,7 +123,7 @@ folded_front = {
 		{ path = "Logo" },
 	},
 	DeviceName = {
-		offset = { 400, 42 },
+		offset = { 180, 42 },
 		{ path = "TapeHorz" },
 	},
 }
