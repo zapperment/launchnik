@@ -143,11 +143,11 @@ for track = 1, TRACK_COUNT do
 end
 
 -- The back button stands above the first track, centred in the width of a
--- launch button, with 70 pixels between the button as drawn and the number of
--- the track. It is a lamp showing one of nine frames, with a transparent
--- display of the same size on top.
+-- launch button and as far above it as the launch buttons are apart, all as
+-- drawn: 122 pixels. It is a lamp showing one of nine frames, with a
+-- transparent display of the same size on top.
 local BACK_LEFT = LAUNCH_LEFT + 38
-local BACK_TOP = 266
+local BACK_TOP = 280
 front.lamp_back = {
 	offset = { BACK_LEFT, BACK_TOP },
 	{ path = "Back_Button_9frames", frames = 9 },

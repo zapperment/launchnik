@@ -87,7 +87,7 @@ What a **launch button** is showing at the moment, in either mode: **unlit**, or
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Label**:
-The caption printed below a **launch button** or **scene button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour** or in white, and barely visible dark grey otherwise. The captions SETUP and STOP and the numbers of the tracks and scenes are not labels: they are always white.
+The caption printed below a **launch button** or **scene button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour** or in white, and barely visible dark grey otherwise. The captions SETUP and STOP are not labels: they are always white.
 _Avoid_: Caption, legend, text, tag
 
 **Mode colour**:
