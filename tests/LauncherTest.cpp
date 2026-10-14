@@ -521,7 +521,7 @@ void TestFlashingGoesOnWhileStopped() {
 	}
 }
 
-void TestClipEditingOfEmptyLaunchButtonShowsOnlyToggleAndBack() {
+void TestClipEditingOfEmptyLaunchButtonShowsOnlyToggle() {
 	CLauncher launcher;
 	FillGrid(launcher);
 	launcher.SetClipPresent(3, 6, false);
@@ -530,12 +530,8 @@ void TestClipEditingOfEmptyLaunchButtonShowsOnlyToggleAndBack() {
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 			const bool isToggle = track == 7 && row == 1;
-			const bool isBack = track == 7 && row == 8;
 			if (isToggle) {
 				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kDim, CLauncher::kColourRed));
-			}
-			else if (isBack) {
-				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kDim, CLauncher::kColourBlue));
 			}
 			else {
 				CHECK(IsUnlit(launcher.GetLight(track, row)));
@@ -552,7 +548,8 @@ void TestClipEditingShowsColoursAndPatterns() {
 	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 6));
 
 	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourGreen));
-	CHECK(IsLight(launcher.GetLight(7, 8), CLauncher::kDim, CLauncher::kColourBlue));
+	// The back button has taken over from the launch button in row 8, column 8.
+	CHECK(IsUnlit(launcher.GetLight(7, 8)));
 
 	// Row 2 holds white to turquoise, row 3 cyan to pink, in columns 1 to 7.
 	for (int column = 0; column < 7; ++column) {
@@ -926,8 +923,7 @@ void TestModeColourFollowsTheSetupStep() {
 	CHECK(launcher.GetModeColour() == CLauncher::kModeWhite);
 }
 
-// Frames of the launch labels' film strip: unlit, SET/CLEAR and BACK lit, all
-// lit.
+// Frames of the launch labels' film strip: unlit, SET/CLEAR lit, all lit.
 void TestLaunchLabelsAreLitOnlyInClipEditing() {
 	CLauncher launcher;
 	launcher.SetClipPresent(2, 4, true);
@@ -943,6 +939,17 @@ void TestLaunchLabelsAreLitOnlyInClipEditing() {
 	CHECK(launcher.GetLaunchLabelsFrame() == 2);
 	launcher.SetClipPresent(2, 4, false);
 	CHECK(launcher.GetLaunchLabelsFrame() == 1);
+}
+
+void TestBackButtonShowsTheStepItGoesBackFrom() {
+	CLauncher launcher;
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantWhite);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantGreen);
+	launcher.SetSetup(CLauncher::kSetupLaunchMode);
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
 }
 
 // Frames of the scene labels' film strip: unlit, white, green.
@@ -998,7 +1005,7 @@ int main() {
 	TestDefaultColourFollowsTheTrack();
 	TestClipPickingFlashesEveryLaunchButton();
 	TestFlashingGoesOnWhileStopped();
-	TestClipEditingOfEmptyLaunchButtonShowsOnlyToggleAndBack();
+	TestClipEditingOfEmptyLaunchButtonShowsOnlyToggle();
 	TestClipEditingShowsColoursAndPatterns();
 	TestLeavingSetupModeShowsTheEditedClip();
 	TestButtonIndexAndSetupNumbering();
@@ -1024,6 +1031,7 @@ int main() {
 	TestOutOfRangeLengthIsIgnored();
 	TestModeColourFollowsTheSetupStep();
 	TestLaunchLabelsAreLitOnlyInClipEditing();
+	TestBackButtonShowsTheStepItGoesBackFrom();
 	TestSceneLabelsShowTheLength();
 
 	return ReportChecks("Launcher");

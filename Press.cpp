@@ -29,9 +29,6 @@ CPress::TChange CPress::LaunchButton(int iSetup, int iTrack, int iRow, bool iPre
 	if (iTrack == CLauncher::kEditingToggleTrack && iRow == CLauncher::kEditingToggleRow) {
 		return MakeChange(kClipPresent, picked, iPickedHoldsClip ? 0 : 1);
 	}
-	if (iTrack == CLauncher::kEditingBackTrack && iRow == CLauncher::kEditingBackRow) {
-		return MakeChange(kSetup, 0, CLauncher::kSetupClipPicking);
-	}
 	// The colour and pattern controls are not there without a clip.
 	if (!iPickedHoldsClip) {
 		return kNoChange;
@@ -71,4 +68,12 @@ CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsCl
 CPress::TChange CPress::SetupButton(int iSetup) {
 	const bool inSetupMode = iSetup != CLauncher::kSetupLaunchMode;
 	return MakeChange(kSetup, 0, inSetupMode ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);
+}
+
+CPress::TChange CPress::BackButton(int iSetup) {
+	if (iSetup == CLauncher::kSetupLaunchMode) {
+		return kNoChange;
+	}
+	const bool inClipPicking = iSetup == CLauncher::kSetupClipPicking;
+	return MakeChange(kSetup, 0, inClipPicking ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);
 }

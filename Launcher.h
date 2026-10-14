@@ -30,7 +30,6 @@ class CLauncher {
 	public: static const int kColourRed = 1;
 	public: static const int kColourYellow = 3;
 	public: static const int kColourGreen = 5;
-	public: static const int kColourBlue = 9;
 	public: static const int kColourPink = 13;
 
 	// The setup state is one number: launch mode, clip picking, or clip editing
@@ -46,8 +45,6 @@ class CLauncher {
 	public: static const int kEditingFirstColourRow = 2;
 	public: static const int kEditingColoursPerRow = 7;
 	public: static const int kEditingPatternRow = 5;
-	public: static const int kEditingBackTrack = 7;
-	public: static const int kEditingBackRow = 8;
 
 	// The length of the switch interval is one of eight settings: immediate,
 	// one beat, half a bar, then 1, 2, 4, 8 and 16 bars. In clip picking the
@@ -183,8 +180,17 @@ class CLauncher {
 	};
 	public: EModeColour GetModeColour() const;
 
+	// The frame of the back button's film strip to show: dark in launch mode,
+	// vibrant white in clip picking, vibrant green in clip editing. The strip
+	// has the frames of the scene button's source image, in its order.
+	public: static const int kBackButtonFrameCount = 9;
+	public: static const int kBackButtonDark = 0;
+	public: static const int kBackButtonVibrantGreen = 3;
+	public: static const int kBackButtonVibrantWhite = 7;
+	public: int GetBackButtonFrame() const;
+
 	// The frame of the launch labels' film strip to show: 0 unlit, 1 SET/CLEAR
-	// and BACK lit, 2 all lit. They are lit, in yellow, only in clip editing,
+	// lit, 2 all lit. They are lit, in yellow, only in clip editing,
 	// and the labels of colours and patterns only while the picked launch
 	// button holds a clip.
 	public: static const int kLaunchLabelsFrameCount = 3;

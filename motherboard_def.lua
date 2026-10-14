@@ -9,6 +9,7 @@ format_version = "3.0"
 --   length of the switch interval:    52
 --   film strip frame of the logo:     53
 --   film strip frame of the launch labels: 54
+--   film strip frame of the back button:   55
 --   film strip frame of the label of the scene button of row r: 60 + r
 --   selection of track t:            100 + t
 --   light of the stop button:       1000 + 10 * t
@@ -123,7 +124,7 @@ rt_properties.setup_lamp = jbox.boolean{
 -- The labels and the logo, computed by the realtime code. The logo shows the
 -- mode colour: 0 = white (launch mode), 1 = green (clip picking), 2 = yellow
 -- (clip editing). The labels of the launch buttons are lit, in yellow, only in
--- clip editing: 0 = unlit, 1 = SET/CLEAR and BACK lit, 2 = all lit, the
+-- clip editing: 0 = unlit, 1 = SET/CLEAR lit, 2 = all lit, the
 -- colours and patterns only while the picked launch button holds a clip. A
 -- scene button's label is 0 = unlit, 1 = white, 2 = green.
 rt_properties.logo_frame = jbox.number{
@@ -140,6 +141,17 @@ rt_properties.launch_labels_frame = jbox.number{
 	steps = 3,
 	ui_name = jbox.ui_text("text_launch_labels"),
 	ui_type = plain_number(2),
+}
+
+-- The back button's frame, computed by the realtime code: 0 = dark (launch
+-- mode), 7 = vibrant white (clip picking), 3 = vibrant green (clip editing).
+-- Not a Remote item: a codec can tell it from the setup state.
+rt_properties.back_button_frame = jbox.number{
+	property_tag = 55,
+	default = 0,
+	steps = 9,
+	ui_name = jbox.ui_text("text_back_button"),
+	ui_type = plain_number(8),
 }
 
 for scene = 1, ROW_COUNT do

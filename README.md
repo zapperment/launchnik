@@ -6,7 +6,7 @@ Version 1.0.0d8, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the stop buttons is the **setup button**. The back panel has eight CV outputs, one per track.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the stop buttons is the **setup button**, and above the first track the **back button**. The back panel has eight CV outputs, one per track.
 
 A launch button either holds a **clip** or is **empty**. A clip is one of the Player's patterns 1–8 together with one of fourteen colours. A new device has only empty launch buttons.
 
@@ -58,11 +58,10 @@ Click the setup button to enter **setup mode**; the logo in the header turns gre
 | Row 1, column 8 | Switches the clip on and off: vibrant green with a clip, dim red without. |
 | Rows 2 and 3, columns 1–7 | The colour: white, red, orange, yellow, lime, green, turquoise in row 2; cyan, light blue, blue, dark blue, purple, fuchsia, pink in row 3. The chosen one is vibrant. |
 | Row 5 | The pattern, 1–8, in pink. The chosen one is vibrant. |
-| Row 8, column 8 | Dim blue: back to clip picking. |
 
 The colour and pattern rows only show while the launch button holds a clip. A new clip plays the pattern of its row and has the colour of its track: red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8. A clip that is switched off and on again comes back with its pattern and colour.
 
-Click the setup button again to return to launch mode, from either step.
+Click the setup button again to return to launch mode, from either step. The back button above the first track goes back one step instead: vibrant green in clip editing, it returns to clip picking; vibrant white in clip picking, it returns to launch mode. In launch mode it is dark and does nothing.
 
 ## Setting the length of the switch interval
 

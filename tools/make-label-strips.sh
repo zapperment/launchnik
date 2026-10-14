@@ -3,7 +3,7 @@
 # buttons (see "Label" in CONTEXT.md):
 #
 # - GUI2D/Labels_Launch_3frames.png holds every label of the launch buttons,
-#   placed as on the panel: all unlit, then SET/CLEAR and BACK lit in yellow,
+#   placed as on the panel: all unlit, then SET/CLEAR lit in yellow,
 #   then all lit in yellow. The labels of colours and patterns stay unlit
 #   while the launch button being edited is empty.
 # - GUI2D/Label_Scene<n>_3frames.png holds the label of scene button n:
@@ -68,7 +68,6 @@ setting 5 5 PATTERN|5
 setting 6 5 PATTERN|6
 setting 7 5 PATTERN|7
 setting 8 5 PATTERN|8
-control 8 8 BACK
 "
 
 # Draws every label of the launch buttons, the controls in one colour and the

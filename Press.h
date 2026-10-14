@@ -22,7 +22,7 @@ class CPress {
 	};
 
 	// One property and its new value. A press of a launch button, a stop
-	// button or the setup button never changes more than one.
+	// button, the setup button or the back button never changes more than one.
 	public: struct TChange {
 		EProperty fProperty;
 		int fIndex;
@@ -45,6 +45,10 @@ class CPress {
 	public: static TChange StopButton(int iTrack);
 
 	public: static TChange SetupButton(int iSetup);
+
+	// Goes back one step of setup mode: from clip editing to clip picking, from
+	// clip picking to launch mode. In launch mode it does nothing.
+	public: static TChange BackButton(int iSetup);
 
 	// In launch mode, a scene button means what the eight launch buttons of
 	// its scene mean, track by track. In clip picking it chooses the length it

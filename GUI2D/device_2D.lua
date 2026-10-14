@@ -109,7 +109,7 @@ front.click_scenes = {
 
 -- The labels sit centred below their buttons, their tops 20 pixels below the
 -- buttons. Those of the launch buttons are one lamp whose film strip starts
--- 25 pixels left of the grid: all unlit, SET/CLEAR and BACK in yellow, or all
+-- 25 pixels left of the grid: all unlit, SET/CLEAR in yellow, or all
 -- in yellow (see tools/make-label-strips.sh). Each scene button has a lamp of its own, 250
 -- pixels wide and unlit, white or green.
 local LABEL_GAP = 20
@@ -141,6 +141,21 @@ for track = 1, TRACK_COUNT do
 		{ path = "ClickArea_Stop_2frames", frames = 2 },
 	}
 end
+
+-- The back button stands above the first track, centred in the width of a
+-- launch button, with 20 pixels between the button as drawn and the number of
+-- the track. It is a lamp showing one of nine frames, with a transparent
+-- display of the same size on top.
+local BACK_LEFT = LAUNCH_LEFT + 38
+local BACK_TOP = 316
+front.lamp_back = {
+	offset = { BACK_LEFT, BACK_TOP },
+	{ path = "Back_Button_9frames", frames = 9 },
+}
+front.click_back = {
+	offset = { BACK_LEFT, BACK_TOP },
+	{ size = { 130, 135 } },
+}
 
 -- The setup button is a lamp with a transparent display on top, like the grid.
 front.lamp_setup = {

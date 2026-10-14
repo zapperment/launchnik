@@ -101,6 +101,11 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		Apply(CPress::SetupButton(setup), customProps, iArgs);
 		return;
 	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_BackButton) {
+		iArgs.fConsumeFlag = true;
+		Apply(CPress::BackButton(setup), customProps, iArgs);
+		return;
+	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
 		int scene = 0;
 		if (!FindSceneButton(iArgs.fStartState.fPoint, scene)) {

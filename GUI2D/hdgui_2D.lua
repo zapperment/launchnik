@@ -56,6 +56,11 @@ for scene = 1, ROW_COUNT do
 end
 
 table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "lamp_back" },
+	value = "/custom_properties/back_button_frame",
+})
+
+table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "labels_launch" },
 	value = "/custom_properties/launch_labels_frame",
 })
@@ -74,8 +79,8 @@ for track = 1, TRACK_COUNT do
 	})
 end
 
--- Clicks on the launch buttons, the scene buttons and the setup button mean
--- different things in launch mode and in setup mode, so they go to the click
+-- Clicks on the launch buttons, the scene buttons, the setup button and the
+-- back button mean different things in launch mode and in setup mode, so they go to the click
 -- handler in Panel.cpp, which tells the three displays apart by display_id. The handler reads and
 -- writes properties that are not listed here; the setup state is listed only
 -- because a display needs at least one value.
@@ -101,6 +106,14 @@ table.insert(front_widgets, jbox.custom_display{
 	display_width_pixels = 70,
 	display_height_pixels = 75,
 	display_id = 2,
+	values = { "/custom_properties/setup" },
+})
+table.insert(front_widgets, jbox.custom_display{
+	graphics = { node = "click_back" },
+	background = "transparent",
+	display_width_pixels = 130,
+	display_height_pixels = 135,
+	display_id = 4,
 	values = { "/custom_properties/setup" },
 })
 

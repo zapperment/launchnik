@@ -28,6 +28,7 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenSetupLamp;
 	private: TJBox_Int32 fWrittenLogoFrame;
 	private: TJBox_Int32 fWrittenLaunchLabelsFrame;
+	private: TJBox_Int32 fWrittenBackButtonFrame;
 	private: TJBox_Int32 fWrittenSceneLabelFrames[CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenStopLights[CLauncher::kTrackCount];
 	private: TJBox_Int32 fWrittenStopLightFrames[CLauncher::kTrackCount];

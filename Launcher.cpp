@@ -254,9 +254,6 @@ CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
 	if (iTrack == kEditingToggleTrack && iRow == kEditingToggleRow) {
 		return clip.fPresent ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
 	}
-	if (iTrack == kEditingBackTrack && iRow == kEditingBackRow) {
-		return MakeLight(kDim, kColourBlue);
-	}
 	// The colour and pattern controls only show while there is a clip to set up.
 	if (!clip.fPresent) {
 		return kUnlitLight;
@@ -332,6 +329,13 @@ CLauncher::EModeColour CLauncher::GetModeColour() const {
 		return kModeWhite;
 	}
 	return fSetup == kSetupClipPicking ? kModeGreen : kModeYellow;
+}
+
+int CLauncher::GetBackButtonFrame() const {
+	if (fSetup == kSetupLaunchMode) {
+		return kBackButtonDark;
+	}
+	return fSetup == kSetupClipPicking ? kBackButtonVibrantWhite : kBackButtonVibrantGreen;
 }
 
 int CLauncher::GetLaunchLabelsFrame() const {

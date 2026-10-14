@@ -70,6 +70,10 @@ _Avoid_: Edit mode, config mode
 **Setup button**:
 The button to the left of the **stop buttons** that switches between **launch mode** and **setup mode**.
 
+**Back button**:
+The button above the first **track** that goes back one step of **setup mode**: from **clip editing** to **clip picking**, and from clip picking to **launch mode**, which in clip picking is what the **setup button** does as well. It is dark in launch mode, where a click does nothing, vibrant white in clip picking and vibrant green in clip editing.
+_Avoid_: Arrow button, left arrow, return button
+
 **Clip picking**:
 The first step of **setup mode**, in which every **launch button** flashes (in its **clip's** **colour**, or in white if it is **empty**) and the user chooses the one to set up. The **scene buttons** flash as well, the one that stands for the current **length** in green and the others in white, and the user may choose a length instead.
 _Avoid_: Clip selection (a **selection** is what a track has chosen to play)
@@ -83,7 +87,7 @@ What a **launch button** is showing at the moment, in either mode: **unlit**, or
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Label**:
-The caption printed below a **launch button** or **scene button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour** or in white, and barely visible dark grey otherwise. The captions SETUP and STOP and the numbers of the tracks and scenes are not labels: they are always white.
+The caption printed below a **launch button** or **scene button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour** or in white, and barely visible dark grey otherwise. The captions SETUP and STOP and the numbers of the tracks and scenes are not labels: they are always white.
 _Avoid_: Caption, legend, text, tag
 
 **Mode colour**:

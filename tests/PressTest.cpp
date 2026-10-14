@@ -53,10 +53,16 @@ void TestClipEditingToggleSwitchesThePickedClip() {
 	CHECK(IsChange(CPress::LaunchButton(editing, 7, 1, false, true), CPress::kClipPresent, picked, 0));
 }
 
-void TestClipEditingBackReturnsToClipPicking() {
+void TestBackButtonGoesBackOneStep() {
+	CHECK(IsNoChange(CPress::BackButton(kLaunchMode)));
+	CHECK(IsChange(CPress::BackButton(kClipPicking), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsChange(CPress::BackButton(CLauncher::SetupForClipEditing(3, 6)), CPress::kSetup, 0, kClipPicking));
+}
+
+void TestClipEditingLastLaunchButtonDoesNothing() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
-	CHECK(IsChange(CPress::LaunchButton(editing, 7, 8, false, true), CPress::kSetup, 0, kClipPicking));
-	CHECK(IsChange(CPress::LaunchButton(editing, 7, 8, false, false), CPress::kSetup, 0, kClipPicking));
+	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 8, false, true)));
+	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 8, false, false)));
 }
 
 void TestClipEditingColourRows() {
@@ -147,7 +153,8 @@ int main() {
 	TestSetupButtonSwitchesBetweenLaunchModeAndClipPicking();
 	TestClipPickingOpensThePressedLaunchButton();
 	TestClipEditingToggleSwitchesThePickedClip();
-	TestClipEditingBackReturnsToClipPicking();
+	TestBackButtonGoesBackOneStep();
+	TestClipEditingLastLaunchButtonDoesNothing();
 	TestClipEditingColourRows();
 	TestClipEditingPatternRow();
 	TestClipEditingUnusedLaunchButtonsDoNothing();
