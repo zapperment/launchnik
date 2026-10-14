@@ -5,12 +5,12 @@ local ROW_COUNT = 8
 
 -- The header is the same on the front and the folded front: the tape, the
 -- name of the patch, the buttons for browsing and saving patches, and the
--- logo, which turns green in setup mode.
+-- logo, which shows the mode colour.
 local function header_widgets()
 	return {
 		jbox.sequence_meter{
 			graphics = { node = "Logo" },
-			value = "/custom_properties/setup_lamp",
+			value = "/custom_properties/logo_frame",
 		},
 		jbox.device_name{
 			graphics = { node = "DeviceName" },
@@ -52,6 +52,17 @@ for scene = 1, ROW_COUNT do
 	table.insert(front_widgets, jbox.sequence_meter{
 		graphics = { node = "lamp_scene" .. scene },
 		value = "/custom_properties/scene" .. scene .. "_light_frame",
+	})
+end
+
+table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "labels_launch" },
+	value = "/custom_properties/launch_labels_frame",
+})
+for scene = 1, ROW_COUNT do
+	table.insert(front_widgets, jbox.sequence_meter{
+		graphics = { node = "label_scene" .. scene },
+		value = "/custom_properties/scene" .. scene .. "_label_frame",
 	})
 end
 

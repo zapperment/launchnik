@@ -16,6 +16,9 @@ texts = {
 	["text_setup_short"] = "Setup",
 	["text_setup_shortest"] = "Set",
 
+	["text_logo"] = "Logo",
+	["text_launch_labels"] = "Launch Button Labels",
+
 	["text_switch_interval"] = "Switch Interval",
 	["text_switch_interval_short"] = "Interval",
 	["text_switch_interval_shortest"] = "Int",
@@ -81,6 +84,7 @@ for scene = 1, 8 do
 	texts[light] = "Scene " .. scene .. " Light"
 	texts[light .. "_short"] = "Sc" .. scene .. " Lgt"
 	texts[light .. "_shortest"] = "SL" .. scene
+	texts["text_scene" .. scene .. "_label"] = "Scene " .. scene .. " Label"
 end
 
 for number = 1, 8 do

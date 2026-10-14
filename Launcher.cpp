@@ -327,6 +327,31 @@ int CLauncher::GetSceneLightFrame(int iScene) const {
 	return 1 + 2 * stripColour + (vibrant ? 1 : 0);
 }
 
+CLauncher::EModeColour CLauncher::GetModeColour() const {
+	if (fSetup == kSetupLaunchMode) {
+		return kModeWhite;
+	}
+	return fSetup == kSetupClipPicking ? kModeGreen : kModeYellow;
+}
+
+int CLauncher::GetLaunchLabelsFrame() const {
+	if (fSetup < kSetupFirstClipEditing) {
+		return 0;
+	}
+	const int picked = fSetup - kSetupFirstClipEditing;
+	return fClips[picked / kRowCount][picked % kRowCount].fPresent ? 2 : 1;
+}
+
+int CLauncher::GetSceneLabelFrame(int iScene) const {
+	if (iScene < 1 || iScene > kRowCount) {
+		return 0;
+	}
+	if (fSetup == kSetupClipPicking) {
+		return 2;
+	}
+	return iScene == SceneForLength(fLength) ? 1 : 0;
+}
+
 double CLauncher::GetCVValue(int iTrack) const {
 	// The Combinator rounds its CV input to the nearest of nine evenly spaced
 	// steps (Off, 1..8), so these values sit in the middle of each step.
