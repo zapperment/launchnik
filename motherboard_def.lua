@@ -10,6 +10,7 @@ format_version = "3.0"
 --   film strip frame of the logo:     53
 --   film strip frame of the launch labels: 54
 --   film strip frame of the back button:   55
+--   film strip frame of its label:         56
 --   film strip frame of the label of the scene button of row r: 60 + r
 --   selection of track t:            100 + t
 --   light of the stop button:       1000 + 10 * t
@@ -152,6 +153,15 @@ rt_properties.back_button_frame = jbox.number{
 	steps = 9,
 	ui_name = jbox.ui_text("text_back_button"),
 	ui_type = plain_number(8),
+}
+
+-- Its label, in the colour of the button: 0 = unlit, 1 = white, 2 = green.
+rt_properties.back_label_frame = jbox.number{
+	property_tag = 56,
+	default = 0,
+	steps = 3,
+	ui_name = jbox.ui_text("text_back_label"),
+	ui_type = plain_number(2),
 }
 
 for scene = 1, ROW_COUNT do

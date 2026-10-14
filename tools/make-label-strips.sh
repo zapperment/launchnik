@@ -8,6 +8,8 @@
 #   while the launch button being edited is empty.
 # - GUI2D/Label_Scene<n>_3frames.png holds the label of scene button n:
 #   unlit, then lit in white, then lit in green.
+# - GUI2D/Label_Back_3frames.png holds the label of the back button, in the
+#   same three frames as a scene button's.
 #
 # The labels are set in Arial, capitals 26 pixels high, about three quarters
 # of the size of SETUP and STOP, whose white they share. Each one is centred
@@ -112,3 +114,11 @@ for text in "16 BARS" "8 BARS" "4 BARS" "2 BARS" "1 BAR" "1/2 BAR" "1 BEAT" "IMM
 	echo "Wrote $target"
 	scene=$((scene + 1))
 done
+
+index=0
+for colour in "$UNLIT" "$WHITE" "$GREEN"; do
+	magick -size "$SCENE_SIZE" xc:none -font "$FONT" -pointsize "$POINTSIZE" -fill "$colour" -gravity north -annotate +0+0 BACK "PNG32:$WORK/back$index.png"
+	index=$((index + 1))
+done
+magick "$WORK/back0.png" "$WORK/back1.png" "$WORK/back2.png" -background none -append +repage "PNG32:GUI2D/Label_Back_3frames.png"
+echo "Wrote GUI2D/Label_Back_3frames.png"

@@ -338,6 +338,13 @@ int CLauncher::GetBackButtonFrame() const {
 	return fSetup == kSetupClipPicking ? kBackButtonVibrantWhite : kBackButtonVibrantGreen;
 }
 
+int CLauncher::GetBackLabelFrame() const {
+	if (fSetup == kSetupLaunchMode) {
+		return 0;
+	}
+	return fSetup == kSetupClipPicking ? 1 : 2;
+}
+
 int CLauncher::GetLaunchLabelsFrame() const {
 	if (fSetup < kSetupFirstClipEditing) {
 		return 0;

@@ -19,6 +19,7 @@ texts = {
 	["text_logo"] = "Logo",
 	["text_launch_labels"] = "Launch Button Labels",
 	["text_back_button"] = "Back Button",
+	["text_back_label"] = "Back Button Label",
 
 	["text_switch_interval"] = "Switch Interval",
 	["text_switch_interval_short"] = "Interval",

@@ -189,6 +189,10 @@ class CLauncher {
 	public: static const int kBackButtonVibrantWhite = 7;
 	public: int GetBackButtonFrame() const;
 
+	// The frame of the back button's label to show, in the colour of the
+	// button: 0 unlit, 1 white, 2 green, as for a scene button's label.
+	public: int GetBackLabelFrame() const;
+
 	// The frame of the launch labels' film strip to show: 0 unlit, 1 SET/CLEAR
 	// lit, 2 all lit. They are lit, in yellow, only in clip editing,
 	// and the labels of colours and patterns only while the picked launch

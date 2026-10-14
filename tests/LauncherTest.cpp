@@ -952,6 +952,18 @@ void TestBackButtonShowsTheStepItGoesBackFrom() {
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
 }
 
+// Frames of the back label's film strip: unlit, white, green.
+void TestBackLabelHasTheColourOfTheBackButton() {
+	CLauncher launcher;
+	CHECK(launcher.GetBackLabelFrame() == 0);
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(launcher.GetBackLabelFrame() == 1);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
+	CHECK(launcher.GetBackLabelFrame() == 2);
+	launcher.SetSetup(CLauncher::kSetupLaunchMode);
+	CHECK(launcher.GetBackLabelFrame() == 0);
+}
+
 // Frames of the scene labels' film strip: unlit, white, green.
 void TestSceneLabelsShowTheLength() {
 	CLauncher launcher;
@@ -1032,6 +1044,7 @@ int main() {
 	TestModeColourFollowsTheSetupStep();
 	TestLaunchLabelsAreLitOnlyInClipEditing();
 	TestBackButtonShowsTheStepItGoesBackFrom();
+	TestBackLabelHasTheColourOfTheBackButton();
 	TestSceneLabelsShowTheLength();
 
 	return ReportChecks("Launcher");

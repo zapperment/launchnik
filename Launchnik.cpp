@@ -28,7 +28,8 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fWrittenSetupLamp(kNothingWritten),
 	fWrittenLogoFrame(kNothingWritten),
 	fWrittenLaunchLabelsFrame(kNothingWritten),
-	fWrittenBackButtonFrame(kNothingWritten)
+	fWrittenBackButtonFrame(kNothingWritten),
+	fWrittenBackLabelFrame(kNothingWritten)
 {
 	const char* const cvOutputPaths[CLauncher::kTrackCount] = {
 		"/cv_outputs/track1",
@@ -160,6 +161,12 @@ void CLaunchnik::WriteOutputs() {
 	if (backButtonFrame != fWrittenBackButtonFrame) {
 		fWrittenBackButtonFrame = backButtonFrame;
 		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_BackButtonFrame, JBox_MakeNumber(backButtonFrame));
+	}
+
+	const TJBox_Int32 backLabelFrame = fLauncher.GetBackLabelFrame();
+	if (backLabelFrame != fWrittenBackLabelFrame) {
+		fWrittenBackLabelFrame = backLabelFrame;
+		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_BackLabelFrame, JBox_MakeNumber(backLabelFrame));
 	}
 
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {

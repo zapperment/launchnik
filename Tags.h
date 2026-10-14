@@ -11,6 +11,7 @@ const TJBox_Tag kCustomPropsTag_Length = 52;
 const TJBox_Tag kCustomPropsTag_LogoFrame = 53;
 const TJBox_Tag kCustomPropsTag_LaunchLabelsFrame = 54;
 const TJBox_Tag kCustomPropsTag_BackButtonFrame = 55;
+const TJBox_Tag kCustomPropsTag_BackLabelFrame = 56;
 
 // Scenes are numbered from 1, like rows.
 inline TJBox_Tag SceneLabelFrameTag(int iScene) {

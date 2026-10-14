@@ -157,6 +157,13 @@ front.click_back = {
 	{ size = { 130, 135 } },
 }
 
+-- Its label sits below it like those of the scene buttons: centred, its top
+-- 20 pixels below the button, unlit, white or green.
+front.label_back = {
+	offset = { BACK_LEFT + (130 - SCENE_LABEL_WIDTH) / 2, BACK_TOP + 135 + LABEL_GAP },
+	{ path = "Label_Back_3frames", frames = 3 },
+}
+
 -- The setup button is a lamp with a transparent display on top, like the grid.
 front.lamp_setup = {
 	offset = { SETUP_LEFT, STOP_TOP },

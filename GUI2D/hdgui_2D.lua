@@ -59,6 +59,10 @@ table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "lamp_back" },
 	value = "/custom_properties/back_button_frame",
 })
+table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "label_back" },
+	value = "/custom_properties/back_label_frame",
+})
 
 table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "labels_launch" },
