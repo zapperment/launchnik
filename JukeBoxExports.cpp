@@ -31,6 +31,8 @@ void JBox_Export_Gesture(TJBox_GestureArgs* iArgs) {
 	HandlePanelGesture(*iArgs);
 }
 
-void JBox_Export_DisplaySetup(const TJBox_DisplayArgs* /*iArgs*/) { }
+void JBox_Export_DisplaySetup(const TJBox_DisplayArgs* iArgs) {
+	SetUpPanelDisplay(*iArgs);
+}
 
 void JBox_Export_Notify(TJBox_NotifyArgs* /*iArgs*/) { }

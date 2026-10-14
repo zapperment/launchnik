@@ -12,6 +12,16 @@ const TJBox_Float32 kRowPitch = 235.0f;
 const TJBox_Float32 kButtonWidth = 205.0f;
 const TJBox_Float32 kButtonHeight = 135.0f;
 
+// The names of the tracks' selections in motherboard_def.lua.
+const char* const kSelectionKeys[CLauncher::kTrackCount] = {
+	"track1_selection", "track2_selection", "track3_selection", "track4_selection",
+	"track5_selection", "track6_selection", "track7_selection", "track8_selection",
+};
+
+// The size of the fill-in button's display.
+const TJBox_Float32 kFillInWidth = 130.0f;
+const TJBox_Float32 kFillInHeight = 135.0f;
+
 // Finds the launch button under a point of the grid display. Returns false for
 // a point in the gaps between launch buttons.
 bool FindLaunchButton(const TJBox_Point& iPoint, int& oTrack, int& oRow) {
@@ -123,10 +133,24 @@ void HandleFillInGesture(TJBox_GestureArgs& iArgs) {
 		iArgs.fConsumeFlag = true;
 		Apply(CPress::FillInButton(true), customProps, iArgs);
 	}
+	// Only let go of a button that is held, not after a context menu.
 	else if (iArgs.fCall == kJBox_OnRelease || iArgs.fCall == kJBox_OnCancel) {
-		iArgs.fConsumeFlag = true;
-		Apply(CPress::FillInButton(false), customProps, iArgs);
+		if (JBox_GetBoolean(JBox_LoadMOMPropertyByTag(customProps, kCustomPropsTag_FillIn))) {
+			Apply(CPress::FillInButton(false), customProps, iArgs);
+		}
 	}
+}
+
+TJBox_PropertyBox MakeBox(TJBox_PropertyRef iProperty, TJBox_Coord iLeft, TJBox_Coord iTop, TJBox_Coord iWidth, TJBox_Coord iHeight) {
+	TJBox_PropertyBox box;
+	box.fPropertyIndex = 0;
+	box.fPropertyRef = iProperty;
+	box.fRect.fLeft = iLeft;
+	box.fRect.fTop = iTop;
+	box.fRect.fRight = iLeft + iWidth;
+	box.fRect.fBottom = iTop + iHeight;
+	box.fFlags = 0;
+	return box;
 }
 
 } // namespace
@@ -208,4 +232,30 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	const bool pressedHoldsClip = HoldsClip(customProps, CLauncher::ButtonIndex(track, row));
 	const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
 	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedHoldsClip), customProps, iArgs);
+}
+
+void SetUpPanelDisplay(const TJBox_DisplayArgs& iArgs) {
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+
+	if (iArgs.fDisplayInfo.fID == kDisplayID_Grid) {
+		TJBox_PropertyBox boxes[CLauncher::kButtonCount];
+		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+			const TJBox_PropertyRef selection = JBox_MakePropertyRef(customProps, kSelectionKeys[track]);
+			for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+				boxes[CLauncher::ButtonIndex(track, row)] = MakeBox(selection, track * kTrackPitch, (row - 1) * kRowPitch, kButtonWidth, kButtonHeight);
+			}
+		}
+		TJBox_PropertyInfo info;
+		info.fBoxes = boxes;
+		info.fCount = CLauncher::kButtonCount;
+		JBox_SetPropertyInfo(&info);
+		return;
+	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_FillInButton) {
+		const TJBox_PropertyBox box = MakeBox(JBox_MakePropertyRef(customProps, "fill_in"), 0.0f, 0.0f, kFillInWidth, kFillInHeight);
+		TJBox_PropertyInfo info;
+		info.fBoxes = &box;
+		info.fCount = 1;
+		JBox_SetPropertyInfo(&info);
+	}
 }

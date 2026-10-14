@@ -16,3 +16,9 @@ const TJBox_DisplayID kDisplayID_FillInButton = 5;
 const TJBox_DisplayID kDisplayID_SetFillInButton = 6;
 
 void HandlePanelGesture(TJBox_GestureArgs& iArgs);
+
+// Tells the host which property each part of a display stands for, so that it
+// offers automation, Remote Override and alt-click there: every launch button
+// stands for its track's selection, in every mode, and the fill-in button for
+// the fill-in property. The other displays stand for no automatable property.
+void SetUpPanelDisplay(const TJBox_DisplayArgs& iArgs);

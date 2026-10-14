@@ -120,6 +120,8 @@ Each track has one automatable parameter, "Track N Selection", with nine values:
 
 The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed.
 
+Right-clicking a launch button or a stop button offers automation and Remote Override for its track's selection, in any mode; alt-clicking opens the automation lane. The fill-in button does the same for "Fill-In". A scene launch is recorded in the selection lanes of the eight tracks; there is no lane of its own for scenes (see [0004](docs/adr/0004-a-scene-press-writes-eight-selections.md)).
+
 Clips, fill-ins, setup mode and the length of the switch interval cannot be automated.
 
 For control surfaces, Launchnik provides these Remote items (N is the track, M the row, both 1–8):
@@ -156,7 +158,6 @@ Launchnik does not respond to MIDI CC messages.
 - Only playing through a switch point fires a queued button. Dragging the song position past one does not, and a loop that neither contains nor ends on a switch point keeps a button queued indefinitely.
 - Clip editing does not show which launch button is being edited.
 - A clip that was switched off while its track's selection still named it is queued again as soon as it is switched back on.
-- Launch buttons have no context menu for automation or Remote; use a stop button's menu to reach the track's selection.
 - There is no stop-all button.
 - A scene launch is recorded as automation of each track's selection, not as one event.
 - Patches cannot be loaded or saved from a control surface.
