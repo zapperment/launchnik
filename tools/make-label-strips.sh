@@ -16,7 +16,7 @@
 # - GUI2D/Caption_Fill_In_2frames.png holds the caption of the fill-in button:
 #   white, red.
 #
-# The labels are set in Arial, capitals 26 pixels high, about three quarters
+# The labels are set in Arial Bold, capitals 26 pixels high, about three quarters
 # of the size of SETUP and STOP, whose white they share. Each one is centred
 # below its button with its top 20 pixels below the button. The layout numbers
 # must match GUI2D/device_2D.lua.
@@ -25,7 +25,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-FONT=/System/Library/Fonts/Supplemental/Arial.ttf
+FONT="/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 POINTSIZE=36
 
 UNLIT="#4d4d4d"
