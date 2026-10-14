@@ -13,7 +13,8 @@ local STOP_TOP = 2218
 
 -- The header is the strip above the divider on the front panel. It is as high
 -- as the folded panel, so the logo sits at the same place on both. It is a
--- lamp with two frames: light grey in launch mode, green in setup mode.
+-- lamp with one frame for each mode colour: light grey in launch mode, green
+-- in clip picking, yellow in clip editing.
 local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
@@ -47,7 +48,7 @@ front = {
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_2frames", frames = 2 },
+		{ path = "Logo_3frames", frames = 3 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -106,6 +107,27 @@ front.click_scenes = {
 	{ size = { SCENE_WIDTH, 1780 } },
 }
 
+-- The labels sit centred below their buttons, their tops 20 pixels below the
+-- buttons. Those of the launch buttons are one lamp whose film strip starts
+-- 25 pixels left of the grid: all unlit, SET/CLEAR and BACK in yellow, or all
+-- in yellow (see tools/make-label-strips.sh). Each scene button has a lamp of its own, 250
+-- pixels wide and unlit, white or green.
+local LABEL_GAP = 20
+local SCENE_LABEL_WIDTH = 250
+front.labels_launch = {
+	offset = { LAUNCH_LEFT - 25, LAUNCH_TOP + BUTTON_HEIGHT + LABEL_GAP },
+	{ path = "Labels_Launch_3frames", frames = 3 },
+}
+for scene = 1, ROW_COUNT do
+	front["label_scene" .. scene] = {
+		offset = {
+			SCENE_LEFT + (SCENE_WIDTH - SCENE_LABEL_WIDTH) / 2,
+			LAUNCH_TOP + ROW_PITCH * (scene - 1) + BUTTON_HEIGHT + LABEL_GAP,
+		},
+		{ path = "Label_Scene" .. scene .. "_3frames", frames = 3 },
+	}
+end
+
 -- A stop button is a lamp showing one of three frames (unlit, dim, vibrant)
 -- with an invisible click area of the same size on top.
 for track = 1, TRACK_COUNT do
@@ -161,7 +183,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_2frames", frames = 2 },
+		{ path = "Logo_3frames", frames = 3 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,

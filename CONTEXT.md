@@ -64,7 +64,7 @@ The normal way of working, in which clicking a **launch button** selects its **c
 _Avoid_: Performance mode, play mode, normal mode
 
 **Setup mode**:
-The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing and **stop buttons** go on working while it lasts; **scene buttons** launch nothing. The logo on the panel is green for as long as it lasts.
+The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing and **stop buttons** go on working while it lasts; **scene buttons** launch nothing. The logo on the panel shows the **mode colour** of the step it is in.
 _Avoid_: Edit mode, config mode
 
 **Setup button**:
@@ -81,6 +81,14 @@ _Avoid_: Edit mode
 **Light**:
 What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **stop button** has a light too, always red, and so has a **scene button**, as part of the **interval meter**. The front panel and a control surface show the same light for the same button.
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
+
+**Label**:
+The caption printed below a **launch button** or **scene button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour** or in white, and barely visible dark grey otherwise. The captions SETUP and STOP and the numbers of the tracks and scenes are not labels: they are always white.
+_Avoid_: Caption, legend, text, tag
+
+**Mode colour**:
+The colour that shows which way of working is on, worn by the logo and by the lit **labels**: white for **launch mode**, green for **clip picking**, yellow for **clip editing**.
+_Avoid_: Theme, accent
 
 **Switch interval**:
 One of the equal, consecutive stretches into which the host's song position is divided, counted from the start of the song. How long they are is the **length**.

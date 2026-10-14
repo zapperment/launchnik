@@ -25,7 +25,9 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fSampleRate(iSampleRate),
 	fIsFirstBatch(true),
 	fSetupLampLit(false),
-	fWrittenSetupLamp(kNothingWritten)
+	fWrittenSetupLamp(kNothingWritten),
+	fWrittenLogoFrame(kNothingWritten),
+	fWrittenLaunchLabelsFrame(kNothingWritten)
 {
 	const char* const cvOutputPaths[CLauncher::kTrackCount] = {
 		"/cv_outputs/track1",
@@ -50,6 +52,7 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	for (int scene = 0; scene < CLauncher::kRowCount; ++scene) {
 		fWrittenSceneLights[scene] = kNothingWritten;
 		fWrittenSceneLightFrames[scene] = kNothingWritten;
+		fWrittenSceneLabelFrames[scene] = kNothingWritten;
 	}
 }
 
@@ -140,6 +143,18 @@ void CLaunchnik::WriteOutputs() {
 		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_SetupLamp, JBox_MakeBoolean(fSetupLampLit));
 	}
 
+	const TJBox_Int32 logoFrame = fLauncher.GetModeColour();
+	if (logoFrame != fWrittenLogoFrame) {
+		fWrittenLogoFrame = logoFrame;
+		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_LogoFrame, JBox_MakeNumber(logoFrame));
+	}
+
+	const TJBox_Int32 launchLabelsFrame = fLauncher.GetLaunchLabelsFrame();
+	if (launchLabelsFrame != fWrittenLaunchLabelsFrame) {
+		fWrittenLaunchLabelsFrame = launchLabelsFrame;
+		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_LaunchLabelsFrame, JBox_MakeNumber(launchLabelsFrame));
+	}
+
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		const TJBox_Int32 stopLight = fLauncher.GetStopLight(track);
 		if (stopLight != fWrittenStopLights[track]) {
@@ -185,6 +200,12 @@ void CLaunchnik::WriteOutputs() {
 		if (frame != fWrittenSceneLightFrames[scene - 1]) {
 			fWrittenSceneLightFrames[scene - 1] = frame;
 			JBox_StoreMOMPropertyByTag(fCustomProps, SceneLightFrameTag(scene), JBox_MakeNumber(frame));
+		}
+
+		const TJBox_Int32 labelFrame = fLauncher.GetSceneLabelFrame(scene);
+		if (labelFrame != fWrittenSceneLabelFrames[scene - 1]) {
+			fWrittenSceneLabelFrames[scene - 1] = labelFrame;
+			JBox_StoreMOMPropertyByTag(fCustomProps, SceneLabelFrameTag(scene), JBox_MakeNumber(labelFrame));
 		}
 	}
 }

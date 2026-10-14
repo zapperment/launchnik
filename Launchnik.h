@@ -4,7 +4,7 @@
 #include "Launcher.h"
 
 // Connects the rules in CLauncher to the host: feeds it selections, clips, the
-// setup state and the transport, and writes states, lights, lamps and CV back.
+// setup state and the transport, and writes states, lights, lamps, labels and CV back.
 class CLaunchnik {
 	public: explicit CLaunchnik(TJBox_Float32 iSampleRate);
 
@@ -26,6 +26,9 @@ class CLaunchnik {
 
 	// What was last written to the host, to avoid storing unchanged values.
 	private: TJBox_Int32 fWrittenSetupLamp;
+	private: TJBox_Int32 fWrittenLogoFrame;
+	private: TJBox_Int32 fWrittenLaunchLabelsFrame;
+	private: TJBox_Int32 fWrittenSceneLabelFrames[CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenStopLights[CLauncher::kTrackCount];
 	private: TJBox_Int32 fWrittenStopLightFrames[CLauncher::kTrackCount];
 	private: TJBox_Int32 fWrittenLights[CLauncher::kTrackCount][CLauncher::kRowCount];

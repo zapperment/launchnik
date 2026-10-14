@@ -7,6 +7,9 @@ format_version = "3.0"
 --   setup state:                      50
 --   lamp of the setup button:         51
 --   length of the switch interval:    52
+--   film strip frame of the logo:     53
+--   film strip frame of the launch labels: 54
+--   film strip frame of the label of the scene button of row r: 60 + r
 --   selection of track t:            100 + t
 --   light of the stop button:       1000 + 10 * t
 --   light of a launch button:       1000 + 10 * t + r
@@ -109,13 +112,45 @@ document_properties.switch_interval = jbox.number{
 }
 add_remote_item("switch_interval", "Switch Interval")
 
--- Whether the setup button is lit and the logo is green.
+-- Whether the setup button is lit: in both steps of setup mode.
 rt_properties.setup_lamp = jbox.boolean{
 	property_tag = 51,
 	default = false,
 	ui_name = jbox.ui_text("text_setup"),
 	ui_type = plain_number(1),
 }
+
+-- The labels and the logo, computed by the realtime code. The logo shows the
+-- mode colour: 0 = white (launch mode), 1 = green (clip picking), 2 = yellow
+-- (clip editing). The labels of the launch buttons are lit, in yellow, only in
+-- clip editing: 0 = unlit, 1 = SET/CLEAR and BACK lit, 2 = all lit, the
+-- colours and patterns only while the picked launch button holds a clip. A
+-- scene button's label is 0 = unlit, 1 = white, 2 = green.
+rt_properties.logo_frame = jbox.number{
+	property_tag = 53,
+	default = 0,
+	steps = 3,
+	ui_name = jbox.ui_text("text_logo"),
+	ui_type = plain_number(2),
+}
+
+rt_properties.launch_labels_frame = jbox.number{
+	property_tag = 54,
+	default = 0,
+	steps = 3,
+	ui_name = jbox.ui_text("text_launch_labels"),
+	ui_type = plain_number(2),
+}
+
+for scene = 1, ROW_COUNT do
+	rt_properties["scene" .. scene .. "_label_frame"] = jbox.number{
+		property_tag = 60 + scene,
+		default = 0,
+		steps = 3,
+		ui_name = jbox.ui_text("text_scene" .. scene .. "_label"),
+		ui_type = plain_number(2),
+	}
+end
 
 for track = 1, TRACK_COUNT do
 	-- What the user last chose on the track. Saved with the song, automatable,

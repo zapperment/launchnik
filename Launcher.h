@@ -6,8 +6,8 @@
 // and in setup mode.
 //
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
-// active, light, switch interval, switch point, length, immediate, clip
-// picking, clip editing, scene, segment, interval meter.
+// active, light, label, mode colour, switch interval, switch point, length,
+// immediate, clip picking, clip editing, scene, segment, interval meter.
 //
 // Tracks are numbered from 0 here. Rows are numbered from 1, so that a row is
 // also the selection that chooses its launch button, and the number of its
@@ -172,6 +172,29 @@ class CLauncher {
 	public: TLight GetSceneLight(int iScene) const;
 	public: int GetSceneLightValue(int iScene) const;
 	public: int GetSceneLightFrame(int iScene) const;
+
+	// The mode colour, worn by the logo and the lit labels: white in launch
+	// mode, green in clip picking, yellow in clip editing. Also the frame of
+	// the logo's film strip.
+	public: enum EModeColour {
+		kModeWhite = 0,
+		kModeGreen = 1,
+		kModeYellow = 2
+	};
+	public: EModeColour GetModeColour() const;
+
+	// The frame of the launch labels' film strip to show: 0 unlit, 1 SET/CLEAR
+	// and BACK lit, 2 all lit. They are lit, in yellow, only in clip editing,
+	// and the labels of colours and patterns only while the picked launch
+	// button holds a clip.
+	public: static const int kLaunchLabelsFrameCount = 3;
+	public: int GetLaunchLabelsFrame() const;
+
+	// The frame of the scene labels' film strip to show: 0 unlit, 1 white, 2
+	// green. Every label is green in clip picking; otherwise only the label of
+	// the current length is lit, in white.
+	public: static const int kSceneLabelFrameCount = 3;
+	public: int GetSceneLabelFrame(int iScene) const;
 
 	// The CV value a track emits, in the range 0..1.
 	public: double GetCVValue(int iTrack) const;

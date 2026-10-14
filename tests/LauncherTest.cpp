@@ -915,6 +915,64 @@ void TestOutOfRangeLengthIsIgnored() {
 
 } // namespace
 
+void TestModeColourFollowsTheSetupStep() {
+	CLauncher launcher;
+	CHECK(launcher.GetModeColour() == CLauncher::kModeWhite);
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(launcher.GetModeColour() == CLauncher::kModeGreen);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 5));
+	CHECK(launcher.GetModeColour() == CLauncher::kModeYellow);
+	launcher.SetSetup(CLauncher::kSetupLaunchMode);
+	CHECK(launcher.GetModeColour() == CLauncher::kModeWhite);
+}
+
+// Frames of the launch labels' film strip: unlit, SET/CLEAR and BACK lit, all
+// lit.
+void TestLaunchLabelsAreLitOnlyInClipEditing() {
+	CLauncher launcher;
+	launcher.SetClipPresent(2, 4, true);
+	CHECK(launcher.GetLaunchLabelsFrame() == 0);
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(launcher.GetLaunchLabelsFrame() == 0);
+
+	// The labels of colours and patterns stay unlit while the picked launch
+	// button is empty, as do their lights.
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
+	CHECK(launcher.GetLaunchLabelsFrame() == 1);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
+	CHECK(launcher.GetLaunchLabelsFrame() == 2);
+	launcher.SetClipPresent(2, 4, false);
+	CHECK(launcher.GetLaunchLabelsFrame() == 1);
+}
+
+// Frames of the scene labels' film strip: unlit, white, green.
+void TestSceneLabelsShowTheLength() {
+	CLauncher launcher;
+
+	// In launch mode only the label of the current length is lit, in white; a
+	// new device has four bars, the third scene button from the top.
+	for (int scene = 1; scene <= 8; ++scene) {
+		CHECK(launcher.GetSceneLabelFrame(scene) == (scene == 3 ? 1 : 0));
+	}
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	CHECK(launcher.GetSceneLabelFrame(8) == 1);
+	CHECK(launcher.GetSceneLabelFrame(3) == 0);
+
+	// In clip picking every label is lit in green, the current length included.
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	for (int scene = 1; scene <= 8; ++scene) {
+		CHECK(launcher.GetSceneLabelFrame(scene) == 2);
+	}
+
+	// In clip editing it is as in launch mode.
+	launcher.SetSetup(CLauncher::SetupForClipEditing(7, 8));
+	for (int scene = 1; scene <= 8; ++scene) {
+		CHECK(launcher.GetSceneLabelFrame(scene) == (scene == 8 ? 1 : 0));
+	}
+	CHECK(launcher.GetSceneLabelFrame(0) == 0);
+	CHECK(launcher.GetSceneLabelFrame(9) == 0);
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -964,6 +1022,9 @@ int main() {
 	TestClipPickingShowsTheLengthOnTheSceneButtons();
 	TestSceneButtonsFlashWithTheLaunchButtons();
 	TestOutOfRangeLengthIsIgnored();
+	TestModeColourFollowsTheSetupStep();
+	TestLaunchLabelsAreLitOnlyInClipEditing();
+	TestSceneLabelsShowTheLength();
 
 	return ReportChecks("Launcher");
 }
