@@ -32,7 +32,7 @@ UNLIT="#4d4d4d"
 WHITE="#d0d0d0"
 GREEN="#1aac08"
 YELLOW="#fafe07"
-RED="#ff2010"
+RED="#ff5e5e"
 
 # Launch buttons are 205 pixels wide, 252 apart, with 235 pixels from one
 # scene to the next. The strip starts 25 pixels left of the first track and

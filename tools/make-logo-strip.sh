@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 
 SOURCES=RE2D_Launchnik_Graphics
 TARGET=GUI2D/Logo_4frames.png
-RED="#ff2010"
+RED="#ff5e5e"
 FRAME=285x110
 
 WORK=$(mktemp -d)
