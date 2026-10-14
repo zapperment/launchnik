@@ -2,7 +2,7 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Which pattern each launch button plays, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d8, a development build. Requires Reason 14 or later.
+Version 1.0.0d9, a development build. Requires Reason 14 or later.
 
 ## The panel
 
