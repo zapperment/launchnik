@@ -6,7 +6,7 @@ Version 1.0.0d8, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the stop buttons is the **setup button**, and above the first track the **back button**. The back panel has eight CV outputs, one per track.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the stop buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. The back panel has eight CV outputs, one per track.
 
 A launch button either holds a **clip** or is **empty**. A clip is one of the Player's patterns 1–8 together with one of fourteen colours. A new device has only empty launch buttons.
 
@@ -48,7 +48,7 @@ A clip with pattern N on that track now selects pattern N, and the stop button s
 
 ## Setting up clips
 
-Click the setup button to enter **setup mode**; the logo in the header turns green for as long as it lasts. Tracks go on playing and the stop buttons go on working; only launching, from the grid or the scene buttons, is unavailable.
+Click the setup button to enter **setup mode**; the logo in the header shows the colour of the step you are in: green, then yellow, then red. Tracks go on playing and the stop buttons go on working; only launching, from the grid or the scene buttons, is unavailable.
 
 1. **Clip picking.** Every launch button flashes: in its clip's colour, or in white if it is empty. Click the one you want to set up.
 2. **Clip editing.** The grid now shows the settings of that one launch button:
@@ -57,11 +57,21 @@ Click the setup button to enter **setup mode**; the logo in the header turns gre
 |---|---|
 | Row 1, column 8 | Switches the clip on and off: vibrant green with a clip, dim red without. |
 | Rows 2 and 3, columns 1–7 | The colour: white, red, orange, yellow, lime, green, turquoise in row 2; cyan, light blue, blue, dark blue, purple, fuchsia, pink in row 3. The chosen one is vibrant. |
-| Row 5 | The pattern, 1–8, in pink. The chosen one is vibrant. |
+| Row 5 | The pattern, 1–8, in yellow. The chosen one is vibrant. |
 
 The colour and pattern rows only show while the launch button holds a clip. A new clip plays the pattern of its row and has the colour of its track: red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8. A clip that is switched off and on again comes back with its pattern and colour.
 
-Click the setup button again to return to launch mode, from either step. The back button above the first track goes back one step instead: vibrant green in clip editing, it returns to clip picking; vibrant white in clip picking, it returns to launch mode. In launch mode it is dark and does nothing.
+3. **Fill-in editing.** While the launch button holds a clip, the **set fill-in** button beside the back button lights up in red. Click it to set up the clip's **fill-in**; the logo turns red. The grid is laid out as in clip editing, with the patterns in red: SET/CLEAR switches the fill-in on and off, and the colour and pattern rows only show while there is one. A new fill-in has the pattern of its clip, in white. The labels are red instead of yellow.
+
+Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to: vibrant yellow in fill-in editing, it returns to clip editing; vibrant green in clip editing, it returns to clip picking; vibrant white in clip picking, it returns to launch mode. In launch mode it is dark and does nothing.
+
+## Fill-ins
+
+A fill-in is a pattern that a clip plays for a short while instead of its own, such as a drum fill leading into the next pattern. Click the **fill-in button** to the left of scene 6: every track whose playing clip has a fill-in switches to it at once, without waiting for a switch point, and its launch button flashes in the fill-in's colour. At the next switch point each track goes back to its clip, or on to whatever was launched in the meantime. Tracks without a fill-in carry on as before.
+
+The fill-in button is dim white, and vibrant red, with its caption, from the click until the switch point, whether or not any track has a fill-in to play. It works in launch mode and in setup mode alike. A click while a fill-in is playing does nothing, and so does a click while the switch interval is "immediate", which has no switch point to end the fill-in at. With the transport stopped, a fill-in goes on until the song plays through the next switch point.
+
+Changing a playing clip's fill-in takes effect at once. A launch button keeps its fill-in while it is empty, so that it comes back with the clip; fill-ins are part of a patch.
 
 ## Setting the length of the switch interval
 
@@ -108,7 +118,9 @@ Launchnik comes with two patches: "Init Patch", in which every launch button is 
 
 Each track has one automatable parameter, "Track N Selection", with nine values: Stop and Clip 1–8, the clip being the one in that row. Automated changes behave like clicks. A change that falls exactly on a switch point takes effect there, not one switch interval later. A selection that names an empty launch button counts as Stop.
 
-Clips, setup mode and the length of the switch interval cannot be automated.
+The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed.
+
+Clips, fill-ins, setup mode and the length of the switch interval cannot be automated.
 
 For control surfaces, Launchnik provides these Remote items (N is the track, M the row, both 1–8):
 
@@ -121,8 +133,14 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Clip M Present` (64 items) | Input and output | 0 = empty, 1 = holds a clip |
 | `Track N Clip M Pattern` (64 items) | Input and output | 0–7 for patterns 1–8 |
 | `Track N Clip M Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Track N Clip M Fill-In Present` (64 items) | Input and output | 0 = no fill-in, 1 = holds one |
+| `Track N Clip M Fill-In Pattern` (64 items) | Input and output | 0–7 for patterns 1–8 |
+| `Track N Clip M Fill-In Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Fill-In` | Input and output | 1 while the fill-in button is held down, 0 otherwise |
+| `Fill-In Light` | Output only | As for a launch button: 1 = dim white, 5 = vibrant red |
+| `Set Fill-In Light` | Output only | As for a launch button: 0 = unlit, 5 = vibrant red |
 | `Switch Interval` | Input and output | 0 = immediate, 1 = one beat, 2 = half a bar, 3–7 = 1, 2, 4, 8 and 16 bars |
-| `Setup` | Input and output | 0 = launch mode, 1 = clip picking, 2–65 = clip editing for launch button 1–64, counted down track 1 first |
+| `Setup` | Input and output | 0 = launch mode, 1 = clip picking, 2–65 = clip editing and 66–129 = fill-in editing for launch button 1–64, counted down track 1 first |
 
 A light is what the launch button shows on the panel, in launch mode and in setup mode alike, so a surface that shows the lights mirrors the panel. "Flashing" is one steady value; the surface flashes by itself.
 
@@ -168,7 +186,7 @@ The film strips of the launch buttons and the scene buttons are built from the s
 ./tools/make-stop-button-strip.sh
 ```
 
-The logo's two frames, light grey and green, are built from the two versions of the lettering:
+The logo's four frames, light grey, green, yellow and red, are built from the versions of the lettering:
 
 ```bash
 ./tools/make-logo-strip.sh

@@ -12,6 +12,13 @@ const TJBox_Tag kCustomPropsTag_LogoFrame = 53;
 const TJBox_Tag kCustomPropsTag_LaunchLabelsFrame = 54;
 const TJBox_Tag kCustomPropsTag_BackButtonFrame = 55;
 const TJBox_Tag kCustomPropsTag_BackLabelFrame = 56;
+const TJBox_Tag kCustomPropsTag_FillIn = 57;
+const TJBox_Tag kCustomPropsTag_FillInLight = 58;
+const TJBox_Tag kCustomPropsTag_SetFillInLight = 59;
+const TJBox_Tag kCustomPropsTag_FillInLightFrame = 70;
+const TJBox_Tag kCustomPropsTag_FillInLabelFrame = 71;
+const TJBox_Tag kCustomPropsTag_SetFillInLightFrame = 72;
+const TJBox_Tag kCustomPropsTag_SetFillInLabelFrame = 73;
 
 // Scenes are numbered from 1, like rows.
 inline TJBox_Tag SceneLabelFrameTag(int iScene) {
@@ -58,4 +65,16 @@ inline TJBox_Tag ClipPatternTag(int iTrack, int iRow) {
 
 inline TJBox_Tag ClipColourTag(int iTrack, int iRow) {
 	return 5000 + 10 * (iTrack + 1) + iRow;
+}
+
+inline TJBox_Tag FillInPresentTag(int iTrack, int iRow) {
+	return 6000 + 10 * (iTrack + 1) + iRow;
+}
+
+inline TJBox_Tag FillInPatternTag(int iTrack, int iRow) {
+	return 7000 + 10 * (iTrack + 1) + iRow;
+}
+
+inline TJBox_Tag FillInColourTag(int iTrack, int iRow) {
+	return 8000 + 10 * (iTrack + 1) + iRow;
 }

@@ -51,6 +51,18 @@ bool HoldsClip(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
 	return JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, ClipPresentTag(track, row)));
 }
 
+bool HoldsFillIn(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
+	const int track = iButtonIndex / CLauncher::kRowCount;
+	const int row = iButtonIndex % CLauncher::kRowCount + 1;
+	return JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInPresentTag(track, row)));
+}
+
+int ClipPattern(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
+	const int track = iButtonIndex / CLauncher::kRowCount;
+	const int row = iButtonIndex % CLauncher::kRowCount + 1;
+	return static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(iCustomProps, ClipPatternTag(track, row))));
+}
+
 // Writes the one property a press changes. The names of the changes are keys
 // of texts.lua; a name that is not a key makes the host refuse the change.
 void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_GestureArgs& iArgs) {
@@ -82,14 +94,48 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, ClipColourTag(track, row), JBox_MakeNumber(iChange.fValue));
 			iArgs.fGestureNameKey = "gesture_clip_colour";
 			break;
+		case CPress::kFillInPresent:
+			JBox_StoreMOMPropertyByTag(iCustomProps, FillInPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_fill_in_present";
+			break;
+		case CPress::kFillInPattern:
+			JBox_StoreMOMPropertyByTag(iCustomProps, FillInPatternTag(track, row), JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_fill_in_pattern";
+			break;
+		case CPress::kFillInColour:
+			JBox_StoreMOMPropertyByTag(iCustomProps, FillInColourTag(track, row), JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_fill_in_colour";
+			break;
+		case CPress::kFillIn:
+			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_FillIn, JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_fill_in";
+			break;
 		case CPress::kNothing:
 			break;
+	}
+}
+
+// The fill-in button is held down from the tap until it is let go, so that
+// automation records both.
+void HandleFillInGesture(TJBox_GestureArgs& iArgs) {
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+	if (iArgs.fCall == kJBox_OnTap && iArgs.fTap == kJBox_TapRegular) {
+		iArgs.fConsumeFlag = true;
+		Apply(CPress::FillInButton(true), customProps, iArgs);
+	}
+	else if (iArgs.fCall == kJBox_OnRelease || iArgs.fCall == kJBox_OnCancel) {
+		iArgs.fConsumeFlag = true;
+		Apply(CPress::FillInButton(false), customProps, iArgs);
 	}
 }
 
 } // namespace
 
 void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
+	if (iArgs.fDisplayInfo.fID == kDisplayID_FillInButton) {
+		HandleFillInGesture(iArgs);
+		return;
+	}
 	if (iArgs.fCall != kJBox_OnTap || iArgs.fTap != kJBox_TapRegular) {
 		return;
 	}
@@ -104,6 +150,13 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	if (iArgs.fDisplayInfo.fID == kDisplayID_BackButton) {
 		iArgs.fConsumeFlag = true;
 		Apply(CPress::BackButton(setup), customProps, iArgs);
+		return;
+	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_SetFillInButton) {
+		iArgs.fConsumeFlag = true;
+		const int picked = CLauncher::PickedButton(setup);
+		const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
+		Apply(CPress::SetFillInButton(setup, pickedHoldsClip), customProps, iArgs);
 		return;
 	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
@@ -139,8 +192,20 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	}
 	iArgs.fConsumeFlag = true;
 
+	const int picked = CLauncher::PickedButton(setup);
+	if (CLauncher::IsFillInEditing(setup)) {
+		const CPress::TChanges changes = CPress::FillInEditingLaunchButton(setup, track, row, HoldsFillIn(customProps, picked), ClipPattern(customProps, picked));
+		for (int i = 0; i < changes.fCount; ++i) {
+			Apply(changes.fChanges[i], customProps, iArgs);
+		}
+		// Setting up a new fill-in is one step of the undo history, named after
+		// switching it on.
+		if (changes.fCount > 1) {
+			iArgs.fGestureNameKey = "gesture_fill_in_present";
+		}
+		return;
+	}
 	const bool pressedHoldsClip = HoldsClip(customProps, CLauncher::ButtonIndex(track, row));
-	const bool isClipEditing = setup >= CLauncher::kSetupFirstClipEditing;
-	const bool pickedHoldsClip = isClipEditing && HoldsClip(customProps, setup - CLauncher::kSetupFirstClipEditing);
+	const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
 	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedHoldsClip), customProps, iArgs);
 }

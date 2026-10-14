@@ -560,9 +560,9 @@ void TestClipEditingShowsColoursAndPatterns() {
 	CHECK(IsUnlit(launcher.GetLight(7, 2)));
 	CHECK(IsUnlit(launcher.GetLight(7, 3)));
 
-	// Row 5 holds the eight patterns, in pink.
+	// Row 5 holds the eight patterns, in yellow like the mode colour.
 	for (int column = 0; column < 8; ++column) {
-		CHECK(IsLight(launcher.GetLight(column, 5), column == 2 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourPink));
+		CHECK(IsLight(launcher.GetLight(column, 5), column == 2 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourYellow));
 	}
 
 	// Everything else is unlit, including the picked launch button itself.
@@ -594,7 +594,23 @@ void TestButtonIndexAndSetupNumbering() {
 	CHECK(CLauncher::ButtonIndex(1, 1) == 8);
 	CHECK(CLauncher::ButtonIndex(7, 8) == 63);
 	CHECK(CLauncher::SetupForClipEditing(0, 1) == 2);
-	CHECK(CLauncher::SetupForClipEditing(7, 8) == CLauncher::kSetupCount - 1);
+	CHECK(CLauncher::SetupForClipEditing(7, 8) == 65);
+	CHECK(CLauncher::SetupForFillInEditing(0, 1) == 66);
+	CHECK(CLauncher::SetupForFillInEditing(7, 8) == CLauncher::kSetupCount - 1);
+
+	CHECK(!CLauncher::IsClipEditing(CLauncher::kSetupClipPicking));
+	CHECK(CLauncher::IsClipEditing(2));
+	CHECK(CLauncher::IsClipEditing(65));
+	CHECK(!CLauncher::IsClipEditing(66));
+	CHECK(!CLauncher::IsFillInEditing(65));
+	CHECK(CLauncher::IsFillInEditing(66));
+	CHECK(CLauncher::IsFillInEditing(129));
+	CHECK(!CLauncher::IsFillInEditing(130));
+
+	CHECK(CLauncher::PickedButton(CLauncher::kSetupLaunchMode) == -1);
+	CHECK(CLauncher::PickedButton(CLauncher::kSetupClipPicking) == -1);
+	CHECK(CLauncher::PickedButton(CLauncher::SetupForClipEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
+	CHECK(CLauncher::PickedButton(CLauncher::SetupForFillInEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
 }
 
 void TestOutOfRangeClipSettingsAreIgnored() {
@@ -919,6 +935,8 @@ void TestModeColourFollowsTheSetupStep() {
 	CHECK(launcher.GetModeColour() == CLauncher::kModeGreen);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 5));
 	CHECK(launcher.GetModeColour() == CLauncher::kModeYellow);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 5));
+	CHECK(launcher.GetModeColour() == CLauncher::kModeRed);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetModeColour() == CLauncher::kModeWhite);
 }
@@ -939,6 +957,14 @@ void TestLaunchLabelsAreLitOnlyInClipEditing() {
 	CHECK(launcher.GetLaunchLabelsFrame() == 2);
 	launcher.SetClipPresent(2, 4, false);
 	CHECK(launcher.GetLaunchLabelsFrame() == 1);
+
+	// In fill-in editing they are red: SET/CLEAR alone until there is a
+	// fill-in.
+	launcher.SetClipPresent(2, 4, true);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
+	CHECK(launcher.GetLaunchLabelsFrame() == 3);
+	launcher.SetFillInPresent(2, 4, true);
+	CHECK(launcher.GetLaunchLabelsFrame() == 4);
 }
 
 void TestBackButtonShowsTheStepItGoesBackFrom() {
@@ -948,6 +974,8 @@ void TestBackButtonShowsTheStepItGoesBackFrom() {
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantWhite);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantGreen);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantYellow);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
 }
@@ -960,6 +988,8 @@ void TestBackLabelHasTheColourOfTheBackButton() {
 	CHECK(launcher.GetBackLabelFrame() == 1);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
 	CHECK(launcher.GetBackLabelFrame() == 2);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
+	CHECK(launcher.GetBackLabelFrame() == 3);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetBackLabelFrame() == 0);
 }
@@ -990,6 +1020,300 @@ void TestSceneLabelsShowTheLength() {
 	}
 	CHECK(launcher.GetSceneLabelFrame(0) == 0);
 	CHECK(launcher.GetSceneLabelFrame(9) == 0);
+}
+
+// Track 0 plays the clip in row 1, pattern 3, which holds a fill-in with
+// pattern 6 in cyan; track 1 plays a clip without a fill-in; track 2 is stopped.
+void SetUpFillIns(CLauncher& iLauncher) {
+	iLauncher.SetClipPresent(0, 1, true);
+	iLauncher.SetClipPattern(0, 1, 2);
+	iLauncher.SetFillInPresent(0, 1, true);
+	iLauncher.SetFillInPattern(0, 1, 5);
+	iLauncher.SetFillInColour(0, 1, 7);
+	iLauncher.SetClipPresent(1, 1, true);
+	iLauncher.SetClipPattern(1, 1, 0);
+	iLauncher.SetClipPresent(2, 1, true);
+	iLauncher.SetSelection(0, 1);
+	iLauncher.SetSelection(1, 1);
+	iLauncher.Open();
+}
+
+void Press(CLauncher& iLauncher) {
+	iLauncher.SetFillInPressed(true);
+	iLauncher.SetFillInPressed(false);
+}
+
+void TestNewFillInHasThePatternOfItsClipInWhite() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
+	launcher.SetFillInPresent(3, 6, true);
+	// The pattern of a new clip in row 6 is 6.
+	CHECK(IsLight(launcher.GetLight(5, 5), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, CLauncher::kColourWhite));
+}
+
+void TestFillInPlaysUntilTheNextSwitchPoint() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(!launcher.IsFillInPlaying());
+
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsFillInPlaying());
+	// It takes effect at once, not at the switch point.
+	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+	// A track whose active clip has no fill-in, and a stopped track, go on as
+	// before.
+	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(2) == 0.0);
+
+	PlayThrough(launcher, kBar + kBatch, kInterval);
+	CHECK(launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(!launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+}
+
+void TestFillInGivesWayToWhatIsQueued() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetClipPresent(0, 2, true);
+	launcher.SetClipPattern(0, 2, 7);
+	PlayThrough(launcher, 0.0, kBar);
+
+	Press(launcher);
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	// The queued clip waits for the switch point; the fill-in plays meanwhile.
+	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kQueued);
+
+	PlayThrough(launcher, kBar + kBatch, kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0) == 8.0 / 8);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
+}
+
+void TestFillInDoesNotEndOneBatchAfterAPress() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	// A press in the batch after a switch point fills in the whole interval,
+	// even though a selection made then still counts as landing on the switch
+	// point.
+	PlayThrough(launcher, kInterval - kBatch, kInterval + kBatch);
+	Press(launcher);
+	launcher.Advance(Playing(kInterval + kBatch));
+	CHECK(launcher.IsFillInPlaying());
+	launcher.Advance(Playing(kInterval + 2 * kBatch));
+	CHECK(launcher.IsFillInPlaying());
+}
+
+void TestPressingDuringAFillInDoesNothing() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	Press(launcher);
+	PlayThrough(launcher, kBar + kBatch, kInterval + kBatch);
+	// It neither cancels the fill-in nor makes another follow it.
+	CHECK(!launcher.IsFillInPlaying());
+}
+
+void TestHoldingTheButtonTriggersOnlyOnce() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetFillInPressed(true);
+	launcher.Advance(Playing(kBar));
+	PlayThrough(launcher, kBar + kBatch, kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+	launcher.SetFillInPressed(true);
+	launcher.Advance(Playing(kInterval + kBatch));
+	CHECK(!launcher.IsFillInPlaying());
+	launcher.SetFillInPressed(false);
+	launcher.SetFillInPressed(true);
+	launcher.Advance(Playing(kInterval + 2 * kBatch));
+	CHECK(launcher.IsFillInPlaying());
+}
+
+void TestNoFillInWithTheLengthImmediate() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	CHECK(!launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+
+	// Changing to immediate ends a fill-in, as there is no switch point left to
+	// end at.
+	launcher.SetLength(CLauncher::kDefaultLength);
+	Press(launcher);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.IsFillInPlaying());
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	launcher.Advance(Playing(kBar + 2 * kBatch));
+	CHECK(!launcher.IsFillInPlaying());
+}
+
+void TestFillInWaitsWhileTheTransportIsStopped() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	Press(launcher);
+	launcher.Advance(Stopped(kBar));
+	CHECK(launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+	for (int batch = 0; batch < 1000; ++batch) {
+		launcher.Advance(Stopped(kBar));
+	}
+	CHECK(launcher.IsFillInPlaying());
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+}
+
+void TestChangesToTheFillInTakeEffectAtOnce() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	launcher.SetFillInPattern(0, 1, 1);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.GetCVValue(0) == 2.0 / 8);
+
+	// Track 1 gets a fill-in while one is playing, and plays it straight away.
+	launcher.SetFillInPresent(1, 1, true);
+	launcher.SetFillInPattern(1, 1, 4);
+	launcher.Advance(Playing(kBar + 2 * kBatch));
+	CHECK(launcher.GetCVValue(1) == 5.0 / 8);
+
+	launcher.SetFillInPresent(0, 1, false);
+	launcher.Advance(Playing(kBar + 3 * kBatch));
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+}
+
+void TestEmptyLaunchButtonHasNoFillInToPlay() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	PlayThrough(launcher, 0.0, kBar);
+	// Switching the active clip off stops the track at the switch point; until
+	// then it plays its pattern, but no longer its fill-in.
+	launcher.SetClipPresent(0, 1, false);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+}
+
+void TestFillInLights() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kDim, CLauncher::kColourWhite));
+	CHECK(launcher.GetFillInLightValue() == 1);
+	CHECK(launcher.GetFillInLightFrame() == 7);
+	CHECK(launcher.GetFillInLabelFrame() == 0);
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
+
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(launcher.GetFillInLightValue() == 5);
+	CHECK(launcher.GetFillInLightFrame() == 2);
+	CHECK(launcher.GetFillInLabelFrame() == 1);
+	// The launch button of a track that plays its fill-in flashes in the
+	// fill-in's colour; the others are as they were.
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kFlashing, 7));
+	CHECK(IsLight(launcher.GetLight(1, 1), CLauncher::kVibrant, CLauncher::DefaultColour(1)));
+	CHECK(IsLight(launcher.GetLight(2, 1), CLauncher::kDim, CLauncher::DefaultColour(2)));
+
+	// The button is red whether or not any track has a fill-in, and in every
+	// mode.
+	launcher.SetFillInPresent(0, 1, false);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(4, 4));
+	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourRed));
+
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kDim, CLauncher::kColourWhite));
+	CHECK(launcher.GetFillInLabelFrame() == 0);
+}
+
+void TestSetFillInButtonIsLitInClipEditingOfAClip() {
+	CLauncher launcher;
+	launcher.SetClipPresent(2, 4, true);
+	CHECK(IsUnlit(launcher.GetSetFillInLight()));
+	CHECK(launcher.GetSetFillInLightValue() == 0);
+	CHECK(launcher.GetSetFillInLightFrame() == 0);
+	CHECK(launcher.GetSetFillInLabelFrame() == 0);
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(IsUnlit(launcher.GetSetFillInLight()));
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
+	CHECK(IsUnlit(launcher.GetSetFillInLight()));
+
+	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
+	CHECK(IsLight(launcher.GetSetFillInLight(), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(launcher.GetSetFillInLightValue() == 5);
+	CHECK(launcher.GetSetFillInLightFrame() == 2);
+	CHECK(launcher.GetSetFillInLabelFrame() == 1);
+
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
+	CHECK(IsUnlit(launcher.GetSetFillInLight()));
+	CHECK(launcher.GetSetFillInLabelFrame() == 0);
+}
+
+void TestFillInEditingWithoutFillInShowsOnlyToggle() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			if (track == 7 && row == 1) {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kDim, CLauncher::kColourRed));
+			}
+			else {
+				CHECK(IsUnlit(launcher.GetLight(track, row)));
+			}
+		}
+	}
+}
+
+void TestFillInEditingShowsColoursAndPatterns() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	launcher.SetClipColour(3, 6, 2);
+	launcher.SetClipPattern(3, 6, 4);
+	launcher.SetFillInPresent(3, 6, true);
+	launcher.SetFillInColour(3, 6, 9);
+	launcher.SetFillInPattern(3, 6, 2);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
+
+	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourGreen));
+	for (int column = 0; column < 7; ++column) {
+		CHECK(IsLight(launcher.GetLight(column, 2), CLauncher::kDim, column));
+		const int colour = 7 + column;
+		CHECK(IsLight(launcher.GetLight(column, 3), colour == 9 ? CLauncher::kVibrant : CLauncher::kDim, colour));
+	}
+	// The patterns are red.
+	for (int column = 0; column < 8; ++column) {
+		CHECK(IsLight(launcher.GetLight(column, 5), column == 2 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourRed));
+	}
+	const int unlitRows[] = { 4, 6, 7, 8 };
+	for (int row : unlitRows) {
+		for (int column = 0; column < 8; ++column) {
+			CHECK(IsUnlit(launcher.GetLight(column, row)));
+		}
+	}
+}
+
+void TestIntervalMeterRunsInFillInEditing() {
+	CLauncher launcher;
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(1, 1));
+	launcher.Advance(Playing(0.0));
+	CHECK(IsLight(launcher.GetSceneLight(8), CLauncher::kDim, CLauncher::kColourGreen));
+	CHECK(launcher.GetSceneLabelFrame(3) == 1);
 }
 
 int main() {
@@ -1046,6 +1370,22 @@ int main() {
 	TestBackButtonShowsTheStepItGoesBackFrom();
 	TestBackLabelHasTheColourOfTheBackButton();
 	TestSceneLabelsShowTheLength();
+
+	TestNewFillInHasThePatternOfItsClipInWhite();
+	TestFillInPlaysUntilTheNextSwitchPoint();
+	TestFillInGivesWayToWhatIsQueued();
+	TestFillInDoesNotEndOneBatchAfterAPress();
+	TestPressingDuringAFillInDoesNothing();
+	TestHoldingTheButtonTriggersOnlyOnce();
+	TestNoFillInWithTheLengthImmediate();
+	TestFillInWaitsWhileTheTransportIsStopped();
+	TestChangesToTheFillInTakeEffectAtOnce();
+	TestEmptyLaunchButtonHasNoFillInToPlay();
+	TestFillInLights();
+	TestSetFillInButtonIsLitInClipEditingOfAClip();
+	TestFillInEditingWithoutFillInShowsOnlyToggle();
+	TestFillInEditingShowsColoursAndPatterns();
+	TestIntervalMeterRunsInFillInEditing();
 
 	return ReportChecks("Launcher");
 }

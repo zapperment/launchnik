@@ -11,6 +11,11 @@ format_version = "3.0"
 --   film strip frame of the launch labels: 54
 --   film strip frame of the back button:   55
 --   film strip frame of its label:         56
+--   fill-in button, held down or not:      57
+--   light of the fill-in button:           58
+--   light of the set fill-in button:       59
+--   film strip frames of the fill-in button, its caption, the set fill-in
+--   button and its label:                  70, 71, 72, 73
 --   film strip frame of the label of the scene button of row r: 60 + r
 --   selection of track t:            100 + t
 --   light of the stop button:       1000 + 10 * t
@@ -22,14 +27,18 @@ format_version = "3.0"
 --   whether a launch button holds a clip: 3000 + 10 * t + r
 --   pattern of its clip:            4000 + 10 * t + r
 --   colour of its clip:             5000 + 10 * t + r
+--   whether the clip holds a fill-in:  6000 + 10 * t + r
+--   pattern of the fill-in:            7000 + 10 * t + r
+--   colour of the fill-in:             8000 + 10 * t + r
 
 local TRACK_COUNT = 8
 local ROW_COUNT = 8
 local PATTERN_COUNT = 8
 local COLOUR_COUNT = 14
 
--- Launch mode, clip picking, and clip editing for each of the launch buttons
-local SETUP_COUNT = 2 + TRACK_COUNT * ROW_COUNT
+-- Launch mode, clip picking, then clip editing and fill-in editing for each of
+-- the launch buttons
+local SETUP_COUNT = 2 + 2 * TRACK_COUNT * ROW_COUNT
 
 -- Unlit, then dim, vibrant and flashing for each colour
 local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
@@ -85,12 +94,14 @@ end
 -- Reason only offers automation for properties that have a number in the MIDI
 -- CC chart. Numbers from 256 upwards enable automation without responding to
 -- any MIDI CC, so nothing a Launchpad sends can reach a selection by accident.
--- Only the selections are automatable; clips and the setup state are not.
+-- Only the selections and the fill-in button are automatable; clips and the
+-- setup state are not.
 local FIRST_SELECTION_MIDI_CC = 256
+local FILL_IN_MIDI_CC = FIRST_SELECTION_MIDI_CC + TRACK_COUNT
 local midi_cc_chart = {}
 
--- 0 = launch mode, 1 = clip picking, 2..65 = clip editing for one launch
--- button. Written by the panel and by control surfaces, read by the realtime
+-- 0 = launch mode, 1 = clip picking, 2..65 = clip editing and 66..129 =
+-- fill-in editing for one launch button. Written by the panel and by control surfaces, read by the realtime
 -- code (see docs/adr/0002). Not saved: a song opens in launch mode.
 document_properties.setup = jbox.number{
 	property_tag = 50,
@@ -114,7 +125,77 @@ document_properties.switch_interval = jbox.number{
 }
 add_remote_item("switch_interval", "Switch Interval")
 
--- Whether the setup button is lit: in both steps of setup mode.
+-- 1 while the fill-in button is held down. The realtime code triggers a fill-in
+-- when it goes down; that is also what automation records and plays back. Not
+-- saved, so that a song never opens with the button held.
+document_properties.fill_in = jbox.boolean{
+	property_tag = 57,
+	default = false,
+	persistence = "none",
+	ui_name = jbox.ui_text("text_fill_in"),
+	ui_type = jbox.ui_selector{ jbox.ui_text("text_released"), jbox.ui_text("text_pressed") },
+}
+midi_cc_chart[FILL_IN_MIDI_CC] = "/custom_properties/fill_in"
+add_remote_item("fill_in", "Fill-In")
+
+-- What the fill-in button and the set fill-in button show, for control
+-- surfaces, encoded like the light of a launch button: dim white (1) or
+-- vibrant red (5) for the fill-in button, unlit (0) or vibrant red (5) for the
+-- set fill-in button. Computed by the realtime code.
+rt_properties.fill_in_light = jbox.number{
+	property_tag = 58,
+	default = 0,
+	steps = LIGHT_COUNT,
+	ui_name = jbox.ui_text("text_fill_in_light"),
+	ui_type = plain_number(LIGHT_COUNT - 1),
+}
+add_remote_item("fill_in_light", "Fill-In Light")
+
+rt_properties.set_fill_in_light = jbox.number{
+	property_tag = 59,
+	default = 0,
+	steps = LIGHT_COUNT,
+	ui_name = jbox.ui_text("text_set_fill_in_light"),
+	ui_type = plain_number(LIGHT_COUNT - 1),
+}
+add_remote_item("set_fill_in_light", "Set Fill-In Light")
+
+-- The frames the front panel shows of the two buttons, whose film strips are
+-- laid out like the scene buttons', and of their captions: FILL-IN is 0 =
+-- white, 1 = red, SET FILL-IN 0 = unlit, 1 = red.
+rt_properties.fill_in_light_frame = jbox.number{
+	property_tag = 70,
+	default = 0,
+	steps = SCENE_LIGHT_FRAME_COUNT,
+	ui_name = jbox.ui_text("text_fill_in_light"),
+	ui_type = plain_number(SCENE_LIGHT_FRAME_COUNT - 1),
+}
+
+rt_properties.fill_in_label_frame = jbox.number{
+	property_tag = 71,
+	default = 0,
+	steps = 2,
+	ui_name = jbox.ui_text("text_fill_in_label"),
+	ui_type = plain_number(1),
+}
+
+rt_properties.set_fill_in_light_frame = jbox.number{
+	property_tag = 72,
+	default = 0,
+	steps = SCENE_LIGHT_FRAME_COUNT,
+	ui_name = jbox.ui_text("text_set_fill_in_light"),
+	ui_type = plain_number(SCENE_LIGHT_FRAME_COUNT - 1),
+}
+
+rt_properties.set_fill_in_label_frame = jbox.number{
+	property_tag = 73,
+	default = 0,
+	steps = 2,
+	ui_name = jbox.ui_text("text_set_fill_in_label"),
+	ui_type = plain_number(1),
+}
+
+-- Whether the setup button is lit: in every step of setup mode.
 rt_properties.setup_lamp = jbox.boolean{
 	property_tag = 51,
 	default = false,
@@ -124,29 +205,32 @@ rt_properties.setup_lamp = jbox.boolean{
 
 -- The labels and the logo, computed by the realtime code. The logo shows the
 -- mode colour: 0 = white (launch mode), 1 = green (clip picking), 2 = yellow
--- (clip editing). The labels of the launch buttons are lit, in yellow, only in
--- clip editing: 0 = unlit, 1 = SET/CLEAR lit, 2 = all lit, the
--- colours and patterns only while the picked launch button holds a clip. A
--- scene button's label is 0 = unlit, 1 = white, 2 = green.
+-- (clip editing), 3 = red (fill-in editing). The labels of the launch buttons
+-- are lit only in clip editing, in yellow, and in fill-in editing, in red: 0 =
+-- unlit, 1 = SET/CLEAR in yellow, 2 = all in yellow, 3 = SET/CLEAR in red, 4 =
+-- all in red; the colours and patterns only while the picked launch button
+-- holds a clip, or in fill-in editing a fill-in. A scene button's label is 0 =
+-- unlit, 1 = white, 2 = green.
 rt_properties.logo_frame = jbox.number{
 	property_tag = 53,
 	default = 0,
-	steps = 3,
+	steps = 4,
 	ui_name = jbox.ui_text("text_logo"),
-	ui_type = plain_number(2),
+	ui_type = plain_number(3),
 }
 
 rt_properties.launch_labels_frame = jbox.number{
 	property_tag = 54,
 	default = 0,
-	steps = 3,
+	steps = 5,
 	ui_name = jbox.ui_text("text_launch_labels"),
-	ui_type = plain_number(2),
+	ui_type = plain_number(4),
 }
 
 -- The back button's frame, computed by the realtime code: 0 = dark (launch
--- mode), 7 = vibrant white (clip picking), 3 = vibrant green (clip editing).
--- Not a Remote item: a codec can tell it from the setup state.
+-- mode), 7 = vibrant white (clip picking), 3 = vibrant green (clip editing), 5
+-- = vibrant yellow (fill-in editing). Not a Remote item: a codec can tell it
+-- from the setup state.
 rt_properties.back_button_frame = jbox.number{
 	property_tag = 55,
 	default = 0,
@@ -155,13 +239,14 @@ rt_properties.back_button_frame = jbox.number{
 	ui_type = plain_number(8),
 }
 
--- Its label, in the colour of the button: 0 = unlit, 1 = white, 2 = green.
+-- Its label, in the colour of the button: 0 = unlit, 1 = white, 2 = green, 3
+-- = yellow.
 rt_properties.back_label_frame = jbox.number{
 	property_tag = 56,
 	default = 0,
-	steps = 3,
+	steps = 4,
 	ui_name = jbox.ui_text("text_back_label"),
-	ui_type = plain_number(2),
+	ui_type = plain_number(3),
 }
 
 for scene = 1, ROW_COUNT do
@@ -216,8 +301,9 @@ for track = 1, TRACK_COUNT do
 		local clip = "track" .. track .. "_clip" .. row
 		local remote_name = "Track " .. track .. " Clip " .. row
 
-		-- What the launch button holds. Pattern and colour are kept while it is
-		-- empty, so that a clip comes back as it was. These three make up a patch.
+		-- What the launch button holds. Pattern, colour and fill-in are kept while
+		-- it is empty, so that a clip comes back as it was. These six make up a
+		-- patch.
 		document_properties[clip .. "_present"] = jbox.boolean{
 			property_tag = 3000 + 10 * track + row,
 			default = false,
@@ -244,6 +330,35 @@ for track = 1, TRACK_COUNT do
 			ui_type = jbox.ui_selector(colour_texts),
 		}
 		add_remote_item(clip .. "_colour", remote_name .. " Colour")
+
+		-- The clip's fill-in. A new one has the pattern of its clip, in white:
+		-- whoever sets one up writes all three (see Press.h), so these defaults
+		-- only matter for a fill-in set up some other way.
+		document_properties[clip .. "_fill_in_present"] = jbox.boolean{
+			property_tag = 6000 + 10 * track + row,
+			default = false,
+			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_present"),
+			ui_type = plain_number(1),
+		}
+		add_remote_item(clip .. "_fill_in_present", remote_name .. " Fill-In Present")
+
+		document_properties[clip .. "_fill_in_pattern"] = jbox.number{
+			property_tag = 7000 + 10 * track + row,
+			default = row - 1,
+			steps = PATTERN_COUNT,
+			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_pattern"),
+			ui_type = jbox.ui_selector(pattern_texts),
+		}
+		add_remote_item(clip .. "_fill_in_pattern", remote_name .. " Fill-In Pattern")
+
+		document_properties[clip .. "_fill_in_colour"] = jbox.number{
+			property_tag = 8000 + 10 * track + row,
+			default = 0,
+			steps = COLOUR_COUNT,
+			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_colour"),
+			ui_type = jbox.ui_selector(colour_texts),
+		}
+		add_remote_item(clip .. "_fill_in_colour", remote_name .. " Fill-In Colour")
 
 		-- What the launch button shows, for control surfaces: 0 = unlit, then
 		-- dim, vibrant and flashing for each colour. Flashing is one steady value.

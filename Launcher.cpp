@@ -40,7 +40,10 @@ CLauncher::CLauncher()
 	fFlashLit(false),
 	fStoppedTime(0.0),
 	fSwitchPointInPreviousBatch(false),
-	fReachedSegments(0)
+	fReachedSegments(0),
+	fFillInPressed(false),
+	fFillInTriggered(false),
+	fFillInPlaying(false)
 {
 	for (int track = 0; track < kTrackCount; ++track) {
 		fSelections[track] = kSelectionStop;
@@ -52,6 +55,10 @@ CLauncher::CLauncher()
 			// A new clip plays the pattern of its row.
 			clip.fPattern = row - 1;
 			clip.fColour = DefaultColour(track);
+			// A fill-in is set up with the pattern of its clip, in white.
+			clip.fFillInPresent = false;
+			clip.fFillInPattern = clip.fPattern;
+			clip.fFillInColour = kColourWhite;
 		}
 	}
 }
@@ -66,6 +73,28 @@ int CLauncher::ButtonIndex(int iTrack, int iRow) {
 
 int CLauncher::SetupForClipEditing(int iTrack, int iRow) {
 	return kSetupFirstClipEditing + ButtonIndex(iTrack, iRow);
+}
+
+int CLauncher::SetupForFillInEditing(int iTrack, int iRow) {
+	return kSetupFirstFillInEditing + ButtonIndex(iTrack, iRow);
+}
+
+bool CLauncher::IsClipEditing(int iSetup) {
+	return iSetup >= kSetupFirstClipEditing && iSetup < kSetupFirstFillInEditing;
+}
+
+bool CLauncher::IsFillInEditing(int iSetup) {
+	return iSetup >= kSetupFirstFillInEditing && iSetup < kSetupCount;
+}
+
+int CLauncher::PickedButton(int iSetup) {
+	if (IsClipEditing(iSetup)) {
+		return iSetup - kSetupFirstClipEditing;
+	}
+	if (IsFillInEditing(iSetup)) {
+		return iSetup - kSetupFirstFillInEditing;
+	}
+	return -1;
 }
 
 bool CLauncher::IsValidButton(int iTrack, int iRow) {
@@ -92,6 +121,35 @@ void CLauncher::SetClipColour(int iTrack, int iRow, int iColour) {
 	if (IsValidButton(iTrack, iRow) && iColour >= 0 && iColour < kColourCount) {
 		fClips[iTrack][iRow - 1].fColour = iColour;
 	}
+}
+
+void CLauncher::SetFillInPresent(int iTrack, int iRow, bool iPresent) {
+	if (IsValidButton(iTrack, iRow)) {
+		fClips[iTrack][iRow - 1].fFillInPresent = iPresent;
+	}
+}
+
+void CLauncher::SetFillInPattern(int iTrack, int iRow, int iPattern) {
+	if (IsValidButton(iTrack, iRow) && iPattern >= 0 && iPattern < kPatternCount) {
+		fClips[iTrack][iRow - 1].fFillInPattern = iPattern;
+	}
+}
+
+void CLauncher::SetFillInColour(int iTrack, int iRow, int iColour) {
+	if (IsValidButton(iTrack, iRow) && iColour >= 0 && iColour < kColourCount) {
+		fClips[iTrack][iRow - 1].fFillInColour = iColour;
+	}
+}
+
+void CLauncher::SetFillInPressed(bool iPressed) {
+	if (iPressed && !fFillInPressed) {
+		fFillInTriggered = true;
+	}
+	fFillInPressed = iPressed;
+}
+
+bool CLauncher::IsFillInPlaying() const {
+	return fFillInPlaying;
 }
 
 void CLauncher::SetSetup(int iSetup) {
@@ -164,6 +222,17 @@ void CLauncher::Advance(const TTransport& iTransport) {
 	}
 	fSwitchPointInPreviousBatch = switchPointInBatch;
 
+	// A fill-in ends at the switch point itself, not one batch later, and only
+	// while the song plays through it; with the length immediate there is none
+	// to end at, so nothing fills in.
+	if (switchPointInBatch || fLength == kLengthImmediate) {
+		fFillInPlaying = false;
+	}
+	if (fFillInTriggered && fLength != kLengthImmediate) {
+		fFillInPlaying = true;
+	}
+	fFillInTriggered = false;
+
 	// The interval meter follows the song position whether it moves or not.
 	fReachedSegments = CountReachedSegments(iTransport);
 
@@ -198,6 +267,15 @@ bool CLauncher::HasPendingPattern(int iTrack) const {
 	return active != kSelectionStop && Clip(iTrack, active).fPresent && Clip(iTrack, active).fPattern + 1 != fEmitted[iTrack];
 }
 
+bool CLauncher::PlaysFillIn(int iTrack) const {
+	const int active = fActive[iTrack];
+	if (!fFillInPlaying || active == kSelectionStop) {
+		return false;
+	}
+	const TClip& clip = Clip(iTrack, active);
+	return clip.fPresent && clip.fFillInPresent;
+}
+
 CLauncher::EBrightness CLauncher::GetStopLight(int iTrack) const {
 	switch (GetButtonState(iTrack, kSelectionStop)) {
 		case kQueued:
@@ -224,6 +302,9 @@ CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
 	if (fSetup == kSetupClipPicking) {
 		return GetClipPickingLight(iTrack, iRow);
 	}
+	if (IsFillInEditing(fSetup)) {
+		return GetFillInEditingLight(iTrack, iRow);
+	}
 	return GetClipEditingLight(iTrack, iRow);
 }
 
@@ -233,7 +314,11 @@ CLauncher::TLight CLauncher::GetLaunchModeLight(int iTrack, int iRow) const {
 		// A clip that was switched off while active goes on showing its colour
 		// until its track has switched.
 		// It flashes while a change of its pattern waits for the switch point.
+		// While it plays its fill-in, it flashes in the fill-in's colour.
 		case kActive:
+			if (PlaysFillIn(iTrack)) {
+				return MakeLight(kFlashing, clip.fFillInColour);
+			}
 			return MakeLight(HasPendingPattern(iTrack) ? kFlashing : kVibrant, clip.fColour);
 		case kQueued:
 			return MakeLight(kFlashing, clip.fColour);
@@ -247,24 +332,39 @@ CLauncher::TLight CLauncher::GetClipPickingLight(int iTrack, int iRow) const {
 	return MakeLight(kFlashing, clip.fPresent ? clip.fColour : kColourWhite);
 }
 
-CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
-	const int picked = fSetup - kSetupFirstClipEditing;
-	const TClip& clip = fClips[picked / kRowCount][picked % kRowCount];
+const CLauncher::TClip& CLauncher::PickedClip() const {
+	const int picked = PickedButton(fSetup);
+	return fClips[picked / kRowCount][picked % kRowCount];
+}
 
+CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
+	const TClip& clip = PickedClip();
+	return GetEditingLight(iTrack, iRow, clip.fPresent, clip.fColour, clip.fPattern, kColourYellow);
+}
+
+// The patterns of a fill-in are red, so that fill-in editing is not mistaken
+// for clip editing.
+CLauncher::TLight CLauncher::GetFillInEditingLight(int iTrack, int iRow) const {
+	const TClip& clip = PickedClip();
+	return GetEditingLight(iTrack, iRow, clip.fFillInPresent, clip.fFillInColour, clip.fFillInPattern, kColourRed);
+}
+
+CLauncher::TLight CLauncher::GetEditingLight(int iTrack, int iRow, bool iPresent, int iColour, int iPattern, int iPatternRowColour) {
 	if (iTrack == kEditingToggleTrack && iRow == kEditingToggleRow) {
-		return clip.fPresent ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
+		return iPresent ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
 	}
-	// The colour and pattern controls only show while there is a clip to set up.
-	if (!clip.fPresent) {
+	// The colour and pattern controls only show while there is something to
+	// set up.
+	if (!iPresent) {
 		return kUnlitLight;
 	}
 	const bool isColourRow = iRow == kEditingFirstColourRow || iRow == kEditingFirstColourRow + 1;
 	if (isColourRow && iTrack < kEditingColoursPerRow) {
 		const int colour = (iRow - kEditingFirstColourRow) * kEditingColoursPerRow + iTrack;
-		return MakeLight(colour == clip.fColour ? kVibrant : kDim, colour);
+		return MakeLight(colour == iColour ? kVibrant : kDim, colour);
 	}
 	if (iRow == kEditingPatternRow) {
-		return MakeLight(iTrack == clip.fPattern ? kVibrant : kDim, kColourPink);
+		return MakeLight(iTrack == iPattern ? kVibrant : kDim, iPatternRowColour);
 	}
 	return kUnlitLight;
 }
@@ -305,22 +405,25 @@ int CLauncher::GetSceneLightValue(int iScene) const {
 }
 
 int CLauncher::GetSceneLightFrame(int iScene) const {
-	const TLight light = GetSceneLight(iScene);
-	if (light.fBrightness == kUnlit) {
+	return SceneStripFrame(GetSceneLight(iScene));
+}
+
+int CLauncher::SceneStripFrame(const TLight& iLight) const {
+	if (iLight.fBrightness == kUnlit) {
 		return 0;
 	}
 	// The film strip holds red, green, yellow and white, in that order.
 	int stripColour = 3;
-	if (light.fColour == kColourRed) {
+	if (iLight.fColour == kColourRed) {
 		stripColour = 0;
 	}
-	else if (light.fColour == kColourGreen) {
+	else if (iLight.fColour == kColourGreen) {
 		stripColour = 1;
 	}
-	else if (light.fColour == kColourYellow) {
+	else if (iLight.fColour == kColourYellow) {
 		stripColour = 2;
 	}
-	const bool vibrant = light.fBrightness == kVibrant || (light.fBrightness == kFlashing && fFlashLit);
+	const bool vibrant = iLight.fBrightness == kVibrant || (iLight.fBrightness == kFlashing && fFlashLit);
 	return 1 + 2 * stripColour + (vibrant ? 1 : 0);
 }
 
@@ -328,29 +431,78 @@ CLauncher::EModeColour CLauncher::GetModeColour() const {
 	if (fSetup == kSetupLaunchMode) {
 		return kModeWhite;
 	}
-	return fSetup == kSetupClipPicking ? kModeGreen : kModeYellow;
+	if (fSetup == kSetupClipPicking) {
+		return kModeGreen;
+	}
+	return IsFillInEditing(fSetup) ? kModeRed : kModeYellow;
 }
 
+// The back button shows the mode colour of the step it goes back to.
 int CLauncher::GetBackButtonFrame() const {
 	if (fSetup == kSetupLaunchMode) {
 		return kBackButtonDark;
 	}
-	return fSetup == kSetupClipPicking ? kBackButtonVibrantWhite : kBackButtonVibrantGreen;
+	if (fSetup == kSetupClipPicking) {
+		return kBackButtonVibrantWhite;
+	}
+	return IsFillInEditing(fSetup) ? kBackButtonVibrantYellow : kBackButtonVibrantGreen;
 }
 
 int CLauncher::GetBackLabelFrame() const {
 	if (fSetup == kSetupLaunchMode) {
 		return 0;
 	}
-	return fSetup == kSetupClipPicking ? 1 : 2;
+	if (fSetup == kSetupClipPicking) {
+		return 1;
+	}
+	return IsFillInEditing(fSetup) ? 3 : 2;
 }
 
 int CLauncher::GetLaunchLabelsFrame() const {
-	if (fSetup < kSetupFirstClipEditing) {
-		return 0;
+	if (IsClipEditing(fSetup)) {
+		return PickedClip().fPresent ? 2 : 1;
 	}
-	const int picked = fSetup - kSetupFirstClipEditing;
-	return fClips[picked / kRowCount][picked % kRowCount].fPresent ? 2 : 1;
+	if (IsFillInEditing(fSetup)) {
+		return PickedClip().fFillInPresent ? 4 : 3;
+	}
+	return 0;
+}
+
+CLauncher::TLight CLauncher::GetFillInLight() const {
+	return fFillInPlaying ? MakeLight(kVibrant, kColourRed) : MakeLight(kDim, kColourWhite);
+}
+
+int CLauncher::GetFillInLightValue() const {
+	return LightValue(GetFillInLight());
+}
+
+int CLauncher::GetFillInLightFrame() const {
+	return SceneStripFrame(GetFillInLight());
+}
+
+int CLauncher::GetFillInLabelFrame() const {
+	return fFillInPlaying ? 1 : 0;
+}
+
+// It is lit while it leads somewhere: from clip editing of a clip to its
+// fill-in.
+CLauncher::TLight CLauncher::GetSetFillInLight() const {
+	if (IsClipEditing(fSetup) && PickedClip().fPresent) {
+		return MakeLight(kVibrant, kColourRed);
+	}
+	return kUnlitLight;
+}
+
+int CLauncher::GetSetFillInLightValue() const {
+	return LightValue(GetSetFillInLight());
+}
+
+int CLauncher::GetSetFillInLightFrame() const {
+	return SceneStripFrame(GetSetFillInLight());
+}
+
+int CLauncher::GetSetFillInLabelFrame() const {
+	return GetSetFillInLight().fBrightness == kUnlit ? 0 : 1;
 }
 
 int CLauncher::GetSceneLabelFrame(int iScene) const {
@@ -365,8 +517,13 @@ int CLauncher::GetSceneLabelFrame(int iScene) const {
 
 double CLauncher::GetCVValue(int iTrack) const {
 	// The Combinator rounds its CV input to the nearest of nine evenly spaced
-	// steps (Off, 1..8), so these values sit in the middle of each step.
-	return static_cast<double>(fEmitted[iTrack]) / kPatternCount;
+	// steps (Off, 1..8), so these values sit in the middle of each step. A
+	// fill-in takes effect at once, and so does any change to it.
+	int emitted = fEmitted[iTrack];
+	if (PlaysFillIn(iTrack)) {
+		emitted = Clip(iTrack, fActive[iTrack]).fFillInPattern + 1;
+	}
+	return static_cast<double>(emitted) / kPatternCount;
 }
 
 long long CLauncher::ComputeSwitchIntervalLength(int iLength, int iNumerator, int iDenominator) {

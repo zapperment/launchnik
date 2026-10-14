@@ -9,8 +9,23 @@ One of the 64 large buttons on the front panel, arranged in eight rows on each o
 _Avoid_: Clip button, pad, cell
 
 **Clip**:
-One pattern (1 to 8) of the track's Player together with a **colour**, held by a **launch button**; launching the clip makes the track's Player play that pattern. Several clips on a track may use the same pattern.
+One pattern (1 to 8) of the track's Player together with a **colour**, held by a **launch button**; launching the clip makes the track's Player play that pattern. Several clips on a track may use the same pattern. A clip may also hold a **fill-in**.
 _Avoid_: Slot, pattern (for the clip itself); a **scene** is a row of launch buttons, not a clip
+
+**Fill-in**:
+A second pattern and **colour** that a **clip** may hold, played instead of the clip's own pattern while a fill-in is **playing** and the clip is **active**. A launch button keeps its fill-in while it is **empty**, so that it comes back with the clip; an empty launch button has no fill-in to play. A new fill-in has the pattern of its clip and the colour white. Fill-ins are part of the **patch**.
+_Avoid_: Fill, drum fill, fill-in mode (it is not a way of working like **launch mode** or **setup mode**)
+
+**Fill-in button**:
+The button to the left of **scene** 6 that triggers a fill-in: from the press until the next **switch point**, every track whose **active** clip holds a fill-in plays it, and its active launch button flashes in the fill-in's colour. Tracks without one, and stopped tracks, go on as before. It works in every mode; a press while a fill-in is already playing, or while the **length** is **immediate**, does nothing. Its **light** is dim white, and vibrant red while a fill-in is playing, whether or not any track has one to play. Its caption FILL-IN is white, and red while a fill-in is playing. It can be automated.
+_Avoid_: Fill button, trigger
+
+**Playing** (of a fill-in):
+Said of a fill-in from the press of the **fill-in button** until the next **switch point**. A change to a fill-in, or to whether the active clip holds one, takes effect at once while a fill-in is playing. With the transport stopped it goes on playing until the song reaches the switch point. At the switch point every track goes on with its **selection**, as it would have anyway.
+
+**Set fill-in button**:
+The button to the right of the **back button** that goes from **clip editing** to **fill-in editing**. It is lit in vibrant red, with its label, only in clip editing of a launch button that holds a clip; otherwise it is dark and a click does nothing. It cannot be automated.
+_Avoid_: Setup fill-in button, fill-in edit button
 
 **Empty**:
 Said of a **launch button** that holds no **clip**. A new device has only empty launch buttons. Choosing an empty launch button counts as choosing the track's **stop button**.
@@ -71,7 +86,7 @@ _Avoid_: Edit mode, config mode
 The button to the left of the **stop buttons** that switches between **launch mode** and **setup mode**.
 
 **Back button**:
-The button above the first **track** that goes back one step of **setup mode**: from **clip editing** to **clip picking**, and from clip picking to **launch mode**, which in clip picking is what the **setup button** does as well. It is dark in launch mode, where a click does nothing, vibrant white in clip picking and vibrant green in clip editing.
+The button above the first **track** that goes back one step of **setup mode**: from **fill-in editing** to **clip editing**, from **clip editing** to **clip picking**, and from clip picking to **launch mode**, which in clip picking is what the **setup button** does as well. It is dark in launch mode, where a click does nothing, and otherwise vibrant in the **mode colour** of the step it goes back to: white in clip picking, green in clip editing, yellow in **fill-in editing**.
 _Avoid_: Arrow button, left arrow, return button
 
 **Clip picking**:
@@ -79,19 +94,23 @@ The first step of **setup mode**, in which every **launch button** flashes (in i
 _Avoid_: Clip selection (a **selection** is what a track has chosen to play)
 
 **Clip editing**:
-The second step of **setup mode**, in which the **launch buttons** stand for the settings of the one picked launch button: whether it holds a **clip**, the clip's **colour** and its pattern.
+The second step of **setup mode**, in which the **launch buttons** stand for the settings of the one picked launch button: whether it holds a **clip**, the clip's **colour** and its pattern. From here the **set fill-in button** leads on to **fill-in editing**.
 _Avoid_: Edit mode
+
+**Fill-in editing**:
+The third step of **setup mode**, in which the **launch buttons** stand for the **fill-in** of the launch button picked in **clip picking**: whether its clip holds one, the fill-in's **colour** and its pattern, laid out as in **clip editing**. The **back button** returns to clip editing.
+_Avoid_: Fill-in mode, fill-in setup
 
 **Light**:
 What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **stop button** has a light too, always red, and so has a **scene button**, as part of the **interval meter**. The front panel and a control surface show the same light for the same button.
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Label**:
-The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP and STOP are not labels: they are always white.
+The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, STOP and FILL-IN are not labels: SETUP and STOP are always white, FILL-IN belongs to the **fill-in button**.
 _Avoid_: Caption, legend, text, tag
 
 **Mode colour**:
-The colour that shows which way of working is on, worn by the logo and by the lit **labels**: white for **launch mode**, green for **clip picking**, yellow for **clip editing**.
+The colour that shows which way of working is on, worn by the logo and by the lit **labels**: white for **launch mode**, green for **clip picking**, yellow for **clip editing**, red for **fill-in editing**.
 _Avoid_: Theme, accent
 
 **Switch interval**:
