@@ -5,11 +5,11 @@ local TRACK_COUNT = 8
 -- Layout of the button grid, in pixels. Together with its labels the grid is
 -- vertically centred in the main section below the header.
 local LAUNCH_LEFT = 907
-local LAUNCH_TOP = 342
+local LAUNCH_TOP = 512
 local TRACK_PITCH = 252
 local ROW_PITCH = 235
 local STOP_LEFT = 974
-local STOP_TOP = 2218
+local STOP_TOP = 2388
 
 -- The header is the strip above the divider on the front panel. It is as high
 -- as the folded panel, so the logo sits at the same place on both. It is a
@@ -32,11 +32,11 @@ local SCREW_SIZE = 95
 local SCREW_LEFT = 65
 local SCREW_RIGHT = PANEL_WIDTH - SCREW_LEFT - SCREW_SIZE
 local SCREW_TOP = 198
-local SCREW_BOTTOM = 2272
+local SCREW_BOTTOM = 2617
 
 front = {
 	Bg = {
-		{ path = "Panel_Front_7U_dark" },
+		{ path = "Panel_Front_8U_dark" },
 	},
 	Labels = {
 		offset = { 0, 0 },
@@ -154,7 +154,7 @@ front.click_setup = {
 
 back = {
 	Bg = {
-		{ path = "Panel_Back_7U" },
+		{ path = "Panel_Back_8U" },
 	},
 	Labels = {
 		offset = { 0, 0 },
@@ -165,14 +165,16 @@ back = {
 		{ path = "TapeHorz" },
 	},
 	PowerCord = {
-		offset = { 3170, 2060 },
+		offset = { 3170, 2405 },
 		{ path = "Powercord_11_1frames" },
 	},
 }
 
+-- Together with their labels the CV outputs are vertically centred on the
+-- back panel.
 for track = 1, TRACK_COUNT do
 	back["cv_out_track" .. track] = {
-		offset = { 1100 + 220 * (track - 1), 1160 },
+		offset = { 1100 + 220 * (track - 1), 1440 },
 		{ path = "SharedCVJack", frames = 3 },
 	}
 end
