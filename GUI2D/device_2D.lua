@@ -5,16 +5,16 @@ local TRACK_COUNT = 8
 -- Layout of the button grid, in pixels. Together with its labels the grid is
 -- vertically centred in the main section below the header.
 local LAUNCH_LEFT = 907
-local LAUNCH_TOP = 342
+local LAUNCH_TOP = 512
 local TRACK_PITCH = 252
 local ROW_PITCH = 235
 local STOP_LEFT = 974
-local STOP_TOP = 2218
+local STOP_TOP = 2388
 
 -- The header is the strip above the divider on the front panel. It is as high
 -- as the folded panel, so the logo sits at the same place on both. It is a
 -- lamp with one frame for each mode colour: light grey in launch mode, green
--- in clip picking, yellow in clip editing.
+-- in clip picking, yellow in clip editing, red in fill-in editing.
 local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
@@ -32,11 +32,11 @@ local SCREW_SIZE = 95
 local SCREW_LEFT = 65
 local SCREW_RIGHT = PANEL_WIDTH - SCREW_LEFT - SCREW_SIZE
 local SCREW_TOP = 198
-local SCREW_BOTTOM = 2272
+local SCREW_BOTTOM = 2617
 
 front = {
 	Bg = {
-		{ path = "Panel_Front_7U_dark" },
+		{ path = "Panel_Front_8U_dark" },
 	},
 	Labels = {
 		offset = { 0, 0 },
@@ -48,7 +48,7 @@ front = {
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_3frames", frames = 3 },
+		{ path = "Logo_4frames", frames = 4 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -109,14 +109,14 @@ front.click_scenes = {
 
 -- The labels sit centred below their buttons, their tops 20 pixels below the
 -- buttons. Those of the launch buttons are one lamp whose film strip starts
--- 25 pixels left of the grid: all unlit, SET/CLEAR and BACK in yellow, or all
--- in yellow (see tools/make-label-strips.sh). Each scene button has a lamp of its own, 250
+-- 25 pixels left of the grid: all unlit, SET/CLEAR or all in yellow, or
+-- SET/CLEAR or all in red (see tools/make-label-strips.sh). Each scene button has a lamp of its own, 250
 -- pixels wide and unlit, white or green.
 local LABEL_GAP = 20
 local SCENE_LABEL_WIDTH = 250
 front.labels_launch = {
 	offset = { LAUNCH_LEFT - 25, LAUNCH_TOP + BUTTON_HEIGHT + LABEL_GAP },
-	{ path = "Labels_Launch_3frames", frames = 3 },
+	{ path = "Labels_Launch_5frames", frames = 5 },
 }
 for scene = 1, ROW_COUNT do
 	front["label_scene" .. scene] = {
@@ -142,6 +142,64 @@ for track = 1, TRACK_COUNT do
 	}
 end
 
+-- The back button stands above the first track, centred in the width of a
+-- launch button and as far above it as the launch buttons are apart, all as
+-- drawn: 122 pixels. It is a lamp showing one of nine frames, with a
+-- transparent display of the same size on top.
+local BACK_LEFT = LAUNCH_LEFT + 38
+local BACK_TOP = 280
+front.lamp_back = {
+	offset = { BACK_LEFT, BACK_TOP },
+	{ path = "Back_Button_9frames", frames = 9 },
+}
+front.click_back = {
+	offset = { BACK_LEFT, BACK_TOP },
+	{ size = { 130, 135 } },
+}
+
+-- Its label sits below it like those of the scene buttons: centred, its top
+-- 20 pixels below the button, unlit, white, green or yellow.
+front.label_back = {
+	offset = { BACK_LEFT + (130 - SCENE_LABEL_WIDTH) / 2, BACK_TOP + 135 + LABEL_GAP },
+	{ path = "Label_Back_4frames", frames = 4 },
+}
+
+-- The set fill-in button stands beside it, above the second track, and looks
+-- like a scene button; its label is unlit or red.
+local SET_FILL_IN_LEFT = BACK_LEFT + TRACK_PITCH
+front.lamp_set_fill_in = {
+	offset = { SET_FILL_IN_LEFT, BACK_TOP },
+	{ path = "Scene_Button_9frames", frames = 9 },
+}
+front.click_set_fill_in = {
+	offset = { SET_FILL_IN_LEFT, BACK_TOP },
+	{ size = { 130, 135 } },
+}
+front.label_set_fill_in = {
+	offset = { SET_FILL_IN_LEFT + (130 - SCENE_LABEL_WIDTH) / 2, BACK_TOP + 135 + LABEL_GAP },
+	{ path = "Label_Set_Fill_In_2frames", frames = 2 },
+}
+
+-- The fill-in button stands to the left of scene 6, as far from the grid as
+-- the scene buttons are on the right. It is a button like a scene button but
+-- without an arrow, framed like one. Its caption is white or red, centred
+-- below it like a label.
+local FILL_IN_LEFT = LAUNCH_LEFT - (SCENE_LEFT - (LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH)) - SCENE_WIDTH
+local FILL_IN_TOP = LAUNCH_TOP + ROW_PITCH * 5
+local CAPTION_WIDTH = 250
+front.lamp_fill_in = {
+	offset = { FILL_IN_LEFT, FILL_IN_TOP },
+	{ path = "Side_Button_9frames", frames = 9 },
+}
+front.click_fill_in = {
+	offset = { FILL_IN_LEFT, FILL_IN_TOP },
+	{ size = { 130, 135 } },
+}
+front.caption_fill_in = {
+	offset = { FILL_IN_LEFT + (SCENE_WIDTH - CAPTION_WIDTH) / 2, FILL_IN_TOP + BUTTON_HEIGHT + LABEL_GAP },
+	{ path = "Caption_Fill_In_2frames", frames = 2 },
+}
+
 -- The setup button is a lamp with a transparent display on top, like the grid.
 front.lamp_setup = {
 	offset = { SETUP_LEFT, STOP_TOP },
@@ -154,7 +212,7 @@ front.click_setup = {
 
 back = {
 	Bg = {
-		{ path = "Panel_Back_7U" },
+		{ path = "Panel_Back_8U" },
 	},
 	Labels = {
 		offset = { 0, 0 },
@@ -165,14 +223,16 @@ back = {
 		{ path = "TapeHorz" },
 	},
 	PowerCord = {
-		offset = { 3170, 2060 },
+		offset = { 3170, 2405 },
 		{ path = "Powercord_11_1frames" },
 	},
 }
 
+-- Together with their labels the CV outputs are vertically centred on the
+-- back panel.
 for track = 1, TRACK_COUNT do
 	back["cv_out_track" .. track] = {
-		offset = { 1100 + 220 * (track - 1), 1160 },
+		offset = { 1100 + 220 * (track - 1), 1440 },
 		{ path = "SharedCVJack", frames = 3 },
 	}
 end
@@ -183,7 +243,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_3frames", frames = 3 },
+		{ path = "Logo_4frames", frames = 4 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,

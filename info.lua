@@ -4,7 +4,7 @@ medium_name = "Launchnik"
 short_name = "Launchnik"
 product_id = "rocks.zapperment.Launchnik"
 manufacturer = "Zapperment"
-version_number = "1.0.0d7"
+version_number = "1.0.0d10"
 device_type = "helper"
 device_categories = { "CV Source" }
 supports_patches = true
@@ -13,5 +13,5 @@ accepts_notes = false
 auto_create_track = false
 auto_create_note_lane = false
 supports_performance_automation = false
-device_height_ru = 7
+device_height_ru = 8
 automation_highlight_color = {r = 60, g = 255, b = 2}

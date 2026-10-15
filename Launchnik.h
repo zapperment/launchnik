@@ -15,6 +15,8 @@ class CLaunchnik {
 	private: void HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue);
 	private: CLauncher::TTransport ReadTransport() const;
 	private: void WriteOutputs();
+	// Stores a number unless it is what was last stored.
+	private: void Write(TJBox_Tag iTag, TJBox_Int32 iValue, TJBox_Int32& ioWritten);
 
 	private: CLauncher fLauncher;
 	private: TJBox_ObjectRef fCustomProps;
@@ -28,6 +30,14 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenSetupLamp;
 	private: TJBox_Int32 fWrittenLogoFrame;
 	private: TJBox_Int32 fWrittenLaunchLabelsFrame;
+	private: TJBox_Int32 fWrittenBackButtonFrame;
+	private: TJBox_Int32 fWrittenBackLabelFrame;
+	private: TJBox_Int32 fWrittenFillInLight;
+	private: TJBox_Int32 fWrittenFillInLightFrame;
+	private: TJBox_Int32 fWrittenFillInLabelFrame;
+	private: TJBox_Int32 fWrittenSetFillInLight;
+	private: TJBox_Int32 fWrittenSetFillInLightFrame;
+	private: TJBox_Int32 fWrittenSetFillInLabelFrame;
 	private: TJBox_Int32 fWrittenSceneLabelFrames[CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenStopLights[CLauncher::kTrackCount];
 	private: TJBox_Int32 fWrittenStopLightFrames[CLauncher::kTrackCount];

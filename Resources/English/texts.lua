@@ -18,6 +18,22 @@ texts = {
 
 	["text_logo"] = "Logo",
 	["text_launch_labels"] = "Launch Button Labels",
+	["text_back_button"] = "Back Button",
+	["text_back_label"] = "Back Button Label",
+
+	["text_fill_in"] = "Fill-In",
+	["text_fill_in_short"] = "Fill-In",
+	["text_fill_in_shortest"] = "Fill",
+	["text_released"] = "Released",
+	["text_pressed"] = "Pressed",
+	["text_fill_in_light"] = "Fill-In Light",
+	["text_fill_in_light_short"] = "Fill Lgt",
+	["text_fill_in_light_shortest"] = "FlLg",
+	["text_fill_in_label"] = "Fill-In Caption",
+	["text_set_fill_in_light"] = "Set Fill-In Light",
+	["text_set_fill_in_light_short"] = "SetF Lgt",
+	["text_set_fill_in_light_shortest"] = "SFLg",
+	["text_set_fill_in_label"] = "Set Fill-In Label",
 
 	["text_switch_interval"] = "Switch Interval",
 	["text_switch_interval_short"] = "Interval",
@@ -40,6 +56,10 @@ texts = {
 	["gesture_clip_present"] = "Switch clip on or off",
 	["gesture_clip_pattern"] = "Change clip pattern",
 	["gesture_clip_colour"] = "Change clip colour",
+	["gesture_fill_in"] = "Fill in",
+	["gesture_fill_in_present"] = "Switch fill-in on or off",
+	["gesture_fill_in_pattern"] = "Change fill-in pattern",
+	["gesture_fill_in_colour"] = "Change fill-in colour",
 }
 
 for track = 1, 8 do
@@ -72,6 +92,18 @@ for track = 1, 8 do
 		texts[clip .. "_colour"] = long .. " Colour"
 		texts[clip .. "_colour_short"] = short .. " Col"
 		texts[clip .. "_colour_shortest"] = "C" .. digits
+
+		texts[clip .. "_fill_in_present"] = long .. " Fill-In Present"
+		texts[clip .. "_fill_in_present_short"] = short .. " FOn"
+		texts[clip .. "_fill_in_present_shortest"] = "FO" .. digits
+
+		texts[clip .. "_fill_in_pattern"] = long .. " Fill-In Pattern"
+		texts[clip .. "_fill_in_pattern_short"] = short .. " FPt"
+		texts[clip .. "_fill_in_pattern_shortest"] = "FP" .. digits
+
+		texts[clip .. "_fill_in_colour"] = long .. " Fill-In Colour"
+		texts[clip .. "_fill_in_colour_short"] = short .. " FCl"
+		texts[clip .. "_fill_in_colour_shortest"] = "FC" .. digits
 
 		texts[clip .. "_light"] = long .. " Light"
 		texts[clip .. "_light_short"] = short .. " Lgt"

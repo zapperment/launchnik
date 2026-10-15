@@ -24,13 +24,13 @@ CPress::TChange CPress::LaunchButton(int iSetup, int iTrack, int iRow, bool iPre
 	if (iSetup == CLauncher::kSetupClipPicking) {
 		return MakeChange(kSetup, 0, CLauncher::SetupForClipEditing(iTrack, iRow));
 	}
+	if (!CLauncher::IsClipEditing(iSetup)) {
+		return kNoChange;
+	}
 
-	const int picked = iSetup - CLauncher::kSetupFirstClipEditing;
+	const int picked = CLauncher::PickedButton(iSetup);
 	if (iTrack == CLauncher::kEditingToggleTrack && iRow == CLauncher::kEditingToggleRow) {
 		return MakeChange(kClipPresent, picked, iPickedHoldsClip ? 0 : 1);
-	}
-	if (iTrack == CLauncher::kEditingBackTrack && iRow == CLauncher::kEditingBackRow) {
-		return MakeChange(kSetup, 0, CLauncher::kSetupClipPicking);
 	}
 	// The colour and pattern controls are not there without a clip.
 	if (!iPickedHoldsClip) {
@@ -45,6 +45,40 @@ CPress::TChange CPress::LaunchButton(int iSetup, int iTrack, int iRow, bool iPre
 		return MakeChange(kClipPattern, picked, iTrack);
 	}
 	return kNoChange;
+}
+
+CPress::TChanges CPress::FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, bool iPickedHoldsFillIn, int iPickedPattern) {
+	TChanges changes;
+	changes.fCount = 0;
+	if (!CLauncher::IsFillInEditing(iSetup)) {
+		return changes;
+	}
+
+	const int picked = CLauncher::PickedButton(iSetup);
+	if (iTrack == CLauncher::kEditingToggleTrack && iRow == CLauncher::kEditingToggleRow) {
+		if (iPickedHoldsFillIn) {
+			changes.fChanges[changes.fCount++] = MakeChange(kFillInPresent, picked, 0);
+			return changes;
+		}
+		// A new fill-in starts with the pattern of its clip, in white.
+		changes.fChanges[changes.fCount++] = MakeChange(kFillInPresent, picked, 1);
+		changes.fChanges[changes.fCount++] = MakeChange(kFillInPattern, picked, iPickedPattern);
+		changes.fChanges[changes.fCount++] = MakeChange(kFillInColour, picked, CLauncher::kColourWhite);
+		return changes;
+	}
+	// The colour and pattern controls are not there without a fill-in.
+	if (!iPickedHoldsFillIn) {
+		return changes;
+	}
+	const bool isColourRow = iRow == CLauncher::kEditingFirstColourRow || iRow == CLauncher::kEditingFirstColourRow + 1;
+	if (isColourRow && iTrack < CLauncher::kEditingColoursPerRow) {
+		const int colour = (iRow - CLauncher::kEditingFirstColourRow) * CLauncher::kEditingColoursPerRow + iTrack;
+		changes.fChanges[changes.fCount++] = MakeChange(kFillInColour, picked, colour);
+	}
+	else if (iRow == CLauncher::kEditingPatternRow) {
+		changes.fChanges[changes.fCount++] = MakeChange(kFillInPattern, picked, iTrack);
+	}
+	return changes;
 }
 
 CPress::TChange CPress::StopButton(int iTrack) {
@@ -71,4 +105,26 @@ CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsCl
 CPress::TChange CPress::SetupButton(int iSetup) {
 	const bool inSetupMode = iSetup != CLauncher::kSetupLaunchMode;
 	return MakeChange(kSetup, 0, inSetupMode ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);
+}
+
+CPress::TChange CPress::BackButton(int iSetup) {
+	if (iSetup == CLauncher::kSetupLaunchMode) {
+		return kNoChange;
+	}
+	if (CLauncher::IsFillInEditing(iSetup)) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupFirstClipEditing + CLauncher::PickedButton(iSetup));
+	}
+	const bool inClipPicking = iSetup == CLauncher::kSetupClipPicking;
+	return MakeChange(kSetup, 0, inClipPicking ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);
+}
+
+CPress::TChange CPress::SetFillInButton(int iSetup, bool iPickedHoldsClip) {
+	if (!CLauncher::IsClipEditing(iSetup) || !iPickedHoldsClip) {
+		return kNoChange;
+	}
+	return MakeChange(kSetup, 0, CLauncher::kSetupFirstFillInEditing + CLauncher::PickedButton(iSetup));
+}
+
+CPress::TChange CPress::FillInButton(bool iPressed) {
+	return MakeChange(kFillIn, 0, iPressed ? 1 : 0);
 }

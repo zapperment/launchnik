@@ -7,7 +7,8 @@
 //
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
 // active, light, label, mode colour, switch interval, switch point, length,
-// immediate, clip picking, clip editing, scene, segment, interval meter.
+// immediate, clip picking, clip editing, fill-in, fill-in editing, scene,
+// segment, interval meter.
 //
 // Tracks are numbered from 0 here. Rows are numbered from 1, so that a row is
 // also the selection that chooses its launch button, and the number of its
@@ -30,24 +31,23 @@ class CLauncher {
 	public: static const int kColourRed = 1;
 	public: static const int kColourYellow = 3;
 	public: static const int kColourGreen = 5;
-	public: static const int kColourBlue = 9;
 	public: static const int kColourPink = 13;
 
 	// The setup state is one number: launch mode, clip picking, or clip editing
-	// for one launch button.
+	// or fill-in editing for one launch button.
 	public: static const int kSetupLaunchMode = 0;
 	public: static const int kSetupClipPicking = 1;
 	public: static const int kSetupFirstClipEditing = 2;
-	public: static const int kSetupCount = kSetupFirstClipEditing + kButtonCount;
+	public: static const int kSetupFirstFillInEditing = kSetupFirstClipEditing + kButtonCount;
+	public: static const int kSetupCount = kSetupFirstFillInEditing + kButtonCount;
 
-	// Where the controls of clip editing sit on the grid.
+	// Where the controls of clip editing sit on the grid; fill-in editing has
+	// them in the same places.
 	public: static const int kEditingToggleTrack = 7;
 	public: static const int kEditingToggleRow = 1;
 	public: static const int kEditingFirstColourRow = 2;
 	public: static const int kEditingColoursPerRow = 7;
 	public: static const int kEditingPatternRow = 5;
-	public: static const int kEditingBackTrack = 7;
-	public: static const int kEditingBackRow = 8;
 
 	// The length of the switch interval is one of eight settings: immediate,
 	// one beat, half a bar, then 1, 2, 4, 8 and 16 bars. In clip picking the
@@ -122,12 +122,24 @@ class CLauncher {
 	// state in which that launch button is being edited.
 	public: static int ButtonIndex(int iTrack, int iRow);
 	public: static int SetupForClipEditing(int iTrack, int iRow);
+	public: static int SetupForFillInEditing(int iTrack, int iRow);
+	public: static bool IsClipEditing(int iSetup);
+	public: static bool IsFillInEditing(int iSetup);
+	// The number of the launch button being edited in clip editing or fill-in
+	// editing, or -1 in launch mode and clip picking.
+	public: static int PickedButton(int iSetup);
 
 	// Record what a launch button holds. A launch button keeps its pattern and
 	// colour while it is empty, so that a clip comes back as it was.
 	public: void SetClipPresent(int iTrack, int iRow, bool iPresent);
 	public: void SetClipPattern(int iTrack, int iRow, int iPattern);
 	public: void SetClipColour(int iTrack, int iRow, int iColour);
+
+	// Record the fill-in a launch button holds, which it keeps while it is
+	// empty, like its clip's pattern and colour.
+	public: void SetFillInPresent(int iTrack, int iRow, bool iPresent);
+	public: void SetFillInPattern(int iTrack, int iRow, int iPattern);
+	public: void SetFillInColour(int iTrack, int iRow, int iColour);
 
 	public: void SetSetup(int iSetup);
 
@@ -141,6 +153,14 @@ class CLauncher {
 	// Records what the user chose on a track. Call before Advance() for changes
 	// that arrived in the same batch.
 	public: void SetSelection(int iTrack, int iSelection);
+
+	// Whether the fill-in button is held down. Pressing it triggers a fill-in,
+	// which plays from the next call of Advance() until the next switch point.
+	// A press does nothing while a fill-in is playing or while the length is
+	// immediate. Call before Advance() for changes that arrived in the same
+	// batch.
+	public: void SetFillInPressed(bool iPressed);
+	public: bool IsFillInPlaying() const;
 
 	// Makes every track emit its selection at once, with nothing queued. Used
 	// when a song is opened.
@@ -174,21 +194,58 @@ class CLauncher {
 	public: int GetSceneLightFrame(int iScene) const;
 
 	// The mode colour, worn by the logo and the lit labels: white in launch
-	// mode, green in clip picking, yellow in clip editing. Also the frame of
+	// mode, green in clip picking, yellow in clip editing, red in fill-in
+	// editing. Also the frame of
 	// the logo's film strip.
 	public: enum EModeColour {
 		kModeWhite = 0,
 		kModeGreen = 1,
-		kModeYellow = 2
+		kModeYellow = 2,
+		kModeRed = 3
 	};
 	public: EModeColour GetModeColour() const;
 
+	// The frame of the back button's film strip to show: dark in launch mode,
+	// vibrant white in clip picking, vibrant green in clip editing, vibrant
+	// yellow in fill-in editing. The strip has the frames of the scene
+	// button's source image, in its order.
+	public: static const int kBackButtonFrameCount = 9;
+	public: static const int kBackButtonDark = 0;
+	public: static const int kBackButtonVibrantGreen = 3;
+	public: static const int kBackButtonVibrantYellow = 5;
+	public: static const int kBackButtonVibrantWhite = 7;
+	public: int GetBackButtonFrame() const;
+
+	// The frame of the back button's label to show, in the colour of the
+	// button: 0 unlit, 1 white, 2 green, 3 yellow.
+	public: int GetBackLabelFrame() const;
+
 	// The frame of the launch labels' film strip to show: 0 unlit, 1 SET/CLEAR
-	// and BACK lit, 2 all lit. They are lit, in yellow, only in clip editing,
-	// and the labels of colours and patterns only while the picked launch
-	// button holds a clip.
-	public: static const int kLaunchLabelsFrameCount = 3;
+	// lit in yellow, 2 all lit in yellow, 3 SET/CLEAR lit in red, 4 all lit in
+	// red. They are lit only in clip editing, in yellow, and in fill-in
+	// editing, in red; the labels of colours and patterns only while the
+	// picked launch button holds a clip, or in fill-in editing a fill-in.
+	public: static const int kLaunchLabelsFrameCount = 5;
 	public: int GetLaunchLabelsFrame() const;
+
+	// What the fill-in button shows: dim white, or vibrant red while a fill-in
+	// is playing. The value is encoded like the light of a launch button, the
+	// frame is one of a film strip laid out like the scene buttons'.
+	public: TLight GetFillInLight() const;
+	public: int GetFillInLightValue() const;
+	public: int GetFillInLightFrame() const;
+	// The frame of the FILL-IN caption: 0 white, 1 red while a fill-in is
+	// playing.
+	public: int GetFillInLabelFrame() const;
+
+	// What the set fill-in button shows: vibrant red in clip editing of a
+	// launch button that holds a clip, unlit otherwise. Encoded and framed like
+	// the fill-in button's light.
+	public: TLight GetSetFillInLight() const;
+	public: int GetSetFillInLightValue() const;
+	public: int GetSetFillInLightFrame() const;
+	// The frame of its label: 0 unlit, 1 red.
+	public: int GetSetFillInLabelFrame() const;
 
 	// The frame of the scene labels' film strip to show: 0 unlit, 1 white, 2
 	// green. Every label is green in clip picking; otherwise only the label of
@@ -206,6 +263,9 @@ class CLauncher {
 		bool fPresent;
 		int fPattern;
 		int fColour;
+		bool fFillInPresent;
+		int fFillInPattern;
+		int fFillInColour;
 	};
 
 	private: bool ContainsSwitchPoint(const TTransport& iTransport) const;
@@ -226,6 +286,16 @@ class CLauncher {
 	private: TLight GetLaunchModeLight(int iTrack, int iRow) const;
 	private: TLight GetClipPickingLight(int iTrack, int iRow) const;
 	private: TLight GetClipEditingLight(int iTrack, int iRow) const;
+	private: TLight GetFillInEditingLight(int iTrack, int iRow) const;
+	// The light of a launch button in clip editing or fill-in editing, given
+	// the settings being edited and the colour of the pattern row.
+	private: static TLight GetEditingLight(int iTrack, int iRow, bool iPresent, int iColour, int iPattern, int iPatternRowColour);
+	private: const TClip& PickedClip() const;
+	// Whether a track is playing the fill-in of its active clip.
+	private: bool PlaysFillIn(int iTrack) const;
+	// The frame of a film strip laid out like the scene buttons': unlit, then
+	// dim and vibrant for red, green, yellow and white.
+	private: int SceneStripFrame(const TLight& iLight) const;
 
 	private: TClip fClips[kTrackCount][kRowCount];
 	private: int fSetup;
@@ -242,4 +312,8 @@ class CLauncher {
 	private: bool fSwitchPointInPreviousBatch;
 	// How many scene buttons the interval meter has lit, from the bottom.
 	private: int fReachedSegments;
+	private: bool fFillInPressed;
+	// Set by a press of the fill-in button, until the next call of Advance().
+	private: bool fFillInTriggered;
+	private: bool fFillInPlaying;
 };

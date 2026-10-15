@@ -14,6 +14,9 @@ const TJBox_Int32 kNothingWritten = -1;
 const TJBox_Tag kClipPresentBase = 3000;
 const TJBox_Tag kClipPatternBase = 4000;
 const TJBox_Tag kClipColourBase = 5000;
+const TJBox_Tag kFillInPresentBase = 6000;
+const TJBox_Tag kFillInPatternBase = 7000;
+const TJBox_Tag kFillInColourBase = 8000;
 const TJBox_Tag kClipTagSpan = 1000;
 
 } // namespace
@@ -27,7 +30,15 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fSetupLampLit(false),
 	fWrittenSetupLamp(kNothingWritten),
 	fWrittenLogoFrame(kNothingWritten),
-	fWrittenLaunchLabelsFrame(kNothingWritten)
+	fWrittenLaunchLabelsFrame(kNothingWritten),
+	fWrittenBackButtonFrame(kNothingWritten),
+	fWrittenBackLabelFrame(kNothingWritten),
+	fWrittenFillInLight(kNothingWritten),
+	fWrittenFillInLightFrame(kNothingWritten),
+	fWrittenFillInLabelFrame(kNothingWritten),
+	fWrittenSetFillInLight(kNothingWritten),
+	fWrittenSetFillInLightFrame(kNothingWritten),
+	fWrittenSetFillInLabelFrame(kNothingWritten)
 {
 	const char* const cvOutputPaths[CLauncher::kTrackCount] = {
 		"/cv_outputs/track1",
@@ -74,7 +85,10 @@ void CLaunchnik::LoadEverything() {
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		HandleChange(SelectionTag(track), JBox_LoadMOMPropertyByTag(fCustomProps, SelectionTag(track)));
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
-			const TJBox_Tag tags[] = { ClipPresentTag(track, row), ClipPatternTag(track, row), ClipColourTag(track, row) };
+			const TJBox_Tag tags[] = {
+				ClipPresentTag(track, row), ClipPatternTag(track, row), ClipColourTag(track, row),
+				FillInPresentTag(track, row), FillInPatternTag(track, row), FillInColourTag(track, row),
+			};
 			for (TJBox_Tag tag : tags) {
 				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
 			}
@@ -102,12 +116,16 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		fLauncher.SetLength(static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
+	if (iTag == kCustomPropsTag_FillIn) {
+		fLauncher.SetFillInPressed(JBox_GetBoolean(iValue));
+		return;
+	}
 	if (iTag >= SelectionTag(0) && iTag <= SelectionTag(CLauncher::kTrackCount - 1)) {
 		const int track = static_cast<int>(iTag - SelectionTag(0));
 		fLauncher.SetSelection(track, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	if (iTag < kClipPresentBase || iTag >= kClipColourBase + kClipTagSpan) {
+	if (iTag < kClipPresentBase || iTag >= kFillInColourBase + kClipTagSpan) {
 		return;
 	}
 	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
@@ -122,6 +140,15 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 	else if (base == kClipColourBase) {
 		fLauncher.SetClipColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
 	}
+	else if (base == kFillInPresentBase) {
+		fLauncher.SetFillInPresent(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kFillInPatternBase) {
+		fLauncher.SetFillInPattern(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	}
+	else if (base == kFillInColourBase) {
+		fLauncher.SetFillInColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	}
 }
 
 CLauncher::TTransport CLaunchnik::ReadTransport() const {
@@ -134,6 +161,13 @@ CLauncher::TTransport CLaunchnik::ReadTransport() const {
 	transport.fTimeSignatureNumerator = static_cast<int>(JBox_LoadMOMPropertyAsNumber(fTransport, kJBox_TransportTimeSignatureNumerator));
 	transport.fTimeSignatureDenominator = static_cast<int>(JBox_LoadMOMPropertyAsNumber(fTransport, kJBox_TransportTimeSignatureDenominator));
 	return transport;
+}
+
+void CLaunchnik::Write(TJBox_Tag iTag, TJBox_Int32 iValue, TJBox_Int32& ioWritten) {
+	if (iValue != ioWritten) {
+		ioWritten = iValue;
+		JBox_StoreMOMPropertyByTag(fCustomProps, iTag, JBox_MakeNumber(iValue));
+	}
 }
 
 void CLaunchnik::WriteOutputs() {
@@ -154,6 +188,25 @@ void CLaunchnik::WriteOutputs() {
 		fWrittenLaunchLabelsFrame = launchLabelsFrame;
 		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_LaunchLabelsFrame, JBox_MakeNumber(launchLabelsFrame));
 	}
+
+	const TJBox_Int32 backButtonFrame = fLauncher.GetBackButtonFrame();
+	if (backButtonFrame != fWrittenBackButtonFrame) {
+		fWrittenBackButtonFrame = backButtonFrame;
+		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_BackButtonFrame, JBox_MakeNumber(backButtonFrame));
+	}
+
+	const TJBox_Int32 backLabelFrame = fLauncher.GetBackLabelFrame();
+	if (backLabelFrame != fWrittenBackLabelFrame) {
+		fWrittenBackLabelFrame = backLabelFrame;
+		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_BackLabelFrame, JBox_MakeNumber(backLabelFrame));
+	}
+
+	Write(kCustomPropsTag_FillInLight, fLauncher.GetFillInLightValue(), fWrittenFillInLight);
+	Write(kCustomPropsTag_FillInLightFrame, fLauncher.GetFillInLightFrame(), fWrittenFillInLightFrame);
+	Write(kCustomPropsTag_FillInLabelFrame, fLauncher.GetFillInLabelFrame(), fWrittenFillInLabelFrame);
+	Write(kCustomPropsTag_SetFillInLight, fLauncher.GetSetFillInLightValue(), fWrittenSetFillInLight);
+	Write(kCustomPropsTag_SetFillInLightFrame, fLauncher.GetSetFillInLightFrame(), fWrittenSetFillInLightFrame);
+	Write(kCustomPropsTag_SetFillInLabelFrame, fLauncher.GetSetFillInLabelFrame(), fWrittenSetFillInLabelFrame);
 
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		const TJBox_Int32 stopLight = fLauncher.GetStopLight(track);
