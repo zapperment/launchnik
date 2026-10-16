@@ -1,7 +1,7 @@
 format_version = "3.0"
 
--- Vocabulary follows CONTEXT.md. A selection is 0 for the stop button or 1..8
--- for the launch button in that row.
+-- Vocabulary follows CONTEXT.md. A selection is 0 for stop or 1..8 for the
+-- launch button in that row.
 --
 -- Property tags, as used by Tags.h, for track t and row r, both from 1:
 --   setup state:                      50
@@ -16,9 +16,15 @@ format_version = "3.0"
 --   light of the set fill-in button:       59
 --   film strip frames of the fill-in button, its caption, the set fill-in
 --   button and its label:                  70, 71, 72, 73
+--   function:                              74
+--   film strip frame of the function select button of function f (0 = stop,
+--   1 = mute, 2 = solo):                   75 + f
+--   film strip frame of its caption:       80 + f
 --   film strip frame of the label of the scene button of row r: 60 + r
 --   selection of track t:            100 + t
---   light of the stop button:       1000 + 10 * t
+--   mute button of track t, held down or not: 110 + t
+--   solo button of track t, held down or not: 120 + t
+--   light of the function button:   1000 + 10 * t
 --   light of a launch button:       1000 + 10 * t + r
 --   light of the scene button of row r:      1090 + r
 --   film strip frame of that light:          2090 + r
@@ -46,6 +52,13 @@ local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
 local LIGHT_FRAME_COUNT = 1 + 2 * COLOUR_COUNT
 -- Unlit, then dim and vibrant for red, green, yellow and white
 local SCENE_LIGHT_FRAME_COUNT = 9
+-- Unlit, then dim and vibrant for red, green, yellow, blue and white
+local SIDE_LIGHT_FRAME_COUNT = 11
+-- Unlit, then dim and vibrant for red (stop), yellow (mute) and blue (solo)
+local FUNCTION_LIGHT_FRAME_COUNT = 7
+
+-- Stop, mute and solo, numbered from 0, with the names used in properties
+local FUNCTIONS = { "stop", "mute", "solo" }
 
 -- Immediate, one beat, half a bar, then 1, 2, 4, 8 and 16 bars
 local LENGTH_COUNT = 8
@@ -94,10 +107,12 @@ end
 -- Reason only offers automation for properties that have a number in the MIDI
 -- CC chart. Numbers from 256 upwards enable automation without responding to
 -- any MIDI CC, so nothing a Launchpad sends can reach a selection by accident.
--- Only the selections and the fill-in button are automatable; clips and the
--- setup state are not.
+-- Only the selections, the fill-in button and the mute and solo buttons are
+-- automatable; clips, the setup state and the function are not.
 local FIRST_SELECTION_MIDI_CC = 256
 local FILL_IN_MIDI_CC = FIRST_SELECTION_MIDI_CC + TRACK_COUNT
+local FIRST_MUTE_MIDI_CC = FILL_IN_MIDI_CC + 1
+local FIRST_SOLO_MIDI_CC = FIRST_MUTE_MIDI_CC + TRACK_COUNT
 local midi_cc_chart = {}
 
 -- 0 = launch mode, 1 = clip picking, 2..65 = clip editing and 66..129 =
@@ -138,6 +153,41 @@ document_properties.fill_in = jbox.boolean{
 midi_cc_chart[FILL_IN_MIDI_CC] = "/custom_properties/fill_in"
 add_remote_item("fill_in", "Fill-In")
 
+-- What the function buttons do: 0 = stop, 1 = mute, 2 = solo. Written by the
+-- panel and by control surfaces, which look it up to tell what a press of a
+-- function button means. Not saved, so that a song opens with stop, and not
+-- automatable: automation records the mute and solo presses themselves (see
+-- docs/adr/0005).
+document_properties.selected_function = jbox.number{
+	property_tag = 74,
+	default = 0,
+	steps = #FUNCTIONS,
+	persistence = "none",
+	ui_name = jbox.ui_text("text_selected_function"),
+	ui_type = jbox.ui_selector{ jbox.ui_text("text_stop"), jbox.ui_text("text_mute"), jbox.ui_text("text_solo") },
+}
+add_remote_item("selected_function", "Function")
+
+-- The frames the front panel shows of the function select buttons, in the
+-- side buttons' film strip, and of their captions: 0 = white, 1 = in the
+-- colour of the function while it is chosen. Computed by the realtime code.
+for index, name in ipairs(FUNCTIONS) do
+	rt_properties["function_select_" .. name .. "_light_frame"] = jbox.number{
+		property_tag = 75 + index - 1,
+		default = 0,
+		steps = SIDE_LIGHT_FRAME_COUNT,
+		ui_name = jbox.ui_text("text_function_select_" .. name),
+		ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
+	}
+	rt_properties["function_select_" .. name .. "_caption_frame"] = jbox.number{
+		property_tag = 80 + index - 1,
+		default = 0,
+		steps = 2,
+		ui_name = jbox.ui_text("text_function_select_" .. name),
+		ui_type = plain_number(1),
+	}
+end
+
 -- What the fill-in button and the set fill-in button show, for control
 -- surfaces, encoded like the light of a launch button: dim white (1) or
 -- vibrant red (5) for the fill-in button, unlit (0) or vibrant red (5) for the
@@ -160,15 +210,16 @@ rt_properties.set_fill_in_light = jbox.number{
 }
 add_remote_item("set_fill_in_light", "Set Fill-In Light")
 
--- The frames the front panel shows of the two buttons, whose film strips are
--- laid out like the scene buttons', and of their captions: FILL-IN is 0 =
--- white, 1 = red, SET FILL-IN 0 = unlit, 1 = red.
+-- The frames the front panel shows of the two buttons, and of their
+-- captions: the fill-in button's film strip is that of the side buttons, the
+-- set fill-in button's that of the scene buttons; FILL-IN is 0 = white, 1 =
+-- red, SET FILL-IN 0 = unlit, 1 = red.
 rt_properties.fill_in_light_frame = jbox.number{
 	property_tag = 70,
 	default = 0,
-	steps = SCENE_LIGHT_FRAME_COUNT,
+	steps = SIDE_LIGHT_FRAME_COUNT,
 	ui_name = jbox.ui_text("text_fill_in_light"),
-	ui_type = plain_number(SCENE_LIGHT_FRAME_COUNT - 1),
+	ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
 }
 
 rt_properties.fill_in_label_frame = jbox.number{
@@ -274,27 +325,48 @@ for track = 1, TRACK_COUNT do
 	midi_cc_chart[FIRST_SELECTION_MIDI_CC + track - 1] = "/custom_properties/" .. selection
 	add_remote_item(selection, "Track " .. track .. " Selection")
 
-	-- What the stop button shows, for control surfaces: 0 = unlit (the track
-	-- has no clips), 1 = dim (stopped), 2 = vibrant (a clip is active), 3 =
-	-- flashing (about to stop). Computed by the realtime code.
-	local stop = "track" .. track .. "_stop"
-	rt_properties[stop .. "_light"] = jbox.number{
+	-- 1 while the track's mute or solo button is held down. The realtime code
+	-- switches the track's mute or solo when it goes down; that is also what
+	-- automation records and plays back. Not saved, so that a song never opens
+	-- with a button held (see docs/adr/0005).
+	for index, name in ipairs({ "mute", "solo" }) do
+		local press = "track" .. track .. "_" .. name
+		document_properties[press] = jbox.boolean{
+			property_tag = 100 + 10 * index + track,
+			default = false,
+			persistence = "none",
+			ui_name = jbox.ui_text("text_" .. press),
+			ui_type = jbox.ui_selector{ jbox.ui_text("text_released"), jbox.ui_text("text_pressed") },
+		}
+		local first_midi_cc = name == "mute" and FIRST_MUTE_MIDI_CC or FIRST_SOLO_MIDI_CC
+		midi_cc_chart[first_midi_cc + track - 1] = "/custom_properties/" .. press
+		add_remote_item(press, "Track " .. track .. " " .. (name == "mute" and "Mute" or "Solo"))
+	end
+
+	-- What the function button shows, for control surfaces, in the colour of
+	-- the function: 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing. In stop
+	-- function: unlit (the track has no clips), dim (stopped), vibrant (a clip
+	-- is active), flashing (about to stop). In mute function vibrant, dim while
+	-- muted; in solo function dim, vibrant while soloed; unlit without clips.
+	-- Computed by the realtime code.
+	local function_button = "track" .. track .. "_function"
+	rt_properties[function_button .. "_light"] = jbox.number{
 		property_tag = 1000 + 10 * track,
 		default = 0,
 		steps = 4,
-		ui_name = jbox.ui_text("text_" .. stop),
+		ui_name = jbox.ui_text("text_" .. function_button),
 		ui_type = jbox.ui_selector{ jbox.ui_text("text_unlit"), jbox.ui_text("text_dim"), jbox.ui_text("text_vibrant"), jbox.ui_text("text_flashing") },
 	}
-	add_remote_item(stop .. "_light", "Track " .. track .. " Stop Light")
+	add_remote_item(function_button .. "_light", "Track " .. track .. " Function Light")
 
-	-- The frame of the stop buttons' film strip the front panel shows right
-	-- now: unlit, dim or vibrant.
-	rt_properties[stop .. "_light_frame"] = jbox.number{
+	-- The frame of the function buttons' film strip the front panel shows
+	-- right now: unlit, then dim and vibrant for red, yellow and blue.
+	rt_properties[function_button .. "_light_frame"] = jbox.number{
 		property_tag = 2000 + 10 * track,
 		default = 0,
-		steps = 3,
-		ui_name = jbox.ui_text("text_" .. stop),
-		ui_type = plain_number(2),
+		steps = FUNCTION_LIGHT_FRAME_COUNT,
+		ui_name = jbox.ui_text("text_" .. function_button),
+		ui_type = plain_number(FUNCTION_LIGHT_FRAME_COUNT - 1),
 	}
 
 	for row = 1, ROW_COUNT do

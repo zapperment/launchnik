@@ -8,7 +8,8 @@
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
 // active, light, label, mode colour, switch interval, switch point, length,
 // immediate, clip picking, clip editing, fill-in, fill-in editing, scene,
-// segment, interval meter.
+// segment, interval meter, function, function button, function select button,
+// stop, muted, soloed, solo-muted.
 //
 // Tracks are numbered from 0 here. Rows are numbered from 1, so that a row is
 // also the selection that chooses its launch button, and the number of its
@@ -19,8 +20,8 @@ class CLauncher {
 	public: static const int kRowCount = 8;
 	public: static const int kButtonCount = kTrackCount * kRowCount;
 
-	// A selection is 0 for the stop button or 1..8 for the launch button in
-	// that row, so a track has nine buttons.
+	// A selection is 0 for stop or 1..8 for the launch button in that row, so
+	// a track has nine buttons.
 	public: static const int kSelectionStop = 0;
 	public: static const int kSelectionCount = 9;
 
@@ -31,6 +32,7 @@ class CLauncher {
 	public: static const int kColourRed = 1;
 	public: static const int kColourYellow = 3;
 	public: static const int kColourGreen = 5;
+	public: static const int kColourBlue = 9;
 	public: static const int kColourPink = 13;
 
 	// The setup state is one number: launch mode, clip picking, or clip editing
@@ -66,6 +68,25 @@ class CLauncher {
 	public: static const int kSegmentCount = kRowCount;
 	public: static const int kGreenSegmentCount = 5;
 	public: static const int kYellowSegmentCount = 2;
+
+	// What the function buttons do: stop, mute or solo. A song opens with stop.
+	public: static const int kFunctionStop = 0;
+	public: static const int kFunctionMute = 1;
+	public: static const int kFunctionSolo = 2;
+	public: static const int kFunctionCount = 3;
+
+	// The film strip of the function buttons: frame 0 is unlit, then dim and
+	// vibrant for red (stop), yellow (mute) and blue (solo).
+	public: static const int kFunctionLightFrameCount = 7;
+
+	// The film strip of the fill-in button and the function select buttons:
+	// frame 0 is unlit, then dim and vibrant for red, green, yellow, blue and
+	// white.
+	public: static const int kSideLightFrameCount = 11;
+
+	// A jump of the song position by more than this, between one batch and the
+	// next, is a locate or a loop rather than the song playing on.
+	public: static const long long kJumpTolerance = 3840;
 
 	// Musical time is counted in PPQ, the host's unit for song position.
 	public: static const long long kPPQPerCrotchet = 15360;
@@ -154,6 +175,24 @@ class CLauncher {
 	// that arrived in the same batch.
 	public: void SetSelection(int iTrack, int iSelection);
 
+	public: void SetFunction(int iFunction);
+	public: int GetFunction() const;
+
+	// Whether a track's mute button or solo button is held down. Pressing it
+	// switches the track between muted and not muted, or soloed and not
+	// soloed, from the next call of Advance(). A press on a track that has no
+	// clips does nothing. Call before Advance() for changes that arrived in the
+	// same batch.
+	public: void SetMutePressed(int iTrack, bool iPressed);
+	public: void SetSoloPressed(int iTrack, bool iPressed);
+	// Mutes and solos end at the next switch point, when the song position
+	// jumps, and when their track has no clips left.
+	public: bool IsMuted(int iTrack) const;
+	public: bool IsSoloed(int iTrack) const;
+	// Whether a track emits 0 because of a mute or a solo: it is not soloed,
+	// and it is muted or another track is soloed.
+	public: bool IsSilenced(int iTrack) const;
+
 	// Whether the fill-in button is held down. Pressing it triggers a fill-in,
 	// which plays from the next call of Advance() until the next switch point.
 	// A press does nothing while a fill-in is playing or while the length is
@@ -175,9 +214,29 @@ class CLauncher {
 	// stop, vibrant while a clip is active and can be stopped, dim while the
 	// track is stopped, unlit while the track has no clips at all.
 	public: EBrightness GetStopLight(int iTrack) const;
-	// The frame of the stop buttons' film strip to show right now: unlit, dim
-	// or vibrant; a flashing light alternates between the last two.
-	public: int GetStopLightFrame(int iTrack) const;
+
+	// What a function button shows, in the colour of the function: in stop
+	// function the light of the stop button, in red. In mute function vibrant
+	// yellow, or dim yellow while the track is muted; in solo function dim
+	// blue, or vibrant blue while the track is soloed. Unlit in every function
+	// while the track has no clips.
+	public: TLight GetFunctionLight(int iTrack) const;
+	// Its brightness alone, the way control surfaces receive it; the colour
+	// follows from the function.
+	public: int GetFunctionLightValue(int iTrack) const;
+	// The frame of the function buttons' film strip to show right now; a
+	// flashing light alternates between dim and vibrant.
+	public: int GetFunctionLightFrame(int iTrack) const;
+
+	// What a function select button shows: vibrant in the colour of its
+	// function (red for stop, yellow for mute, blue for solo) while that
+	// function is chosen, dim white otherwise. The frame is one of the side
+	// buttons' film strip.
+	public: TLight GetFunctionSelectLight(int iFunction) const;
+	public: int GetFunctionSelectLightFrame(int iFunction) const;
+	// The frame of its caption: 0 white, 1 in the colour of its function while
+	// that function is chosen.
+	public: int GetFunctionSelectCaptionFrame(int iFunction) const;
 
 	public: TLight GetLight(int iTrack, int iRow) const;
 	public: int GetLightValue(int iTrack, int iRow) const;
@@ -230,7 +289,7 @@ class CLauncher {
 
 	// What the fill-in button shows: dim white, or vibrant red while a fill-in
 	// is playing. The value is encoded like the light of a launch button, the
-	// frame is one of a film strip laid out like the scene buttons'.
+	// frame is one of the side buttons' film strip.
 	public: TLight GetFillInLight() const;
 	public: int GetFillInLightValue() const;
 	public: int GetFillInLightFrame() const;
@@ -239,8 +298,8 @@ class CLauncher {
 	public: int GetFillInLabelFrame() const;
 
 	// What the set fill-in button shows: vibrant red in clip editing of a
-	// launch button that holds a clip, unlit otherwise. Encoded and framed like
-	// the fill-in button's light.
+	// launch button that holds a clip, unlit otherwise. Encoded like the
+	// fill-in button's light, framed like a scene button's.
 	public: TLight GetSetFillInLight() const;
 	public: int GetSetFillInLightValue() const;
 	public: int GetSetFillInLightFrame() const;
@@ -296,6 +355,16 @@ class CLauncher {
 	// The frame of a film strip laid out like the scene buttons': unlit, then
 	// dim and vibrant for red, green, yellow and white.
 	private: int SceneStripFrame(const TLight& iLight) const;
+	// The frame of the side buttons' film strip: unlit, then dim and vibrant
+	// for red, green, yellow, blue and white.
+	private: int SideStripFrame(const TLight& iLight) const;
+	// Whether a light shows vibrant right now, as opposed to dim.
+	private: bool ShowsVibrant(const TLight& iLight) const;
+	// Whether the song position has moved other than by playing on since the
+	// last call of Advance().
+	private: bool IsJump(const TTransport& iTransport) const;
+	private: void EndMutesAndSolos();
+	private: static int FunctionColour(int iFunction);
 
 	private: TClip fClips[kTrackCount][kRowCount];
 	private: int fSetup;
@@ -316,4 +385,17 @@ class CLauncher {
 	// Set by a press of the fill-in button, until the next call of Advance().
 	private: bool fFillInTriggered;
 	private: bool fFillInPlaying;
+	private: int fFunction;
+	private: bool fMutePressed[kTrackCount];
+	private: bool fSoloPressed[kTrackCount];
+	// Set by a press of a mute or solo button, until the next call of
+	// Advance().
+	private: bool fMuteTriggered[kTrackCount];
+	private: bool fSoloTriggered[kTrackCount];
+	private: bool fMuted[kTrackCount];
+	private: bool fSoloed[kTrackCount];
+	// The transport of the last call of Advance(), to tell a jump of the song
+	// position from playing on.
+	private: bool fHasPreviousTransport;
+	private: TTransport fPreviousTransport;
 };

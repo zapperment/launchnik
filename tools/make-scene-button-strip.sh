@@ -1,15 +1,18 @@
 #!/bin/sh
 # Builds GUI2D/Scene_Button_9frames.png, the film strip of the scene buttons
 # and the set fill-in button, from the nine-frame image in
-# RE2D_Launchnik_Graphics, and in the same way GUI2D/Side_Button_9frames.png,
-# that of the fill-in button, from the image of a button without an arrow.
+# RE2D_Launchnik_Graphics, and GUI2D/Side_Button_11frames.png, that of the
+# fill-in button and the function select buttons, from the eleven-frame image
+# of a button without an arrow.
 #
-# Frame 0 is the unlit button. Red, green, yellow and white follow in that
-# order, each as a dim frame and then a vibrant one.
+# Frame 0 is the unlit button. The colours follow, each as a dim frame and
+# then a vibrant one: red, green, yellow and white for the scene buttons; red,
+# green, yellow, blue and white for the side buttons.
 #
-# The source is 126x1211 pixels with its frames 135 pixels apart. It is padded
-# to frames of 130x135, a size RE2DRender accepts and the height of a launch
-# button, with the button moved so that it sits level with the launch buttons.
+# The sources are 126 pixels wide with their frames 135 pixels apart. They are
+# padded to frames of 130x135, a size RE2DRender accepts and the height of a
+# launch button, with the button moved so that it sits level with the launch
+# buttons.
 #
 # Needs ImageMagick.
 set -e
@@ -20,22 +23,34 @@ FRAME=130x135
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
+# In the sources the unlit frame comes first, then vibrant and dim for each
+# colour, so the two frames of each colour swap places.
 build_strip() {
 	source=$1
 	target=$2
-	magick "$source" -background none -gravity northwest -splice 2x1 -extent 130x1215 +repage "$WORK/padded.png"
+	frames=$3
+	magick "$source" -background none -gravity northwest -splice 2x1 -extent "130x$((frames * 135))" +repage "$WORK/padded.png"
 
-	# In the source the unlit frame comes first, then vibrant and dim for red,
-	# green, yellow and white.
 	index=0
-	for source_frame in 0 2 1 4 3 6 5 8 7; do
-		magick "$WORK/padded.png" -crop "$FRAME+0+$((source_frame * 135))" +repage "$WORK/$index.png"
+	list=""
+	while [ "$index" -lt "$frames" ]; do
+		if [ "$index" -eq 0 ]; then
+			source_frame=0
+		elif [ $((index % 2)) -eq 1 ]; then
+			source_frame=$((index + 1))
+		else
+			source_frame=$((index - 1))
+		fi
+		magick "$WORK/padded.png" -crop "$FRAME+0+$((source_frame * 135))" +repage "$WORK/frame$index.png"
+		list="$list $WORK/frame$index.png"
 		index=$((index + 1))
 	done
 
-	magick "$WORK"/[0-8].png -background none -append +repage "PNG32:$target"
+	# shellcheck disable=SC2086
+	magick $list -background none -append +repage "PNG32:$target"
+	rm "$WORK"/frame*.png
 	echo "Wrote $target"
 }
 
-build_strip RE2D_Launchnik_Graphics/Launchnik_Scene_Button_9frames.png GUI2D/Scene_Button_9frames.png
-build_strip RE2D_Launchnik_Graphics/Launchnik_Side_Button_9frames.png GUI2D/Side_Button_9frames.png
+build_strip RE2D_Launchnik_Graphics/Launchnik_Scene_Button_9frames.png GUI2D/Scene_Button_9frames.png 9
+build_strip RE2D_Launchnik_Graphics/Launchnik_Side_Button_11frames.png GUI2D/Side_Button_11frames.png 11

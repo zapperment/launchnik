@@ -43,9 +43,17 @@ CLauncher::CLauncher()
 	fReachedSegments(0),
 	fFillInPressed(false),
 	fFillInTriggered(false),
-	fFillInPlaying(false)
+	fFillInPlaying(false),
+	fFunction(kFunctionStop),
+	fHasPreviousTransport(false)
 {
 	for (int track = 0; track < kTrackCount; ++track) {
+		fMutePressed[track] = false;
+		fSoloPressed[track] = false;
+		fMuteTriggered[track] = false;
+		fSoloTriggered[track] = false;
+		fMuted[track] = false;
+		fSoloed[track] = false;
 		fSelections[track] = kSelectionStop;
 		fActive[track] = kSelectionStop;
 		fEmitted[track] = 0;
@@ -179,6 +187,78 @@ void CLauncher::SetSelection(int iTrack, int iSelection) {
 	fSelections[iTrack] = iSelection;
 }
 
+void CLauncher::SetFunction(int iFunction) {
+	if (iFunction >= 0 && iFunction < kFunctionCount) {
+		fFunction = iFunction;
+	}
+}
+
+int CLauncher::GetFunction() const {
+	return fFunction;
+}
+
+void CLauncher::SetMutePressed(int iTrack, bool iPressed) {
+	if (iTrack < 0 || iTrack >= kTrackCount) {
+		return;
+	}
+	if (iPressed && !fMutePressed[iTrack]) {
+		fMuteTriggered[iTrack] = !fMuteTriggered[iTrack];
+	}
+	fMutePressed[iTrack] = iPressed;
+}
+
+void CLauncher::SetSoloPressed(int iTrack, bool iPressed) {
+	if (iTrack < 0 || iTrack >= kTrackCount) {
+		return;
+	}
+	if (iPressed && !fSoloPressed[iTrack]) {
+		fSoloTriggered[iTrack] = !fSoloTriggered[iTrack];
+	}
+	fSoloPressed[iTrack] = iPressed;
+}
+
+bool CLauncher::IsMuted(int iTrack) const {
+	return fMuted[iTrack];
+}
+
+bool CLauncher::IsSoloed(int iTrack) const {
+	return fSoloed[iTrack];
+}
+
+bool CLauncher::IsSilenced(int iTrack) const {
+	if (fSoloed[iTrack]) {
+		return false;
+	}
+	if (fMuted[iTrack]) {
+		return true;
+	}
+	for (int track = 0; track < kTrackCount; ++track) {
+		if (fSoloed[track]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void CLauncher::EndMutesAndSolos() {
+	for (int track = 0; track < kTrackCount; ++track) {
+		fMuted[track] = false;
+		fSoloed[track] = false;
+	}
+}
+
+bool CLauncher::IsJump(const TTransport& iTransport) const {
+	if (!fHasPreviousTransport) {
+		return false;
+	}
+	double expected = fPreviousTransport.fPlayPos;
+	if (fPreviousTransport.fPlaying) {
+		expected += fPreviousTransport.fBatchLength;
+	}
+	const double distance = iTransport.fPlayPos - expected;
+	return distance > kJumpTolerance || distance < -kJumpTolerance;
+}
+
 int CLauncher::Target(int iTrack) const {
 	const int selection = fSelections[iTrack];
 	if (selection != kSelectionStop && !Clip(iTrack, selection).fPresent) {
@@ -232,6 +312,32 @@ void CLauncher::Advance(const TTransport& iTransport) {
 		fFillInPlaying = true;
 	}
 	fFillInTriggered = false;
+
+	// Mutes and solos end at the switch point itself, like a fill-in, and when
+	// the song position jumps, so that playing back part of a song does not
+	// depend on presses made before it. A press in the same batch counts after
+	// that, and so lasts until the next switch point.
+	if (switchPointInBatch || IsJump(iTransport)) {
+		EndMutesAndSolos();
+	}
+	fHasPreviousTransport = true;
+	fPreviousTransport = iTransport;
+	for (int track = 0; track < kTrackCount; ++track) {
+		// A track without clips can be neither muted nor soloed.
+		const bool hasClips = HasClips(track);
+		if (fMuteTriggered[track] && hasClips) {
+			fMuted[track] = !fMuted[track];
+		}
+		if (fSoloTriggered[track] && hasClips) {
+			fSoloed[track] = !fSoloed[track];
+		}
+		fMuteTriggered[track] = false;
+		fSoloTriggered[track] = false;
+		if (!hasClips) {
+			fMuted[track] = false;
+			fSoloed[track] = false;
+		}
+	}
 
 	// The interval meter follows the song position whether it moves or not.
 	fReachedSegments = CountReachedSegments(iTransport);
@@ -287,12 +393,69 @@ CLauncher::EBrightness CLauncher::GetStopLight(int iTrack) const {
 	}
 }
 
-int CLauncher::GetStopLightFrame(int iTrack) const {
-	const EBrightness light = GetStopLight(iTrack);
-	if (light == kFlashing) {
-		return fFlashLit ? kVibrant : kDim;
+int CLauncher::FunctionColour(int iFunction) {
+	if (iFunction == kFunctionMute) {
+		return kColourYellow;
 	}
-	return light;
+	if (iFunction == kFunctionSolo) {
+		return kColourBlue;
+	}
+	return kColourRed;
+}
+
+CLauncher::TLight CLauncher::GetFunctionLight(int iTrack) const {
+	if (fFunction == kFunctionStop) {
+		const EBrightness brightness = GetStopLight(iTrack);
+		return brightness == kUnlit ? kUnlitLight : MakeLight(brightness, kColourRed);
+	}
+	if (!HasClips(iTrack)) {
+		return kUnlitLight;
+	}
+	// A mute button lights up while there is something to mute, a solo button
+	// while its track is soloed.
+	if (fFunction == kFunctionMute) {
+		return MakeLight(fMuted[iTrack] ? kDim : kVibrant, kColourYellow);
+	}
+	return MakeLight(fSoloed[iTrack] ? kVibrant : kDim, kColourBlue);
+}
+
+int CLauncher::GetFunctionLightValue(int iTrack) const {
+	return GetFunctionLight(iTrack).fBrightness;
+}
+
+int CLauncher::GetFunctionLightFrame(int iTrack) const {
+	const TLight light = GetFunctionLight(iTrack);
+	if (light.fBrightness == kUnlit) {
+		return 0;
+	}
+	// The film strip holds red, yellow and blue, in that order.
+	int stripColour = 0;
+	if (light.fColour == kColourYellow) {
+		stripColour = 1;
+	}
+	else if (light.fColour == kColourBlue) {
+		stripColour = 2;
+	}
+	return 1 + 2 * stripColour + (ShowsVibrant(light) ? 1 : 0);
+}
+
+CLauncher::TLight CLauncher::GetFunctionSelectLight(int iFunction) const {
+	if (iFunction == fFunction) {
+		return MakeLight(kVibrant, FunctionColour(iFunction));
+	}
+	return MakeLight(kDim, kColourWhite);
+}
+
+int CLauncher::GetFunctionSelectLightFrame(int iFunction) const {
+	return SideStripFrame(GetFunctionSelectLight(iFunction));
+}
+
+int CLauncher::GetFunctionSelectCaptionFrame(int iFunction) const {
+	return iFunction == fFunction ? 1 : 0;
+}
+
+bool CLauncher::ShowsVibrant(const TLight& iLight) const {
+	return iLight.fBrightness == kVibrant || (iLight.fBrightness == kFlashing && fFlashLit);
 }
 
 CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
@@ -423,8 +586,28 @@ int CLauncher::SceneStripFrame(const TLight& iLight) const {
 	else if (iLight.fColour == kColourYellow) {
 		stripColour = 2;
 	}
-	const bool vibrant = iLight.fBrightness == kVibrant || (iLight.fBrightness == kFlashing && fFlashLit);
-	return 1 + 2 * stripColour + (vibrant ? 1 : 0);
+	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
+}
+
+int CLauncher::SideStripFrame(const TLight& iLight) const {
+	if (iLight.fBrightness == kUnlit) {
+		return 0;
+	}
+	// The film strip holds red, green, yellow, blue and white, in that order.
+	int stripColour = 4;
+	if (iLight.fColour == kColourRed) {
+		stripColour = 0;
+	}
+	else if (iLight.fColour == kColourGreen) {
+		stripColour = 1;
+	}
+	else if (iLight.fColour == kColourYellow) {
+		stripColour = 2;
+	}
+	else if (iLight.fColour == kColourBlue) {
+		stripColour = 3;
+	}
+	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
 }
 
 CLauncher::EModeColour CLauncher::GetModeColour() const {
@@ -477,7 +660,7 @@ int CLauncher::GetFillInLightValue() const {
 }
 
 int CLauncher::GetFillInLightFrame() const {
-	return SceneStripFrame(GetFillInLight());
+	return SideStripFrame(GetFillInLight());
 }
 
 int CLauncher::GetFillInLabelFrame() const {
@@ -518,7 +701,11 @@ int CLauncher::GetSceneLabelFrame(int iScene) const {
 double CLauncher::GetCVValue(int iTrack) const {
 	// The Combinator rounds its CV input to the nearest of nine evenly spaced
 	// steps (Off, 1..8), so these values sit in the middle of each step. A
-	// fill-in takes effect at once, and so does any change to it.
+	// fill-in takes effect at once, and so does any change to it. A mute or a
+	// solo silences whatever the track would emit, at once.
+	if (IsSilenced(iTrack)) {
+		return 0.0;
+	}
 	int emitted = fEmitted[iTrack];
 	if (PlaysFillIn(iTrack)) {
 		emitted = Clip(iTrack, fActive[iTrack]).fFillInPattern + 1;

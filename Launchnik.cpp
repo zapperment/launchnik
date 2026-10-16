@@ -53,8 +53,8 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		fCVOutputs[track] = JBox_GetMotherboardObjectRef(cvOutputPaths[track]);
 		fWrittenCVValues[track] = -1.0;
-		fWrittenStopLights[track] = kNothingWritten;
-		fWrittenStopLightFrames[track] = kNothingWritten;
+		fWrittenFunctionLights[track] = kNothingWritten;
+		fWrittenFunctionLightFrames[track] = kNothingWritten;
 		for (int row = 0; row < CLauncher::kRowCount; ++row) {
 			fWrittenLights[track][row] = kNothingWritten;
 			fWrittenLightFrames[track][row] = kNothingWritten;
@@ -64,6 +64,10 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 		fWrittenSceneLights[scene] = kNothingWritten;
 		fWrittenSceneLightFrames[scene] = kNothingWritten;
 		fWrittenSceneLabelFrames[scene] = kNothingWritten;
+	}
+	for (int function = 0; function < CLauncher::kFunctionCount; ++function) {
+		fWrittenFunctionSelectLightFrames[function] = kNothingWritten;
+		fWrittenFunctionSelectCaptionFrames[function] = kNothingWritten;
 	}
 }
 
@@ -82,6 +86,7 @@ void CLaunchnik::RenderBatch(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UI
 void CLaunchnik::LoadEverything() {
 	HandleChange(kCustomPropsTag_Setup, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Setup));
 	HandleChange(kCustomPropsTag_Length, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Length));
+	HandleChange(kCustomPropsTag_Function, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Function));
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		HandleChange(SelectionTag(track), JBox_LoadMOMPropertyByTag(fCustomProps, SelectionTag(track)));
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
@@ -118,6 +123,18 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 	}
 	if (iTag == kCustomPropsTag_FillIn) {
 		fLauncher.SetFillInPressed(JBox_GetBoolean(iValue));
+		return;
+	}
+	if (iTag == kCustomPropsTag_Function) {
+		fLauncher.SetFunction(static_cast<int>(JBox_GetNumber(iValue)));
+		return;
+	}
+	if (iTag >= MuteTag(0) && iTag <= MuteTag(CLauncher::kTrackCount - 1)) {
+		fLauncher.SetMutePressed(static_cast<int>(iTag - MuteTag(0)), JBox_GetBoolean(iValue));
+		return;
+	}
+	if (iTag >= SoloTag(0) && iTag <= SoloTag(CLauncher::kTrackCount - 1)) {
+		fLauncher.SetSoloPressed(static_cast<int>(iTag - SoloTag(0)), JBox_GetBoolean(iValue));
 		return;
 	}
 	if (iTag >= SelectionTag(0) && iTag <= SelectionTag(CLauncher::kTrackCount - 1)) {
@@ -208,18 +225,14 @@ void CLaunchnik::WriteOutputs() {
 	Write(kCustomPropsTag_SetFillInLightFrame, fLauncher.GetSetFillInLightFrame(), fWrittenSetFillInLightFrame);
 	Write(kCustomPropsTag_SetFillInLabelFrame, fLauncher.GetSetFillInLabelFrame(), fWrittenSetFillInLabelFrame);
 
-	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
-		const TJBox_Int32 stopLight = fLauncher.GetStopLight(track);
-		if (stopLight != fWrittenStopLights[track]) {
-			fWrittenStopLights[track] = stopLight;
-			JBox_StoreMOMPropertyByTag(fCustomProps, StopLightTag(track), JBox_MakeNumber(stopLight));
-		}
+	for (int function = 0; function < CLauncher::kFunctionCount; ++function) {
+		Write(FunctionSelectLightFrameTag(function), fLauncher.GetFunctionSelectLightFrame(function), fWrittenFunctionSelectLightFrames[function]);
+		Write(FunctionSelectCaptionFrameTag(function), fLauncher.GetFunctionSelectCaptionFrame(function), fWrittenFunctionSelectCaptionFrames[function]);
+	}
 
-		const TJBox_Int32 stopFrame = fLauncher.GetStopLightFrame(track);
-		if (stopFrame != fWrittenStopLightFrames[track]) {
-			fWrittenStopLightFrames[track] = stopFrame;
-			JBox_StoreMOMPropertyByTag(fCustomProps, StopLightFrameTag(track), JBox_MakeNumber(stopFrame));
-		}
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		Write(FunctionLightTag(track), fLauncher.GetFunctionLightValue(track), fWrittenFunctionLights[track]);
+		Write(FunctionLightFrameTag(track), fLauncher.GetFunctionLightFrame(track), fWrittenFunctionLightFrames[track]);
 
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 			const TJBox_Int32 light = fLauncher.GetLightValue(track, row);

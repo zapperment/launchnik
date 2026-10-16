@@ -15,9 +15,12 @@
 #   button: unlit, red.
 # - GUI2D/Caption_Fill_In_2frames.png holds the caption of the fill-in button:
 #   white, red.
+# - GUI2D/Caption_Mute_2frames.png, Caption_Solo_2frames.png and
+#   Caption_Stop_2frames.png hold the captions of the function select buttons:
+#   white, then yellow, blue and red.
 #
 # The labels are set in Arial Bold, capitals 26 pixels high, about three quarters
-# of the size of SETUP and STOP, whose white they share. Each one is centred
+# of the size of SETUP, whose white they share. Each one is centred
 # below its button with its top 20 pixels below the button. The layout numbers
 # must match GUI2D/device_2D.lua.
 #
@@ -33,6 +36,7 @@ WHITE="#d0d0d0"
 GREEN="#1aac08"
 YELLOW="#fafe07"
 RED="#ff5e5e"
+BLUE="#0598fe"
 
 # Launch buttons are 205 pixels wide, 252 apart, with 235 pixels from one
 # scene to the next. The strip starts 25 pixels left of the first track and
@@ -143,3 +147,6 @@ draw_strip() {
 draw_strip "$SCENE_SIZE" "$POINTSIZE" BACK GUI2D/Label_Back_4frames.png "$UNLIT" "$WHITE" "$GREEN" "$YELLOW"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" "SET FILL-IN" GUI2D/Label_Set_Fill_In_2frames.png "$UNLIT" "$RED"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" FILL-IN GUI2D/Caption_Fill_In_2frames.png "$WHITE" "$RED"
+draw_strip "$SCENE_SIZE" "$POINTSIZE" MUTE GUI2D/Caption_Mute_2frames.png "$WHITE" "$YELLOW"
+draw_strip "$SCENE_SIZE" "$POINTSIZE" SOLO GUI2D/Caption_Solo_2frames.png "$WHITE" "$BLUE"
+draw_strip "$SCENE_SIZE" "$POINTSIZE" STOP GUI2D/Caption_Stop_2frames.png "$WHITE" "$RED"

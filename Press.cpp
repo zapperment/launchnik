@@ -85,6 +85,29 @@ CPress::TChange CPress::StopButton(int iTrack) {
 	return MakeChange(kSelection, iTrack, CLauncher::kSelectionStop);
 }
 
+CPress::TChange CPress::FunctionButton(int iFunction, int iTrack, bool iTrackHasClips, bool iPressed) {
+	if (iTrack < 0 || iTrack >= CLauncher::kTrackCount) {
+		return kNoChange;
+	}
+	if (iPressed && !iTrackHasClips) {
+		return kNoChange;
+	}
+	if (iFunction == CLauncher::kFunctionMute) {
+		return MakeChange(kMute, iTrack, iPressed ? 1 : 0);
+	}
+	if (iFunction == CLauncher::kFunctionSolo) {
+		return MakeChange(kSolo, iTrack, iPressed ? 1 : 0);
+	}
+	return iPressed ? StopButton(iTrack) : kNoChange;
+}
+
+CPress::TChange CPress::FunctionSelectButton(int iFunction) {
+	if (iFunction < 0 || iFunction >= CLauncher::kFunctionCount) {
+		return kNoChange;
+	}
+	return MakeChange(kFunction, 0, iFunction);
+}
+
 CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsClip[]) {
 	TChanges changes;
 	changes.fCount = 0;

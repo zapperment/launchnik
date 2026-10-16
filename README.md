@@ -2,11 +2,11 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Which pattern each launch button plays, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d10, a development build. Requires Reason 14 or later.
+Version 1.0.0d11, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **stop button** underneath. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the stop buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. The back panel has eight CV outputs, one per track.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. The back panel has eight CV outputs, one per track.
 
 A launch button either holds a **clip** or is **empty**. A clip is one of the Player's patterns 1–8 together with one of fourteen colours. A new device has only empty launch buttons.
 
@@ -18,9 +18,9 @@ In **launch mode**, the normal way of working, a button is in one of three state
 | Queued | Flashing on the beat | Clicked, waiting for the next switch point. |
 | Active | Vibrant | The track is emitting this button's CV value. |
 
-An empty launch button is unlit, and clicking it has the same effect as clicking the track's stop button. A track always has exactly one active button and at most one queued button. A new device starts with all stop buttons active.
+An empty launch button is unlit, and clicking it has the same effect as clicking the track's stop button. A track always has exactly one active button and at most one queued button. A new device starts with every track stopped.
 
-A stop button shows whether there is anything to stop, as in Ableton Live:
+A song always opens with the function STOP, in which the function buttons are **stop buttons**. A stop button shows whether there is anything to stop, as in Ableton Live:
 
 | Stop button | Meaning |
 |---|---|
@@ -28,6 +28,25 @@ A stop button shows whether there is anything to stop, as in Ableton Live:
 | Dim red | The track is stopped. |
 | Vibrant red | A clip is active; clicking stops it. |
 | Flashing | Clicked, the track stops at the next switch point. |
+
+## Mute and solo
+
+The function select buttons work like radio buttons: the one for the current function is lit in its colour, red for STOP, yellow for MUTE, blue for SOLO, with its caption; the others are dim white with a white caption. Choosing a function changes only what the function buttons do, never what any track plays.
+
+In MUTE the function buttons are yellow. Click one to **mute** its track: from the click until the next switch point its CV output emits 0, and its function button is dim yellow; the launch buttons go on as before. Click it again to unmute the track sooner. Several tracks can be muted at once.
+
+In SOLO the function buttons are blue. Click one to **solo** its track: from the click until the next switch point every track that is not soloed emits 0, and the soloed track's function button is vibrant blue. Several tracks can be soloed at once. A soloed track plays even if it is muted; switching the solo off again leaves every track muted or not, as it was.
+
+| Function button | STOP | MUTE | SOLO |
+|---|---|---|---|
+| Unlit | The track has no clips | The track has no clips | The track has no clips |
+| Dim | The track is stopped | The track is muted | The track is not soloed |
+| Vibrant | A clip is active | The track is not muted | The track is soloed |
+| Flashing | The track stops at the next switch point | – | – |
+
+Mutes and solos end by themselves at the next switch point, so a break needs no second click on the downbeat. With the switch interval "immediate" there is no switch point, so they last until they are clicked off. They also end when the song position jumps, by a locate or a loop, and when their track has no clips left. A click on the function button of a track without clips does nothing, in every function. With the transport stopped, mutes and solos last until the song plays through the next switch point.
+
+The function buttons and the function select buttons work in launch mode and setup mode alike. A song always opens with nothing muted or soloed.
 
 ## Scenes and the interval meter
 
@@ -48,7 +67,7 @@ A clip with pattern N on that track now selects pattern N, and the stop button s
 
 ## Setting up clips
 
-Click the setup button to enter **setup mode**; the logo in the header shows the colour of the step you are in: green, then yellow, then red. Tracks go on playing and the stop buttons go on working; only launching, from the grid or the scene buttons, is unavailable.
+Click the setup button to enter **setup mode**; the logo in the header shows the colour of the step you are in: green, then yellow, then red. Tracks go on playing and the function buttons and function select buttons go on working; only launching, from the grid or the scene buttons, is unavailable.
 
 1. **Clip picking.** Every launch button flashes: in its clip's colour, or in white if it is empty. Click the one you want to set up.
 2. **Clip editing.** The grid now shows the settings of that one launch button:
@@ -118,18 +137,21 @@ Launchnik comes with two patches: "Init Patch", in which every launch button is 
 
 Each track has one automatable parameter, "Track N Selection", with nine values: Stop and Clip 1–8, the clip being the one in that row. Automated changes behave like clicks. A change that falls exactly on a switch point takes effect there, not one switch interval later. A selection that names an empty launch button counts as Stop.
 
-The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed.
+The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed. So can each track's mute and solo button, as "Track N Mute" and "Track N Solo": a recorded session plays back with the same mutes and solos, whichever function is chosen during playback (see [0005](docs/adr/0005-mute-and-solo-are-presses.md)).
 
-Right-clicking a launch button or a stop button offers automation and Remote Override for its track's selection, in any mode; alt-clicking opens the automation lane. The fill-in button does the same for "Fill-In". A scene launch is recorded in the selection lanes of the eight tracks; there is no lane of its own for scenes (see [0004](docs/adr/0004-a-scene-press-writes-eight-selections.md)).
+Right-clicking a launch button or a function button offers automation and Remote Override for its track's selection, in any mode and function; alt-clicking opens the automation lane. The fill-in button does the same for "Fill-In". A scene launch is recorded in the selection lanes of the eight tracks; there is no lane of its own for scenes (see [0004](docs/adr/0004-a-scene-press-writes-eight-selections.md)).
 
-Clips, fill-ins, setup mode and the length of the switch interval cannot be automated.
+Clips, fill-ins, setup mode, the function and the length of the switch interval cannot be automated.
 
 For control surfaces, Launchnik provides these Remote items (N is the track, M the row, both 1–8):
 
 | Remote item | Direction | Values |
 |---|---|---|
 | `Track N Selection` (8 items) | Input and output | 0 = stop, 1–8 = clip in that row |
-| `Track N Stop Light` (8 items) | Output only | 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing |
+| `Track N Function Light` (8 items) | Output only | 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing, in the colour of the function |
+| `Track N Mute` (8 items) | Input and output | 1 while the track's mute button is held down, 0 otherwise |
+| `Track N Solo` (8 items) | Input and output | 1 while the track's solo button is held down, 0 otherwise |
+| `Function` | Input and output | 0 = stop, 1 = mute, 2 = solo |
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
 | `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green, and in clip picking 3 = flashing white, 18 = flashing green |
 | `Track N Clip M Present` (64 items) | Input and output | 0 = empty, 1 = holds a clip |
@@ -173,7 +195,7 @@ python3 build45.py local45 Testing
 
 This compiles the device and installs it for Reason Recon. Restart Recon to pick up a new build.
 
-The film strips of the launch buttons and the scene buttons are built from the source graphics in `RE2D_Launchnik_Graphics`, that of the stop buttons from the stock button image (all need ImageMagick):
+The film strips of the launch buttons, the scene buttons and the side buttons (the fill-in button and the function select buttons) are built from the source graphics in `RE2D_Launchnik_Graphics`, that of the function buttons from those and the stock button image (all need ImageMagick):
 
 ```bash
 ./tools/make-launch-button-strip.sh
@@ -184,7 +206,7 @@ The film strips of the launch buttons and the scene buttons are built from the s
 ```
 
 ```bash
-./tools/make-stop-button-strip.sh
+./tools/make-function-button-strip.sh
 ```
 
 The logo's four frames, light grey, green, yellow and red, are built from the versions of the lettering:
@@ -225,14 +247,14 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `Launcher.h`, `Launcher.cpp` | The rules: when a track switches, what it emits, what every button shows. Plain C++ with no dependency on the SDK. |
 | `Press.h`, `Press.cpp` | What a press of a button changes, in launch mode and in setup mode. Also free of the SDK. |
 | `Launchnik.h`, `Launchnik.cpp` | Connects the rules to the host: reads selections, clips, the setup state and the transport, writes states, lights, lamps and CV. |
-| `Panel.h`, `Panel.cpp` | The click handler of the launch buttons, the scene buttons and the setup button. |
+| `Panel.h`, `Panel.cpp` | The click handler of the launch buttons, the scene buttons, the function buttons, the function select buttons and the buttons of setup mode and fill-ins. |
 | `Tags.h` | The property tags shared by the two. |
 | `JukeBoxExports.cpp` | Entry points the host calls. |
 | `motherboard_def.lua` | Properties, Remote items, automation and CV outputs. |
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
 | `GUI2D/` | Panel layout and the graphics it uses. |
 | `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
-| `tools/` | Scripts that build the film strips of the launch, scene and stop buttons and of the logo. |
+| `tools/` | Scripts that build the film strips of the launch, scene, side and function buttons, of the labels and of the logo. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |
