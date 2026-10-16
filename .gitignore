@@ -4,3 +4,4 @@ Output/
 tests/build/
 *.plist
 .DS_Store
+ui-template/
