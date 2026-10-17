@@ -28,11 +28,11 @@ local PATCH_NAME_OFFSET = { 635, 50 }
 local PATCH_BROWSE_OFFSET = { 1345, 20 }
 
 -- The upper screws sit below the divider, which ends at 160 pixels. The left
--- screws line up with the fold button that Reason draws in the header, and
--- the right ones are as far from their edge.
+-- screws are 40 pixels from the edge, and the right ones as far from theirs.
+-- Each shows a different frame of the screw strip (see tools/make-screws.sh).
 local PANEL_WIDTH = 3770
 local SCREW_SIZE = 95
-local SCREW_LEFT = 65
+local SCREW_LEFT = 40
 local SCREW_RIGHT = PANEL_WIDTH - SCREW_LEFT - SCREW_SIZE
 local SCREW_TOP = 198
 local SCREW_BOTTOM = 2617
@@ -45,10 +45,10 @@ front = {
 		offset = { 0, 0 },
 		{ path = "Labels_Front" },
 	},
-	ScrewTopLeft = { offset = { SCREW_LEFT, SCREW_TOP }, { path = "Screw_17_1frames" } },
-	ScrewTopRight = { offset = { SCREW_RIGHT, SCREW_TOP }, { path = "Screw_17_1frames" } },
-	ScrewBottomLeft = { offset = { SCREW_LEFT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
-	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_1frames" } },
+	ScrewTopLeft = { offset = { SCREW_LEFT, SCREW_TOP }, { path = "Screw_17_1" } },
+	ScrewTopRight = { offset = { SCREW_RIGHT, SCREW_TOP }, { path = "Screw_17_2" } },
+	ScrewBottomLeft = { offset = { SCREW_LEFT, SCREW_BOTTOM }, { path = "Screw_17_3" } },
+	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_4" } },
 	Logo = {
 		offset = LOGO_OFFSET,
 		{ path = "Logo_4frames", frames = 4 },
@@ -74,7 +74,7 @@ front = {
 local ROW_COUNT = 8
 local BUTTON_WIDTH = 205
 local BUTTON_HEIGHT = 135
-local SETUP_LEFT = 580
+local SETUP_LEFT = 720
 
 -- The launch buttons are lamps showing one frame of a film strip: unlit, then
 -- dim and vibrant for each of the fourteen colours. One transparent display

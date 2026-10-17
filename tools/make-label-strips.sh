@@ -18,11 +18,13 @@
 # - GUI2D/Caption_Mute_2frames.png, Caption_Solo_2frames.png and
 #   Caption_Stop_2frames.png hold the captions of the function select buttons:
 #   white, then yellow, blue and red.
+# - GUI2D/Labels_Front.png holds the caption SETUP, which is always white, as
+#   large as the panel: to the left of the setup button, its right edge 30
+#   pixels from the button and vertically centred on it.
 #
-# The labels are set in Arial Bold, capitals 26 pixels high, about three quarters
-# of the size of SETUP, whose white they share. Each one is centred
-# below its button with its top 20 pixels below the button. The layout numbers
-# must match GUI2D/device_2D.lua.
+# The labels are set in Arial Bold, capitals 26 pixels high, in white or
+# coloured. Each one is centred below its button with its top 20 pixels below
+# the button. The layout numbers must match GUI2D/device_2D.lua.
 #
 # Needs ImageMagick.
 set -e
@@ -150,3 +152,10 @@ draw_strip "$SCENE_SIZE" "$POINTSIZE" FILL-IN GUI2D/Caption_Fill_In_2frames.png 
 draw_strip "$SCENE_SIZE" "$POINTSIZE" MUTE GUI2D/Caption_Mute_2frames.png "$WHITE" "$YELLOW"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" SOLO GUI2D/Caption_Solo_2frames.png "$WHITE" "$BLUE"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" STOP GUI2D/Caption_Stop_2frames.png "$WHITE" "$RED"
+
+# The setup button is 70 by 75 pixels; SETUP is 118 by 26 pixels when trimmed.
+SETUP_LEFT=720
+FUNCTION_TOP=2338
+magick -size 300x80 xc:none -font "$FONT" -pointsize "$POINTSIZE" -fill "$WHITE" -annotate +10+50 SETUP -trim +repage "PNG32:$WORK/setup.png"
+magick -size 3770x2760 xc:none "$WORK/setup.png" -geometry "+$((SETUP_LEFT - 30 - 118))+$((FUNCTION_TOP + (75 - 26) / 2))" -composite "PNG32:GUI2D/Labels_Front.png"
+echo "Wrote GUI2D/Labels_Front.png"
