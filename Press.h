@@ -23,12 +23,19 @@ class CPress {
 		kFillInPattern,
 		kFillInColour,
 		// fValue is 1 while the fill-in button is held down, 0 once it is let go.
-		kFillIn
+		kFillIn,
+		// fValue is the function.
+		kFunction,
+		// fIndex is the track, fValue 1 while its mute or solo button is held
+		// down, 0 once it is let go.
+		kMute,
+		kSolo
 	};
 
 	// One property and its new value. A press of a launch button outside
-	// fill-in editing, a stop button, the setup button, the back button, the
-	// set fill-in button or the fill-in button never changes more than one.
+	// fill-in editing, a function button, a function select button, the setup
+	// button, the back button, the set fill-in button or the fill-in button
+	// never changes more than one.
 	public: struct TChange {
 		EProperty fProperty;
 		int fIndex;
@@ -57,6 +64,18 @@ class CPress {
 	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, bool iPickedHoldsFillIn, int iPickedPattern);
 
 	public: static TChange StopButton(int iTrack);
+
+	// Holding down a function button and letting it go. In stop function a
+	// press chooses stop and letting go does nothing; in mute and solo function
+	// the button is held down, as the mute or solo button of its track, for as
+	// long as it is, and whether a press mutes or solos is up to the realtime
+	// code. iTrackHasClips says whether the track holds any clip: without one,
+	// a press does nothing. Letting go is always passed on, so that a button
+	// that is held down can be let go of.
+	public: static TChange FunctionButton(int iFunction, int iTrack, bool iTrackHasClips, bool iPressed);
+
+	// Chooses the function of a function select button.
+	public: static TChange FunctionSelectButton(int iFunction);
 
 	public: static TChange SetupButton(int iSetup);
 

@@ -4,7 +4,7 @@
 #include "Launcher.h"
 
 // Connects the rules in CLauncher to the host: feeds it selections, clips, the
-// setup state and the transport, and writes states, lights, lamps, labels and CV back.
+// setup state, the function, mute and solo presses and the transport, and writes states, lights, lamps, labels and CV back.
 class CLaunchnik {
 	public: explicit CLaunchnik(TJBox_Float32 iSampleRate);
 
@@ -39,8 +39,10 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenSetFillInLightFrame;
 	private: TJBox_Int32 fWrittenSetFillInLabelFrame;
 	private: TJBox_Int32 fWrittenSceneLabelFrames[CLauncher::kRowCount];
-	private: TJBox_Int32 fWrittenStopLights[CLauncher::kTrackCount];
-	private: TJBox_Int32 fWrittenStopLightFrames[CLauncher::kTrackCount];
+	private: TJBox_Int32 fWrittenFunctionLights[CLauncher::kTrackCount];
+	private: TJBox_Int32 fWrittenFunctionLightFrames[CLauncher::kTrackCount];
+	private: TJBox_Int32 fWrittenFunctionSelectLightFrames[CLauncher::kFunctionCount];
+	private: TJBox_Int32 fWrittenFunctionSelectCaptionFrames[CLauncher::kFunctionCount];
 	private: TJBox_Int32 fWrittenLights[CLauncher::kTrackCount][CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenLightFrames[CLauncher::kTrackCount][CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenSceneLights[CLauncher::kRowCount];

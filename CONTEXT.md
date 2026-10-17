@@ -28,7 +28,7 @@ The button to the right of the **back button** that goes from **clip editing** t
 _Avoid_: Setup fill-in button, fill-in edit button
 
 **Empty**:
-Said of a **launch button** that holds no **clip**. A new device has only empty launch buttons. Choosing an empty launch button counts as choosing the track's **stop button**.
+Said of a **launch button** that holds no **clip**. A new device has only empty launch buttons. Choosing an empty launch button counts as choosing **stop**.
 _Avoid_: Inactive, disabled, cleared
 
 **Colour**:
@@ -40,15 +40,45 @@ What all 64 **launch buttons** hold, together with the **length** of the switch 
 _Avoid_: Template, preset, layout
 
 **Unlit**, **dim**, **vibrant**:
-The three ways a **launch button** can look: showing no **colour** at all, showing a colour at low brightness, or showing it at full brightness. A flashing launch button alternates between dim and vibrant. A **stop button** looks the same three ways, always in red.
+The three ways a **launch button** can look: showing no **colour** at all, showing a colour at low brightness, or showing it at full brightness. A flashing launch button alternates between dim and vibrant. A **function button** looks the same three ways, in the colour of the **function**.
 _Avoid_: Inactive (for unlit), bright, lit
 
+**Stop**:
+The **selection** that stands for the Player's pattern selection being "off": the track emits no pattern. Choosing an **empty** launch button counts as choosing stop.
+_Avoid_: Off (an **off** button is something else)
+
+**Function**:
+What the **function buttons** do at the moment: **mute**, **solo** or **stop**, chosen with the **function select buttons**. A song always opens with stop. It is not part of the **patch** and cannot be automated; it changes only what a click on a function button means, not what any track plays.
+_Avoid_: Mode (**launch mode** and **setup mode** are something else), function mode
+
+**Function button**:
+The small button at the foot of a **track**, below its eight **launch buttons**. What a click on it does, and its **light**, depend on the **function**: it is a **stop button**, a mute button or a solo button. While its track has no **clips** it is **unlit** in every function, and a click on it does nothing. It works the same in every mode.
+_Avoid_: Track button, stop button (when the function is not stop)
+
 **Stop button**:
-The small button at the foot of a **track** that stands for the Player's pattern selection being "off". Its **light** says whether there is anything to stop: unlit while the track has no **clips**, dim while the track is stopped, vibrant while a clip is **active**, flashing while the stop is **queued**.
-_Avoid_: Off button, mute button
+A **function button** while the **function** is stop: clicking it chooses **stop** for its track. Its **light** is red and says whether there is anything to stop: unlit while the track has no **clips**, dim while the track is stopped, vibrant while a clip is **active**, flashing while the stop is **queued**.
+_Avoid_: Off button
+
+**Mute button**, **solo button**:
+A **function button** while the **function** is mute or solo: clicking it switches its track between **muted** and not muted, or between **soloed** and not soloed. A mute button is vibrant yellow, and dim yellow while its track is muted; a solo button is dim blue, and vibrant blue while its track is soloed. The presses can be automated, like those of the **fill-in button**.
+
+**Function select button**:
+One of the buttons in the row below the **function buttons** that choose the **function**: MUTE below track 2, SOLO below track 3, STOP below track 8. They work like radio buttons: the one for the current function is vibrant in its colour (yellow, blue, red), the others dim white. Each has a caption below it, white, and in the button's colour while its function is chosen. They work the same in every mode.
+_Avoid_: Mode button, function button (that is the row above)
+
+**Muted**:
+Said of a **track** from a click on its mute button until the next **switch point**, a second click, a jump of the song position, or until the track has no **clips** left. While it is muted and not **soloed**, its CV output emits 0; its **selection** and its **launch buttons** go on as before. Several tracks can be muted at once. With the **length** **immediate** there is no switch point, so a track stays muted until it is clicked again. A song always opens with no track muted.
+_Avoid_: Stopped (a stopped track has chosen **stop**), silenced
+
+**Soloed**:
+Said of a **track** from a click on its solo button until the next **switch point**, a second click, a jump of the song position, or until the track has no **clips** left. A soloed track plays as it would without any mute or solo, even if it is **muted**; every track that is not soloed is **solo-muted**. Several tracks can be soloed at once. Switching a solo off leaves every track muted or not muted as it was.
+_Avoid_: Isolated
+
+**Solo-muted**:
+Said of a **track** that is not **soloed** while another track is. Its CV output emits 0, whether or not it is **muted**; nothing on the panel shows it apart from its dim blue solo button.
 
 **Track**:
-One column of the front panel: eight **launch buttons**, one **stop button** and the one CV output they drive.
+One column of the front panel: eight **launch buttons**, one **function button** and the one CV output they drive.
 _Avoid_: Column, channel, lane
 
 **Scene**:
@@ -60,7 +90,7 @@ The button to the right of a **scene**. In **launch mode**, clicking it means cl
 _Avoid_: Scene launch button, row button
 
 **Selection**:
-What the user last chose on a **track**: the **stop button** or one of the track's **clips**. Choosing an **empty** launch button is a selection of the stop button. It is what is saved with the song; a selection that the track is not yet emitting is **queued**.
+What the user last chose on a **track**: **stop** or one of the track's **clips**. Choosing an **empty** launch button is a selection of stop. It is what is saved with the song; a selection that the track is not yet emitting is **queued**.
 _Avoid_: Target, request, choice
 
 **Off**:
@@ -79,11 +109,11 @@ The normal way of working, in which clicking a **launch button** selects its **c
 _Avoid_: Performance mode, play mode, normal mode
 
 **Setup mode**:
-The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing and **stop buttons** go on working while it lasts; **scene buttons** launch nothing. The logo on the panel shows the **mode colour** of the step it is in.
+The way of working in which the **launch buttons** are used to change **clips** instead of launching them. Tracks go on playing and the **function buttons** and **function select buttons** go on working while it lasts; **scene buttons** launch nothing. The logo on the panel shows the **mode colour** of the step it is in.
 _Avoid_: Edit mode, config mode
 
 **Setup button**:
-The button to the left of the **stop buttons** that switches between **launch mode** and **setup mode**.
+The button to the left of the **function buttons** that switches between **launch mode** and **setup mode**.
 
 **Back button**:
 The button above the first **track** that goes back one step of **setup mode**: from **fill-in editing** to **clip editing**, from **clip editing** to **clip picking**, and from clip picking to **launch mode**, which in clip picking is what the **setup button** does as well. It is dark in launch mode, where a click does nothing, and otherwise vibrant in the **mode colour** of the step it goes back to: white in clip picking, green in clip editing, yellow in **fill-in editing**.
@@ -102,11 +132,11 @@ The third step of **setup mode**, in which the **launch buttons** stand for the 
 _Avoid_: Fill-in mode, fill-in setup
 
 **Light**:
-What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **stop button** has a light too, always red, and so has a **scene button**, as part of the **interval meter**. The front panel and a control surface show the same light for the same button.
+What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **function button** has a light too, in the colour of the **function**, and so has a **function select button**, and so has a **scene button**, as part of the **interval meter**. The front panel and a control surface show the same light for the same button.
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Label**:
-The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, STOP and FILL-IN are not labels: SETUP and STOP are always white, FILL-IN belongs to the **fill-in button**.
+The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, FILL-IN, MUTE, SOLO and STOP are not labels: SETUP is always white, FILL-IN belongs to the **fill-in button**, and MUTE, SOLO and STOP to the **function select buttons**.
 _Avoid_: Caption, legend, text, tag
 
 **Mode colour**:

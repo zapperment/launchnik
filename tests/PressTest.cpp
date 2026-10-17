@@ -228,6 +228,34 @@ void TestSceneButtonDoesNothingInFillInEditing() {
 	CHECK(CPress::SceneButton(CLauncher::SetupForFillInEditing(0, 1), 3, holdsClip).fCount == 0);
 }
 
+void TestFunctionButtonInStopFunctionSelectsStop() {
+	CHECK(IsChange(CPress::FunctionButton(CLauncher::kFunctionStop, 4, true, true), CPress::kSelection, 4, CLauncher::kSelectionStop));
+	CHECK(IsNoChange(CPress::FunctionButton(CLauncher::kFunctionStop, 4, true, false)));
+}
+
+void TestFunctionButtonIsHeldDownAsMuteOrSoloButton() {
+	CHECK(IsChange(CPress::FunctionButton(CLauncher::kFunctionMute, 2, true, true), CPress::kMute, 2, 1));
+	CHECK(IsChange(CPress::FunctionButton(CLauncher::kFunctionMute, 2, true, false), CPress::kMute, 2, 0));
+	CHECK(IsChange(CPress::FunctionButton(CLauncher::kFunctionSolo, 7, true, true), CPress::kSolo, 7, 1));
+	CHECK(IsChange(CPress::FunctionButton(CLauncher::kFunctionSolo, 7, true, false), CPress::kSolo, 7, 0));
+}
+
+void TestFunctionButtonOfATrackWithoutClipsDoesNothing() {
+	CHECK(IsNoChange(CPress::FunctionButton(CLauncher::kFunctionStop, 4, false, true)));
+	CHECK(IsNoChange(CPress::FunctionButton(CLauncher::kFunctionMute, 4, false, true)));
+	CHECK(IsNoChange(CPress::FunctionButton(CLauncher::kFunctionSolo, 4, false, true)));
+	// A button that is held down can still be let go of.
+	CHECK(IsChange(CPress::FunctionButton(CLauncher::kFunctionMute, 4, false, false), CPress::kMute, 4, 0));
+	CHECK(IsNoChange(CPress::FunctionButton(CLauncher::kFunctionMute, 8, true, true)));
+}
+
+void TestFunctionSelectButtonChoosesItsFunction() {
+	CHECK(IsChange(CPress::FunctionSelectButton(CLauncher::kFunctionMute), CPress::kFunction, 0, CLauncher::kFunctionMute));
+	CHECK(IsChange(CPress::FunctionSelectButton(CLauncher::kFunctionSolo), CPress::kFunction, 0, CLauncher::kFunctionSolo));
+	CHECK(IsChange(CPress::FunctionSelectButton(CLauncher::kFunctionStop), CPress::kFunction, 0, CLauncher::kFunctionStop));
+	CHECK(IsNoChange(CPress::FunctionSelectButton(3)));
+}
+
 int main() {
 	TestLaunchModeSelectsTheClip();
 	TestLaunchModeEmptyLaunchButtonSelectsStop();
@@ -256,6 +284,11 @@ int main() {
 	TestFillInEditingColourAndPatternRows();
 	TestFillInEditingWithoutFillInHasNoColourOrPatternControls();
 	TestSceneButtonDoesNothingInFillInEditing();
+
+	TestFunctionButtonInStopFunctionSelectsStop();
+	TestFunctionButtonIsHeldDownAsMuteOrSoloButton();
+	TestFunctionButtonOfATrackWithoutClipsDoesNothing();
+	TestFunctionSelectButtonChoosesItsFunction();
 
 	return ReportChecks("Press");
 }

@@ -22,6 +22,11 @@ const char* const kSelectionKeys[CLauncher::kTrackCount] = {
 const TJBox_Float32 kFillInWidth = 130.0f;
 const TJBox_Float32 kFillInHeight = 135.0f;
 
+// The size of a function button; the display of the function buttons is as
+// wide as the eight of them, a track apart.
+const TJBox_Float32 kFunctionButtonWidth = 70.0f;
+const TJBox_Float32 kFunctionButtonHeight = 75.0f;
+
 // Finds the launch button under a point of the grid display. Returns false for
 // a point in the gaps between launch buttons.
 bool FindLaunchButton(const TJBox_Point& iPoint, int& oTrack, int& oRow) {
@@ -55,6 +60,20 @@ bool FindSceneButton(const TJBox_Point& iPoint, int& oScene) {
 	return true;
 }
 
+// Finds the function button under a point of the function buttons' display.
+// Returns false for a point in the gaps between function buttons.
+bool FindFunctionButton(const TJBox_Point& iPoint, int& oTrack) {
+	if (iPoint.fX < 0.0f || iPoint.fY < 0.0f || iPoint.fY >= kFunctionButtonHeight) {
+		return false;
+	}
+	const int column = static_cast<int>(iPoint.fX / kTrackPitch);
+	if (column >= CLauncher::kTrackCount || iPoint.fX - column * kTrackPitch >= kFunctionButtonWidth) {
+		return false;
+	}
+	oTrack = column;
+	return true;
+}
+
 bool HoldsClip(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
@@ -65,6 +84,15 @@ bool HoldsFillIn(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
 	return JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInPresentTag(track, row)));
+}
+
+bool TrackHoldsClips(TJBox_ObjectRef iCustomProps, int iTrack) {
+	for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+		if (HoldsClip(iCustomProps, CLauncher::ButtonIndex(iTrack, row))) {
+			return true;
+		}
+	}
+	return false;
 }
 
 int ClipPattern(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
@@ -120,6 +148,18 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_FillIn, JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_fill_in";
 			break;
+		case CPress::kFunction:
+			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_Function, JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_function";
+			break;
+		case CPress::kMute:
+			JBox_StoreMOMPropertyByTag(iCustomProps, MuteTag(iChange.fIndex), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_mute";
+			break;
+		case CPress::kSolo:
+			JBox_StoreMOMPropertyByTag(iCustomProps, SoloTag(iChange.fIndex), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_solo";
+			break;
 		case CPress::kNothing:
 			break;
 	}
@@ -137,6 +177,34 @@ void HandleFillInGesture(TJBox_GestureArgs& iArgs) {
 	else if (iArgs.fCall == kJBox_OnRelease || iArgs.fCall == kJBox_OnCancel) {
 		if (JBox_GetBoolean(JBox_LoadMOMPropertyByTag(customProps, kCustomPropsTag_FillIn))) {
 			Apply(CPress::FillInButton(false), customProps, iArgs);
+		}
+	}
+}
+
+// In mute and solo function a function button is held down from the tap until
+// it is let go, so that automation records both, like the fill-in button. In
+// stop function the tap chooses stop.
+void HandleFunctionButtonsGesture(TJBox_GestureArgs& iArgs) {
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+	const int function = static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(customProps, kCustomPropsTag_Function)));
+	if (iArgs.fCall == kJBox_OnTap && iArgs.fTap == kJBox_TapRegular) {
+		int track = 0;
+		if (!FindFunctionButton(iArgs.fStartState.fPoint, track)) {
+			return;
+		}
+		iArgs.fConsumeFlag = true;
+		Apply(CPress::FunctionButton(function, track, TrackHoldsClips(customProps, track), true), customProps, iArgs);
+	}
+	// Let go of whichever mute or solo button is held, whatever the function
+	// is by now, but not after a context menu.
+	else if (iArgs.fCall == kJBox_OnRelease || iArgs.fCall == kJBox_OnCancel) {
+		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+			if (JBox_GetBoolean(JBox_LoadMOMPropertyByTag(customProps, MuteTag(track)))) {
+				Apply(CPress::FunctionButton(CLauncher::kFunctionMute, track, true, false), customProps, iArgs);
+			}
+			if (JBox_GetBoolean(JBox_LoadMOMPropertyByTag(customProps, SoloTag(track)))) {
+				Apply(CPress::FunctionButton(CLauncher::kFunctionSolo, track, true, false), customProps, iArgs);
+			}
 		}
 	}
 }
@@ -160,12 +228,22 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		HandleFillInGesture(iArgs);
 		return;
 	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_FunctionButtons) {
+		HandleFunctionButtonsGesture(iArgs);
+		return;
+	}
 	if (iArgs.fCall != kJBox_OnTap || iArgs.fTap != kJBox_TapRegular) {
 		return;
 	}
 	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
 	const int setup = static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(customProps, kCustomPropsTag_Setup)));
 
+	const int functionSelect = static_cast<int>(iArgs.fDisplayInfo.fID) - static_cast<int>(kDisplayID_FirstFunctionSelectButton);
+	if (functionSelect >= 0 && functionSelect < CLauncher::kFunctionCount) {
+		iArgs.fConsumeFlag = true;
+		Apply(CPress::FunctionSelectButton(functionSelect), customProps, iArgs);
+		return;
+	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SetupButton) {
 		iArgs.fConsumeFlag = true;
 		Apply(CPress::SetupButton(setup), customProps, iArgs);
@@ -248,6 +326,18 @@ void SetUpPanelDisplay(const TJBox_DisplayArgs& iArgs) {
 		TJBox_PropertyInfo info;
 		info.fBoxes = boxes;
 		info.fCount = CLauncher::kButtonCount;
+		JBox_SetPropertyInfo(&info);
+		return;
+	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_FunctionButtons) {
+		TJBox_PropertyBox boxes[CLauncher::kTrackCount];
+		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+			const TJBox_PropertyRef selection = JBox_MakePropertyRef(customProps, kSelectionKeys[track]);
+			boxes[track] = MakeBox(selection, track * kTrackPitch, 0.0f, kFunctionButtonWidth, kFunctionButtonHeight);
+		}
+		TJBox_PropertyInfo info;
+		info.fBoxes = boxes;
+		info.fCount = CLauncher::kTrackCount;
 		JBox_SetPropertyInfo(&info);
 		return;
 	}

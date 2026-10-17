@@ -64,7 +64,7 @@ void TestInitialState() {
 		CHECK(launcher.GetButtonState(track, CLauncher::kSelectionStop) == CLauncher::kActive);
 		// With no clips to stop, the stop button is unlit.
 		CHECK(launcher.GetStopLight(track) == CLauncher::kUnlit);
-		CHECK(launcher.GetStopLightFrame(track) == 0);
+		CHECK(launcher.GetFunctionLightFrame(track) == 0);
 		CHECK(launcher.GetCVValue(track) == 0.0);
 		// A new device has only empty launch buttons.
 		for (int row = 1; row <= 8; ++row) {
@@ -270,12 +270,12 @@ void TestQueuedButtonFlashesOnTheBeat() {
 	// Vibrant for the first quaver of a crotchet, dim for the second.
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
-	CHECK(launcher.GetStopLightFrame(1) == 2);
+	CHECK(launcher.GetFunctionLightFrame(1) == 2);
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver - kBatch));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver));
 	CHECK(launcher.GetLightFrame(0, 3) == dimFrame);
-	CHECK(launcher.GetStopLightFrame(1) == 1);
+	CHECK(launcher.GetFunctionLightFrame(1) == 1);
 	launcher.Advance(Playing(2 * CLauncher::kPPQPerCrotchet));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
 
@@ -285,7 +285,7 @@ void TestQueuedButtonFlashesOnTheBeat() {
 
 	// The active buttons do not flash. Track 2's clips are orange.
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver));
-	CHECK(launcher.GetStopLightFrame(0) == 1);
+	CHECK(launcher.GetFunctionLightFrame(0) == 1);
 	CHECK(launcher.GetLightFrame(1, 2) == 2 + 2 * 2);
 }
 
@@ -448,9 +448,9 @@ void TestStopLights() {
 	CHECK(launcher.GetStopLight(0) == CLauncher::kDim);
 	CHECK(launcher.GetStopLight(1) == CLauncher::kVibrant);
 	CHECK(launcher.GetStopLight(2) == CLauncher::kUnlit);
-	CHECK(launcher.GetStopLightFrame(0) == 1);
-	CHECK(launcher.GetStopLightFrame(1) == 2);
-	CHECK(launcher.GetStopLightFrame(2) == 0);
+	CHECK(launcher.GetFunctionLightFrame(0) == 1);
+	CHECK(launcher.GetFunctionLightFrame(1) == 2);
+	CHECK(launcher.GetFunctionLightFrame(2) == 0);
 
 	// A queued clip does not change the stop button...
 	launcher.SetSelection(0, 1);
@@ -1214,7 +1214,7 @@ void TestFillInLights() {
 	PlayThrough(launcher, 0.0, kBar);
 	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kDim, CLauncher::kColourWhite));
 	CHECK(launcher.GetFillInLightValue() == 1);
-	CHECK(launcher.GetFillInLightFrame() == 7);
+	CHECK(launcher.GetFillInLightFrame() == 9);
 	CHECK(launcher.GetFillInLabelFrame() == 0);
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
 
@@ -1316,6 +1316,311 @@ void TestIntervalMeterRunsInFillInEditing() {
 	CHECK(launcher.GetSceneLabelFrame(3) == 1);
 }
 
+// Tracks 0, 1 and 2 play clips with patterns 3, 1 and 5; track 3 holds a
+// clip but is stopped; track 4 has no clips. The song plays up to bar 2.
+void SetUpMutesAndSolos(CLauncher& iLauncher) {
+	iLauncher.SetClipPresent(0, 1, true);
+	iLauncher.SetClipPattern(0, 1, 2);
+	iLauncher.SetClipPresent(1, 1, true);
+	iLauncher.SetClipPattern(1, 1, 0);
+	iLauncher.SetClipPresent(2, 1, true);
+	iLauncher.SetClipPattern(2, 1, 4);
+	iLauncher.SetClipPresent(3, 1, true);
+	for (int track = 0; track < 3; ++track) {
+		iLauncher.SetSelection(track, 1);
+	}
+	iLauncher.Open();
+	PlayThrough(iLauncher, 0.0, kBar);
+}
+
+void PressMute(CLauncher& iLauncher, int iTrack) {
+	iLauncher.SetMutePressed(iTrack, true);
+	iLauncher.SetMutePressed(iTrack, false);
+}
+
+void PressSolo(CLauncher& iLauncher, int iTrack) {
+	iLauncher.SetSoloPressed(iTrack, true);
+	iLauncher.SetSoloPressed(iTrack, false);
+}
+
+void TestNewDeviceHasTheStopFunction() {
+	CLauncher launcher;
+	CHECK(launcher.GetFunction() == CLauncher::kFunctionStop);
+	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionStop), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionMute), CLauncher::kDim, CLauncher::kColourWhite));
+	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionSolo), CLauncher::kDim, CLauncher::kColourWhite));
+	// Vibrant red, and dim white, in the side buttons' film strip.
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionStop) == 2);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 9);
+	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionStop) == 1);
+	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionMute) == 0);
+	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionSolo) == 0);
+}
+
+void TestFunctionSelectButtonsWorkLikeRadioButtons() {
+	CLauncher launcher;
+	launcher.SetFunction(CLauncher::kFunctionMute);
+	CHECK(launcher.GetFunction() == CLauncher::kFunctionMute);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 6);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionStop) == 9);
+	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionMute) == 1);
+	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionStop) == 0);
+
+	launcher.SetFunction(CLauncher::kFunctionSolo);
+	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionSolo), CLauncher::kVibrant, CLauncher::kColourBlue));
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionSolo) == 8);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 9);
+
+	launcher.SetFunction(3);
+	launcher.SetFunction(-1);
+	CHECK(launcher.GetFunction() == CLauncher::kFunctionSolo);
+}
+
+void TestMuteSilencesATrackAtOnceUntilTheNextSwitchPoint() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PressMute(launcher, 0);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsMuted(0));
+	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
+	// The launch buttons go on as before.
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
+
+	PlayThrough(launcher, kBar + kBatch, kInterval - kBatch / 2);
+	CHECK(launcher.IsMuted(0));
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(!launcher.IsMuted(0));
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+}
+
+void TestSecondPressUnmutes() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PressMute(launcher, 0);
+	launcher.Advance(Playing(kBar));
+	PressMute(launcher, 0);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(!launcher.IsMuted(0));
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+}
+
+void TestSeveralTracksCanBeMuted() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PressMute(launcher, 0);
+	PressMute(launcher, 2);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(2) == 0.0);
+}
+
+void TestHoldingAMuteButtonTogglesOnlyOnce() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	launcher.SetMutePressed(0, true);
+	launcher.Advance(Playing(kBar));
+	launcher.SetMutePressed(0, true);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.IsMuted(0));
+	launcher.SetMutePressed(0, false);
+	launcher.Advance(Playing(kBar + 2 * kBatch));
+	CHECK(launcher.IsMuted(0));
+}
+
+void TestMuteInTheBatchAfterASwitchPointLastsTheWholeInterval() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	PressMute(launcher, 0);
+	launcher.Advance(Playing(kInterval + kBatch));
+	launcher.Advance(Playing(kInterval + 2 * kBatch));
+	CHECK(launcher.IsMuted(0));
+}
+
+void TestMuteLastsWithTheLengthImmediate() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	PressMute(launcher, 0);
+	launcher.Advance(Playing(kBar));
+	PlayThrough(launcher, kBar + kBatch, 3 * kInterval);
+	CHECK(launcher.IsMuted(0));
+	// A clip launched meanwhile is muted as well.
+	launcher.SetSelection(0, CLauncher::kSelectionStop);
+	launcher.Advance(Playing(3 * kInterval));
+	launcher.SetSelection(0, 1);
+	launcher.Advance(Playing(3 * kInterval + kBatch));
+	CHECK(launcher.IsMuted(0));
+	CHECK(launcher.GetCVValue(0) == 0.0);
+}
+
+void TestMuteWaitsWhileTheTransportIsStopped() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PressMute(launcher, 0);
+	launcher.Advance(Stopped(kBar));
+	for (int batch = 0; batch < 1000; ++batch) {
+		launcher.Advance(Stopped(kBar));
+	}
+	CHECK(launcher.IsMuted(0));
+	// Playing on from where the transport stopped is not a jump.
+	PlayThrough(launcher, kBar, kInterval - kBatch);
+	CHECK(launcher.IsMuted(0));
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(!launcher.IsMuted(0));
+}
+
+void TestMutesAndSolosEndWhenTheSongPositionJumps() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	PressMute(launcher, 0);
+	PressSolo(launcher, 1);
+	launcher.Advance(Playing(kBar));
+	PlayThrough(launcher, kBar + kBatch, 2 * kBar);
+	CHECK(launcher.IsMuted(0));
+	CHECK(launcher.IsSoloed(1));
+	// A loop goes back to bar 2.
+	launcher.Advance(Playing(kBar));
+	CHECK(!launcher.IsMuted(0));
+	CHECK(!launcher.IsSoloed(1));
+
+	// So does a locate while the transport is stopped.
+	PressMute(launcher, 0);
+	launcher.Advance(Stopped(kBar + kBatch));
+	launcher.Advance(Stopped(kBar + kBatch));
+	CHECK(launcher.IsMuted(0));
+	launcher.Advance(Stopped(3 * kBar));
+	CHECK(!launcher.IsMuted(0));
+}
+
+void TestMuteAndSoloNeedClips() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PressMute(launcher, 4);
+	PressSolo(launcher, 4);
+	launcher.Advance(Playing(kBar));
+	CHECK(!launcher.IsMuted(4));
+	CHECK(!launcher.IsSoloed(4));
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+
+	// A stopped track that holds a clip can be soloed, and silences the others.
+	PressSolo(launcher, 3);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.IsSoloed(3));
+	CHECK(launcher.GetCVValue(0) == 0.0);
+
+	// A track that loses its last clip is neither muted nor soloed any more.
+	PressMute(launcher, 3);
+	launcher.Advance(Playing(kBar + 2 * kBatch));
+	CHECK(launcher.IsMuted(3));
+	launcher.SetClipPresent(3, 1, false);
+	launcher.Advance(Playing(kBar + 3 * kBatch));
+	CHECK(!launcher.IsMuted(3));
+	CHECK(!launcher.IsSoloed(3));
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+}
+
+void TestSoloSilencesTheOtherTracksUntilTheNextSwitchPoint() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PressSolo(launcher, 1);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsSoloed(1));
+	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(2) == 0.0);
+	CHECK(launcher.IsSilenced(0));
+	CHECK(!launcher.IsSilenced(1));
+
+	// Several tracks can be soloed.
+	PressSolo(launcher, 2);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(2) == 5.0 / 8);
+
+	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + kBatch);
+	CHECK(!launcher.IsSoloed(1));
+	CHECK(!launcher.IsSoloed(2));
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+}
+
+void TestSoloAndMuteCombine() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	PressMute(launcher, 0);
+	PressMute(launcher, 1);
+	launcher.Advance(Playing(kBar));
+
+	// A muted track that is soloed plays at once.
+	PressSolo(launcher, 0);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.IsMuted(0));
+	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(2) == 0.0);
+
+	// Switching the solo off leaves every track as it was: tracks 0 and 1
+	// muted, track 2 playing.
+	PressSolo(launcher, 0);
+	launcher.Advance(Playing(kBar + 2 * kBatch));
+	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(1) == 0.0);
+	CHECK(launcher.GetCVValue(2) == 5.0 / 8);
+}
+
+void TestMutedTrackPlaysNoFillIn() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+	launcher.SetFillInPresent(0, 1, true);
+	launcher.SetFillInPattern(0, 1, 5);
+	PressMute(launcher, 0);
+	launcher.SetFillInPressed(true);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0) == 0.0);
+}
+
+void TestFunctionLights() {
+	CLauncher launcher;
+	SetUpMutesAndSolos(launcher);
+
+	// In stop function, the stop buttons' lights in red.
+	CHECK(IsLight(launcher.GetFunctionLight(0), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(IsLight(launcher.GetFunctionLight(3), CLauncher::kDim, CLauncher::kColourRed));
+	CHECK(IsUnlit(launcher.GetFunctionLight(4)));
+	CHECK(launcher.GetFunctionLightValue(0) == 2);
+
+	// In mute function, vibrant yellow, dim while muted, unlit without clips.
+	PressMute(launcher, 1);
+	launcher.SetFunction(CLauncher::kFunctionMute);
+	launcher.Advance(Playing(kBar));
+	CHECK(IsLight(launcher.GetFunctionLight(0), CLauncher::kVibrant, CLauncher::kColourYellow));
+	CHECK(IsLight(launcher.GetFunctionLight(1), CLauncher::kDim, CLauncher::kColourYellow));
+	CHECK(IsLight(launcher.GetFunctionLight(3), CLauncher::kVibrant, CLauncher::kColourYellow));
+	CHECK(IsUnlit(launcher.GetFunctionLight(4)));
+	CHECK(launcher.GetFunctionLightFrame(0) == 4);
+	CHECK(launcher.GetFunctionLightFrame(1) == 3);
+	CHECK(launcher.GetFunctionLightFrame(4) == 0);
+	CHECK(launcher.GetFunctionLightValue(0) == 2);
+	CHECK(launcher.GetFunctionLightValue(1) == 1);
+
+	// In solo function, dim blue, vibrant while soloed. A muted track that is
+	// soloed still shows dim yellow in mute function.
+	PressSolo(launcher, 1);
+	launcher.SetFunction(CLauncher::kFunctionSolo);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(IsLight(launcher.GetFunctionLight(0), CLauncher::kDim, CLauncher::kColourBlue));
+	CHECK(IsLight(launcher.GetFunctionLight(1), CLauncher::kVibrant, CLauncher::kColourBlue));
+	CHECK(IsUnlit(launcher.GetFunctionLight(4)));
+	CHECK(launcher.GetFunctionLightFrame(0) == 5);
+	CHECK(launcher.GetFunctionLightFrame(1) == 6);
+	launcher.SetFunction(CLauncher::kFunctionMute);
+	CHECK(IsLight(launcher.GetFunctionLight(1), CLauncher::kDim, CLauncher::kColourYellow));
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -1386,6 +1691,22 @@ int main() {
 	TestFillInEditingWithoutFillInShowsOnlyToggle();
 	TestFillInEditingShowsColoursAndPatterns();
 	TestIntervalMeterRunsInFillInEditing();
+
+	TestNewDeviceHasTheStopFunction();
+	TestFunctionSelectButtonsWorkLikeRadioButtons();
+	TestMuteSilencesATrackAtOnceUntilTheNextSwitchPoint();
+	TestSecondPressUnmutes();
+	TestSeveralTracksCanBeMuted();
+	TestHoldingAMuteButtonTogglesOnlyOnce();
+	TestMuteInTheBatchAfterASwitchPointLastsTheWholeInterval();
+	TestMuteLastsWithTheLengthImmediate();
+	TestMuteWaitsWhileTheTransportIsStopped();
+	TestMutesAndSolosEndWhenTheSongPositionJumps();
+	TestMuteAndSoloNeedClips();
+	TestSoloSilencesTheOtherTracksUntilTheNextSwitchPoint();
+	TestSoloAndMuteCombine();
+	TestMutedTrackPlaysNoFillIn();
+	TestFunctionLights();
 
 	return ReportChecks("Launcher");
 }

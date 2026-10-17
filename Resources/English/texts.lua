@@ -7,6 +7,8 @@ local COLOUR_NAMES = {
 
 texts = {
 	["text_stop"] = "Stop",
+	["text_mute"] = "Mute",
+	["text_solo"] = "Solo",
 	["text_unlit"] = "Unlit",
 	["text_dim"] = "Dim",
 	["text_vibrant"] = "Vibrant",
@@ -35,6 +37,13 @@ texts = {
 	["text_set_fill_in_light_shortest"] = "SFLg",
 	["text_set_fill_in_label"] = "Set Fill-In Label",
 
+	["text_selected_function"] = "Function",
+	["text_selected_function_short"] = "Function",
+	["text_selected_function_shortest"] = "Func",
+	["text_function_select_stop"] = "Stop Function Select Button",
+	["text_function_select_mute"] = "Mute Function Select Button",
+	["text_function_select_solo"] = "Solo Function Select Button",
+
 	["text_switch_interval"] = "Switch Interval",
 	["text_switch_interval_short"] = "Interval",
 	["text_switch_interval_shortest"] = "Int",
@@ -60,6 +69,9 @@ texts = {
 	["gesture_fill_in_present"] = "Switch fill-in on or off",
 	["gesture_fill_in_pattern"] = "Change fill-in pattern",
 	["gesture_fill_in_colour"] = "Change fill-in colour",
+	["gesture_function"] = "Change function",
+	["gesture_mute"] = "Mute or unmute track",
+	["gesture_solo"] = "Solo or unsolo track",
 }
 
 for track = 1, 8 do
@@ -68,10 +80,20 @@ for track = 1, 8 do
 	texts[selection .. "_short"] = "T" .. track .. " Sel"
 	texts[selection .. "_shortest"] = "T" .. track .. "Sl"
 
-	local stop = "text_track" .. track .. "_stop"
-	texts[stop] = "Track " .. track .. " Stop"
-	texts[stop .. "_light_short"] = "T" .. track .. " Stop"
-	texts[stop .. "_light_shortest"] = "T" .. track .. "St"
+	local mute = "text_track" .. track .. "_mute"
+	texts[mute] = "Track " .. track .. " Mute"
+	texts[mute .. "_short"] = "T" .. track .. " Mute"
+	texts[mute .. "_shortest"] = "T" .. track .. "Mu"
+
+	local solo = "text_track" .. track .. "_solo"
+	texts[solo] = "Track " .. track .. " Solo"
+	texts[solo .. "_short"] = "T" .. track .. " Solo"
+	texts[solo .. "_shortest"] = "T" .. track .. "So"
+
+	local function_button = "text_track" .. track .. "_function"
+	texts[function_button] = "Track " .. track .. " Function Light"
+	texts[function_button .. "_light_short"] = "T" .. track .. " Func"
+	texts[function_button .. "_light_shortest"] = "T" .. track .. "Fn"
 
 	texts["text_cv_out_track" .. track] = "Track " .. track .. " CV Out"
 

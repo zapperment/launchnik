@@ -37,8 +37,8 @@ table.insert(front_widgets, jbox.sequence_meter{
 })
 for track = 1, TRACK_COUNT do
 	table.insert(front_widgets, jbox.sequence_meter{
-		graphics = { node = "lamp_track" .. track .. "_stop" },
-		value = "/custom_properties/track" .. track .. "_stop_light_frame",
+		graphics = { node = "lamp_track" .. track .. "_function" },
+		value = "/custom_properties/track" .. track .. "_function_light_frame",
 	})
 	for row = 1, ROW_COUNT do
 		table.insert(front_widgets, jbox.sequence_meter{
@@ -80,6 +80,19 @@ table.insert(front_widgets, jbox.sequence_meter{
 	value = "/custom_properties/fill_in_label_frame",
 })
 
+-- Stop, mute and solo, in the order of their display ids from 8 (see Panel.h).
+local FUNCTIONS = { "stop", "mute", "solo" }
+for _, name in ipairs(FUNCTIONS) do
+	table.insert(front_widgets, jbox.sequence_meter{
+		graphics = { node = "lamp_function_select_" .. name },
+		value = "/custom_properties/function_select_" .. name .. "_light_frame",
+	})
+	table.insert(front_widgets, jbox.sequence_meter{
+		graphics = { node = "caption_function_select_" .. name },
+		value = "/custom_properties/function_select_" .. name .. "_caption_frame",
+	})
+end
+
 table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "labels_launch" },
 	value = "/custom_properties/launch_labels_frame",
@@ -91,19 +104,13 @@ for scene = 1, ROW_COUNT do
 	})
 end
 
-for track = 1, TRACK_COUNT do
-	table.insert(front_widgets, jbox.radio_button{
-		graphics = { node = "click_track" .. track .. "_stop" },
-		value = "/custom_properties/track" .. track .. "_selection",
-		index = 0,
-	})
-end
-
 -- Clicks on the launch buttons, the scene buttons, the setup button, the back
 -- button and the set fill-in button mean different things in launch mode and
--- in setup mode, so they go to the click handler in Panel.cpp, which tells the
--- displays apart by display_id. So does the fill-in button, which is held
--- down while the mouse button is. The handler reads and
+-- in setup mode, and clicks on the function buttons different things in each
+-- function, so they go to the click handler in Panel.cpp, which tells the
+-- displays apart by display_id. So do the function select buttons, and the
+-- fill-in button, which is held down while the mouse button is, as are the
+-- function buttons in mute and solo function. The handler reads and
 -- writes properties that are not listed here; the setup state is listed only
 -- because a display needs at least one value.
 table.insert(front_widgets, jbox.custom_display{
@@ -154,6 +161,24 @@ table.insert(front_widgets, jbox.custom_display{
 	display_id = 6,
 	values = { "/custom_properties/setup" },
 })
+table.insert(front_widgets, jbox.custom_display{
+	graphics = { node = "click_functions" },
+	background = "transparent",
+	display_width_pixels = 1835,
+	display_height_pixels = 75,
+	display_id = 7,
+	values = { "/custom_properties/selected_function" },
+})
+for index, name in ipairs(FUNCTIONS) do
+	table.insert(front_widgets, jbox.custom_display{
+		graphics = { node = "click_function_select_" .. name },
+		background = "transparent",
+		display_width_pixels = 130,
+		display_height_pixels = 135,
+		display_id = 7 + index,
+		values = { "/custom_properties/selected_function" },
+	})
+end
 
 front = jbox.panel{
 	graphics = { node = "Bg" },
