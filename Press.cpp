@@ -4,19 +4,57 @@
 
 namespace {
 
-CPress::TChange MakeChange(CPress::EProperty iProperty, int iIndex, int iValue) {
+CPress::TChange MakeChange(CPress::EProperty iProperty, int iIndex, int iValue, int iOutput = 0) {
 	CPress::TChange change;
 	change.fProperty = iProperty;
 	change.fIndex = iIndex;
+	change.fOutput = iOutput;
 	change.fValue = iValue;
 	return change;
 }
 
-const CPress::TChange kNoChange = { CPress::kNothing, 0, 0 };
+const CPress::TChange kNoChange = { CPress::kNothing, 0, 0, 0 };
+
+// What a press changes among the colours and the CV outputs of the settings
+// being edited, the clip's or the fill-in's, which must be there.
+CPress::TChange EditSetting(bool iFillIn, int iPicked, int iTrack, int iRow, const CPress::TEdited& iEdited) {
+	const bool isColourRow = iRow == CLauncher::kEditingFirstColourRow || iRow == CLauncher::kEditingFirstColourRow + 1;
+	if (isColourRow && iTrack < CLauncher::kEditingColoursPerRow) {
+		const int colour = (iRow - CLauncher::kEditingFirstColourRow) * CLauncher::kEditingColoursPerRow + iTrack;
+		return MakeChange(iFillIn ? CPress::kFillInColour : CPress::kClipColour, iPicked, colour);
+	}
+	const int output = iRow - CLauncher::kEditingFirstOutputRow;
+	if (output < 0 || output >= CLauncher::kOutputCount || iTrack < 0 || iTrack >= CLauncher::kTrackCount) {
+		return kNoChange;
+	}
+	const int cvMode = iEdited.fCVModes[output];
+	if (cvMode == CLauncher::kCVModePattern) {
+		return MakeChange(iFillIn ? CPress::kFillInPattern : CPress::kClipPattern, iPicked, iTrack, output);
+	}
+	// The transition button goes round from off through A to D.
+	if (iTrack == CLauncher::kEditingTransitionTrack) {
+		const int transition = (iEdited.fTransitions[output] + 1) % CLauncher::kTransitionCount;
+		return MakeChange(iFillIn ? CPress::kFillInTransition : CPress::kClipTransition, iPicked, transition, output);
+	}
+	if (cvMode == CLauncher::kCVModeUnipolar) {
+		return MakeChange(iFillIn ? CPress::kFillInUnipolar : CPress::kClipUnipolar, iPicked, iTrack, output);
+	}
+	return MakeChange(iFillIn ? CPress::kFillInBipolar : CPress::kClipBipolar, iPicked, iTrack, output);
+}
 
 } // namespace
 
-CPress::TChange CPress::LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, bool iPickedHoldsClip) {
+CPress::TEdited CPress::Edited(bool iPresent) {
+	TEdited edited;
+	edited.fPresent = iPresent;
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		edited.fCVModes[output] = CLauncher::DefaultCVMode(output);
+		edited.fTransitions[output] = CLauncher::kTransitionOff;
+	}
+	return edited;
+}
+
+CPress::TChange CPress::LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, const TEdited& iPicked) {
 	if (iSetup == CLauncher::kSetupLaunchMode) {
 		// An empty launch button stands in for the stop button.
 		return MakeChange(kSelection, iTrack, iPressedHoldsClip ? iRow : CLauncher::kSelectionStop);
@@ -30,24 +68,16 @@ CPress::TChange CPress::LaunchButton(int iSetup, int iTrack, int iRow, bool iPre
 
 	const int picked = CLauncher::PickedButton(iSetup);
 	if (iTrack == CLauncher::kEditingToggleTrack && iRow == CLauncher::kEditingToggleRow) {
-		return MakeChange(kClipPresent, picked, iPickedHoldsClip ? 0 : 1);
+		return MakeChange(kClipPresent, picked, iPicked.fPresent ? 0 : 1);
 	}
-	// The colour and pattern controls are not there without a clip.
-	if (!iPickedHoldsClip) {
+	// The colour and CV controls are not there without a clip.
+	if (!iPicked.fPresent) {
 		return kNoChange;
 	}
-	const bool isColourRow = iRow == CLauncher::kEditingFirstColourRow || iRow == CLauncher::kEditingFirstColourRow + 1;
-	if (isColourRow && iTrack < CLauncher::kEditingColoursPerRow) {
-		const int colour = (iRow - CLauncher::kEditingFirstColourRow) * CLauncher::kEditingColoursPerRow + iTrack;
-		return MakeChange(kClipColour, picked, colour);
-	}
-	if (iRow == CLauncher::kEditingPatternRow) {
-		return MakeChange(kClipPattern, picked, iTrack);
-	}
-	return kNoChange;
+	return EditSetting(false, picked, iTrack, iRow, iPicked);
 }
 
-CPress::TChanges CPress::FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, bool iPickedHoldsFillIn, int iPickedPattern) {
+CPress::TChanges CPress::FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip) {
 	TChanges changes;
 	changes.fCount = 0;
 	if (!CLauncher::IsFillInEditing(iSetup)) {
@@ -56,27 +86,29 @@ CPress::TChanges CPress::FillInEditingLaunchButton(int iSetup, int iTrack, int i
 
 	const int picked = CLauncher::PickedButton(iSetup);
 	if (iTrack == CLauncher::kEditingToggleTrack && iRow == CLauncher::kEditingToggleRow) {
-		if (iPickedHoldsFillIn) {
+		if (iFillIn.fPresent) {
 			changes.fChanges[changes.fCount++] = MakeChange(kFillInPresent, picked, 0);
 			return changes;
 		}
-		// A new fill-in starts with the pattern of its clip, in white.
+		// A new fill-in starts as a copy of its clip's values, with every
+		// transition off, in white.
 		changes.fChanges[changes.fCount++] = MakeChange(kFillInPresent, picked, 1);
-		changes.fChanges[changes.fCount++] = MakeChange(kFillInPattern, picked, iPickedPattern);
 		changes.fChanges[changes.fCount++] = MakeChange(kFillInColour, picked, CLauncher::kColourWhite);
+		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+			changes.fChanges[changes.fCount++] = MakeChange(kFillInPattern, picked, iClip.fPatterns[output], output);
+			changes.fChanges[changes.fCount++] = MakeChange(kFillInUnipolar, picked, iClip.fUnipolar[output], output);
+			changes.fChanges[changes.fCount++] = MakeChange(kFillInBipolar, picked, iClip.fBipolar[output], output);
+			changes.fChanges[changes.fCount++] = MakeChange(kFillInTransition, picked, CLauncher::kTransitionOff, output);
+		}
 		return changes;
 	}
-	// The colour and pattern controls are not there without a fill-in.
-	if (!iPickedHoldsFillIn) {
+	// The colour and CV controls are not there without a fill-in.
+	if (!iFillIn.fPresent) {
 		return changes;
 	}
-	const bool isColourRow = iRow == CLauncher::kEditingFirstColourRow || iRow == CLauncher::kEditingFirstColourRow + 1;
-	if (isColourRow && iTrack < CLauncher::kEditingColoursPerRow) {
-		const int colour = (iRow - CLauncher::kEditingFirstColourRow) * CLauncher::kEditingColoursPerRow + iTrack;
-		changes.fChanges[changes.fCount++] = MakeChange(kFillInColour, picked, colour);
-	}
-	else if (iRow == CLauncher::kEditingPatternRow) {
-		changes.fChanges[changes.fCount++] = MakeChange(kFillInPattern, picked, iTrack);
+	const TChange change = EditSetting(true, picked, iTrack, iRow, iFillIn);
+	if (change.fProperty != kNothing) {
+		changes.fChanges[changes.fCount++] = change;
 	}
 	return changes;
 }
@@ -120,7 +152,7 @@ CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsCl
 		return changes;
 	}
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
-		changes.fChanges[changes.fCount++] = LaunchButton(iSetup, track, iScene, iHoldsClip[track], false);
+		changes.fChanges[changes.fCount++] = LaunchButton(iSetup, track, iScene, iHoldsClip[track], Edited(false));
 	}
 	return changes;
 }

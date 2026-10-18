@@ -1,5 +1,7 @@
 #include "Launcher.h"
 
+#include <cmath>
+
 namespace {
 
 // Flashing lights are vibrant for the first quaver of every crotchet.
@@ -31,7 +33,24 @@ int LightValue(const CLauncher::TLight& iLight) {
 // Red, orange, yellow, green, cyan, blue, purple and pink for tracks 1 to 8.
 const int kDefaultColours[CLauncher::kTrackCount] = { 1, 2, 3, 5, 7, 9, 11, 13 };
 
+// How steep the exponential curve of transitions B and D is.
+const double kCurveSteepness = 4.0;
+
+bool IsValidOutput(int iOutput) {
+	return iOutput >= 0 && iOutput < CLauncher::kOutputCount;
+}
+
+bool IsValidValue(int iValue) {
+	return iValue >= 0 && iValue < CLauncher::kValueCount;
+}
+
+bool IsValidTransition(int iTransition) {
+	return iTransition >= 0 && iTransition < CLauncher::kTransitionCount;
+}
+
 } // namespace
+
+const CLauncher::TMovement CLauncher::kNoMovement = { false, 0.0, false, 0.0, 0, 0, 0, 0 };
 
 CLauncher::CLauncher()
 	:
@@ -56,17 +75,30 @@ CLauncher::CLauncher()
 		fSoloed[track] = false;
 		fSelections[track] = kSelectionStop;
 		fActive[track] = kSelectionStop;
-		fEmitted[track] = 0;
+		fLastActive[track] = kSelectionStop;
+		for (int output = 0; output < kOutputCount; ++output) {
+			fEmitted[track][output] = 0;
+			fCVModes[track][output] = DefaultCVMode(output);
+			fClipValues[track][output] = 0.0;
+			fValues[track][output] = 0.0;
+			fMovements[track][output] = kNoMovement;
+			fFillInMovements[track][output] = kNoMovement;
+		}
 		for (int row = 1; row <= kRowCount; ++row) {
 			TClip& clip = fClips[track][row - 1];
 			clip.fPresent = false;
-			// A new clip plays the pattern of its row.
-			clip.fPattern = row - 1;
 			clip.fColour = DefaultColour(track);
-			// A fill-in is set up with the pattern of its clip, in white.
-			clip.fFillInPresent = false;
-			clip.fFillInPattern = clip.fPattern;
-			clip.fFillInColour = kColourWhite;
+			// A new clip plays the pattern of its row, with both values at 0.
+			for (int output = 0; output < kOutputCount; ++output) {
+				clip.fPatterns[output] = row - 1;
+				clip.fUnipolar[output] = 0;
+				clip.fBipolar[output] = kBipolarZero;
+				clip.fTransitions[output] = kTransitionOff;
+			}
+			// A fill-in is set up as a copy of its clip, in white.
+			clip.fFillIn = clip;
+			clip.fFillIn.fPresent = false;
+			clip.fFillIn.fColour = kColourWhite;
 		}
 	}
 }
@@ -113,15 +145,17 @@ const CLauncher::TClip& CLauncher::Clip(int iTrack, int iRow) const {
 	return fClips[iTrack][iRow - 1];
 }
 
+CLauncher::TSettings* CLauncher::EditableSettings(int iTrack, int iRow, int iOutput, bool iFillIn) {
+	if (!IsValidButton(iTrack, iRow) || !IsValidOutput(iOutput)) {
+		return nullptr;
+	}
+	TClip& clip = fClips[iTrack][iRow - 1];
+	return iFillIn ? &clip.fFillIn : &clip;
+}
+
 void CLauncher::SetClipPresent(int iTrack, int iRow, bool iPresent) {
 	if (IsValidButton(iTrack, iRow)) {
 		fClips[iTrack][iRow - 1].fPresent = iPresent;
-	}
-}
-
-void CLauncher::SetClipPattern(int iTrack, int iRow, int iPattern) {
-	if (IsValidButton(iTrack, iRow) && iPattern >= 0 && iPattern < kPatternCount) {
-		fClips[iTrack][iRow - 1].fPattern = iPattern;
 	}
 }
 
@@ -131,22 +165,86 @@ void CLauncher::SetClipColour(int iTrack, int iRow, int iColour) {
 	}
 }
 
-void CLauncher::SetFillInPresent(int iTrack, int iRow, bool iPresent) {
-	if (IsValidButton(iTrack, iRow)) {
-		fClips[iTrack][iRow - 1].fFillInPresent = iPresent;
+void CLauncher::SetClipPattern(int iTrack, int iRow, int iOutput, int iPattern) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, false);
+	if (settings && iPattern >= 0 && iPattern < kPatternCount) {
+		settings->fPatterns[iOutput] = iPattern;
 	}
 }
 
-void CLauncher::SetFillInPattern(int iTrack, int iRow, int iPattern) {
-	if (IsValidButton(iTrack, iRow) && iPattern >= 0 && iPattern < kPatternCount) {
-		fClips[iTrack][iRow - 1].fFillInPattern = iPattern;
+void CLauncher::SetClipUnipolar(int iTrack, int iRow, int iOutput, int iValue) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, false);
+	if (settings && IsValidValue(iValue)) {
+		settings->fUnipolar[iOutput] = iValue;
+	}
+}
+
+void CLauncher::SetClipBipolar(int iTrack, int iRow, int iOutput, int iValue) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, false);
+	if (settings && IsValidValue(iValue)) {
+		settings->fBipolar[iOutput] = iValue;
+	}
+}
+
+void CLauncher::SetClipTransition(int iTrack, int iRow, int iOutput, int iTransition) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, false);
+	if (settings && IsValidTransition(iTransition)) {
+		settings->fTransitions[iOutput] = iTransition;
+	}
+}
+
+void CLauncher::SetFillInPresent(int iTrack, int iRow, bool iPresent) {
+	if (IsValidButton(iTrack, iRow)) {
+		fClips[iTrack][iRow - 1].fFillIn.fPresent = iPresent;
 	}
 }
 
 void CLauncher::SetFillInColour(int iTrack, int iRow, int iColour) {
 	if (IsValidButton(iTrack, iRow) && iColour >= 0 && iColour < kColourCount) {
-		fClips[iTrack][iRow - 1].fFillInColour = iColour;
+		fClips[iTrack][iRow - 1].fFillIn.fColour = iColour;
 	}
+}
+
+void CLauncher::SetFillInPattern(int iTrack, int iRow, int iOutput, int iPattern) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, true);
+	if (settings && iPattern >= 0 && iPattern < kPatternCount) {
+		settings->fPatterns[iOutput] = iPattern;
+	}
+}
+
+void CLauncher::SetFillInUnipolar(int iTrack, int iRow, int iOutput, int iValue) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, true);
+	if (settings && IsValidValue(iValue)) {
+		settings->fUnipolar[iOutput] = iValue;
+	}
+}
+
+void CLauncher::SetFillInBipolar(int iTrack, int iRow, int iOutput, int iValue) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, true);
+	if (settings && IsValidValue(iValue)) {
+		settings->fBipolar[iOutput] = iValue;
+	}
+}
+
+void CLauncher::SetFillInTransition(int iTrack, int iRow, int iOutput, int iTransition) {
+	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, true);
+	if (settings && IsValidTransition(iTransition)) {
+		settings->fTransitions[iOutput] = iTransition;
+	}
+}
+
+int CLauncher::DefaultCVMode(int iOutput) {
+	return iOutput == 0 ? kCVModePattern : kCVModeUnipolar;
+}
+
+void CLauncher::SetCVMode(int iTrack, int iOutput, int iCVMode) {
+	if (iTrack >= 0 && iTrack < kTrackCount && IsValidOutput(iOutput) && iCVMode >= 0 && iCVMode < kCVModeCount) {
+		fCVModes[iTrack][iOutput] = iCVMode;
+	}
+}
+
+int CLauncher::GetCVMode(int iTrack, int iOutput) const {
+	return fCVModes[iTrack][iOutput];
 }
 
 void CLauncher::SetFillInPressed(bool iPressed) {
@@ -270,7 +368,12 @@ int CLauncher::Target(int iTrack) const {
 void CLauncher::Switch() {
 	for (int track = 0; track < kTrackCount; ++track) {
 		fActive[track] = Target(track);
-		fEmitted[track] = fActive[track] == kSelectionStop ? 0 : Clip(track, fActive[track]).fPattern + 1;
+		if (fActive[track] != kSelectionStop) {
+			fLastActive[track] = fActive[track];
+		}
+		for (int output = 0; output < kOutputCount; ++output) {
+			fEmitted[track][output] = fActive[track] == kSelectionStop ? 0 : Clip(track, fActive[track]).fPatterns[output] + 1;
+		}
 	}
 }
 
@@ -347,6 +450,157 @@ void CLauncher::Advance(const TTransport& iTransport) {
 	if (switchNow) {
 		Switch();
 	}
+	UpdateValues(iTransport);
+}
+
+double CLauncher::UnipolarCV(int iValue) {
+	return static_cast<double>(iValue) / (kValueCount - 1);
+}
+
+double CLauncher::BipolarCV(int iValue) {
+	return static_cast<double>(iValue - kBipolarZero) / kBipolarZero;
+}
+
+double CLauncher::TransitionCurve(int iTransition, double iTime) {
+	if (iTime <= 0.0) {
+		return 0.0;
+	}
+	if (iTime >= 1.0) {
+		return 1.0;
+	}
+	if (iTransition == kTransitionB || iTransition == kTransitionD) {
+		return (std::exp(kCurveSteepness * iTime) - 1.0) / (std::exp(kCurveSteepness) - 1.0);
+	}
+	return iTime;
+}
+
+int CLauncher::ValueIndex(const TSettings& iSettings, int iOutput, int iCVMode) {
+	return iCVMode == kCVModeBipolar ? iSettings.fBipolar[iOutput] : iSettings.fUnipolar[iOutput];
+}
+
+double CLauncher::ValueCV(const TSettings& iSettings, int iOutput, int iCVMode) {
+	const int value = ValueIndex(iSettings, iOutput, iCVMode);
+	return iCVMode == kCVModeBipolar ? BipolarCV(value) : UnipolarCV(value);
+}
+
+double CLauncher::BarLength(const TTransport& iTransport) {
+	int numerator = iTransport.fTimeSignatureNumerator;
+	int denominator = iTransport.fTimeSignatureDenominator;
+	if (numerator <= 0 || denominator <= 0) {
+		numerator = 4;
+		denominator = 4;
+	}
+	return static_cast<double>(numerator * (kPPQPerCrotchet * 4 / denominator));
+}
+
+double CLauncher::NextSwitchPoint(double iPosition, const TTransport& iTransport) const {
+	const double intervalLength = static_cast<double>(ComputeSwitchIntervalLength(fLength, iTransport.fTimeSignatureNumerator, iTransport.fTimeSignatureDenominator));
+	if (intervalLength <= 0.0) {
+		return iPosition;
+	}
+	return (std::floor(iPosition / intervalLength) + 1.0) * intervalLength;
+}
+
+void CLauncher::StartOver(TMovement& ioMovement, double iEmitted, int iRow, int iTransition, int iValue, int iCVMode, double iPosition, const TTransport& iTransport) const {
+	// A movement that had begun goes on from where it is. One that had not,
+	// or whose CV mode has changed, starts from the active clip's value.
+	const bool begun = ioMovement.fOn && (ioMovement.fFromFrozen || iPosition >= ioMovement.fStart);
+	ioMovement.fFromFrozen = begun && ioMovement.fCVMode == iCVMode;
+	ioMovement.fFrom = iEmitted;
+	ioMovement.fOn = true;
+	ioMovement.fRow = iRow;
+	ioMovement.fTransition = iTransition;
+	ioMovement.fValue = iValue;
+	ioMovement.fCVMode = iCVMode;
+	ioMovement.fStart = iPosition;
+	// C and D move only within the last bar before the switch point.
+	if (iTransition == kTransitionC || iTransition == kTransitionD) {
+		const double lastBar = NextSwitchPoint(iPosition, iTransport) - BarLength(iTransport);
+		if (lastBar > iPosition) {
+			ioMovement.fStart = lastBar;
+		}
+	}
+}
+
+double CLauncher::MovementValue(const TMovement& iMovement, double iActiveValue, double iTo, double iPosition, const TTransport& iTransport) const {
+	const double from = iMovement.fFromFrozen ? iMovement.fFrom : iActiveValue;
+	// After a jump of the song position it lands on the switch point ahead.
+	const double end = NextSwitchPoint(iPosition, iTransport);
+	if (iPosition <= iMovement.fStart || end <= iMovement.fStart) {
+		return from;
+	}
+	const double time = (iPosition - iMovement.fStart) / (end - iMovement.fStart);
+	return from + (iTo - from) * TransitionCurve(iMovement.fTransition, time);
+}
+
+double CLauncher::ComputeClipValue(int iTrack, int iOutput, const TTransport& iTransport) {
+	TMovement& movement = fMovements[iTrack][iOutput];
+	const int cvMode = fCVModes[iTrack][iOutput];
+	const int active = fActive[iTrack];
+	// A stopped track goes on with the value of the clip it last played.
+	if (active == kSelectionStop) {
+		movement = kNoMovement;
+		return fLastActive[iTrack] == kSelectionStop ? 0.0 : ValueCV(Clip(iTrack, fLastActive[iTrack]), iOutput, cvMode);
+	}
+	const TClip& clip = Clip(iTrack, active);
+	const double activeValue = ValueCV(clip, iOutput, cvMode);
+	// The active clip's transition moves towards a queued clip, never towards
+	// stop; with the length immediate nothing is ever queued.
+	const int target = Target(iTrack);
+	const int transition = clip.fTransitions[iOutput];
+	if (!iTransport.fPlaying || fLength == kLengthImmediate || target == kSelectionStop || target == active || transition == kTransitionOff) {
+		movement = kNoMovement;
+		return activeValue;
+	}
+	const TClip& targetClip = Clip(iTrack, target);
+	const int value = ValueIndex(targetClip, iOutput, cvMode);
+	if (!movement.fOn || movement.fRow != target || movement.fTransition != transition || movement.fValue != value || movement.fCVMode != cvMode) {
+		StartOver(movement, fClipValues[iTrack][iOutput], target, transition, value, cvMode, iTransport.fPlayPos, iTransport);
+	}
+	return MovementValue(movement, activeValue, ValueCV(targetClip, iOutput, cvMode), iTransport.fPlayPos, iTransport);
+}
+
+double CLauncher::ComputeFillInValue(int iTrack, int iOutput, double iBelow, const TTransport& iTransport) {
+	TMovement& movement = fFillInMovements[iTrack][iOutput];
+	if (!PlaysFillIn(iTrack)) {
+		movement = kNoMovement;
+		return iBelow;
+	}
+	// A fill-in moves from whatever is emitted at the press to its own value,
+	// and hides any transition of its clip meanwhile.
+	const int cvMode = fCVModes[iTrack][iOutput];
+	const int active = fActive[iTrack];
+	const TSettings& fillIn = Clip(iTrack, active).fFillIn;
+	const int transition = fillIn.fTransitions[iOutput];
+	const int value = ValueIndex(fillIn, iOutput, cvMode);
+	if (!movement.fOn || movement.fRow != active || movement.fTransition != transition || movement.fValue != value || movement.fCVMode != cvMode) {
+		// Unlike a clip's, a fill-in's transition always starts from what is
+		// emitted at that moment: what the clip emits, unless the fill-in was
+		// already playing in the same CV mode.
+		const double from = movement.fOn && movement.fCVMode == cvMode ? fValues[iTrack][iOutput] : iBelow;
+		StartOver(movement, from, active, transition, value, cvMode, iTransport.fPlayPos, iTransport);
+		movement.fFromFrozen = true;
+	}
+	const double fillInValue = ValueCV(fillIn, iOutput, cvMode);
+	if (transition == kTransitionOff) {
+		return fillInValue;
+	}
+	return MovementValue(movement, iBelow, fillInValue, iTransport.fPlayPos, iTransport);
+}
+
+void CLauncher::UpdateValues(const TTransport& iTransport) {
+	for (int track = 0; track < kTrackCount; ++track) {
+		for (int output = 0; output < kOutputCount; ++output) {
+			if (fCVModes[track][output] == kCVModePattern) {
+				fMovements[track][output] = kNoMovement;
+				fFillInMovements[track][output] = kNoMovement;
+				continue;
+			}
+			const double clipValue = ComputeClipValue(track, output, iTransport);
+			fClipValues[track][output] = clipValue;
+			fValues[track][output] = ComputeFillInValue(track, output, clipValue, iTransport);
+		}
+	}
 }
 
 CLauncher::EButtonState CLauncher::GetButtonState(int iTrack, int iSelection) const {
@@ -370,7 +624,15 @@ bool CLauncher::HasClips(int iTrack) const {
 
 bool CLauncher::HasPendingPattern(int iTrack) const {
 	const int active = fActive[iTrack];
-	return active != kSelectionStop && Clip(iTrack, active).fPresent && Clip(iTrack, active).fPattern + 1 != fEmitted[iTrack];
+	if (active == kSelectionStop || !Clip(iTrack, active).fPresent) {
+		return false;
+	}
+	for (int output = 0; output < kOutputCount; ++output) {
+		if (fCVModes[iTrack][output] == kCVModePattern && Clip(iTrack, active).fPatterns[output] + 1 != fEmitted[iTrack][output]) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool CLauncher::PlaysFillIn(int iTrack) const {
@@ -379,7 +641,7 @@ bool CLauncher::PlaysFillIn(int iTrack) const {
 		return false;
 	}
 	const TClip& clip = Clip(iTrack, active);
-	return clip.fPresent && clip.fFillInPresent;
+	return clip.fPresent && clip.fFillIn.fPresent;
 }
 
 CLauncher::EBrightness CLauncher::GetStopLight(int iTrack) const {
@@ -480,7 +742,7 @@ CLauncher::TLight CLauncher::GetLaunchModeLight(int iTrack, int iRow) const {
 		// While it plays its fill-in, it flashes in the fill-in's colour.
 		case kActive:
 			if (PlaysFillIn(iTrack)) {
-				return MakeLight(kFlashing, clip.fFillInColour);
+				return MakeLight(kFlashing, clip.fFillIn.fColour);
 			}
 			return MakeLight(HasPendingPattern(iTrack) ? kFlashing : kVibrant, clip.fColour);
 		case kQueued:
@@ -500,36 +762,75 @@ const CLauncher::TClip& CLauncher::PickedClip() const {
 	return fClips[picked / kRowCount][picked % kRowCount];
 }
 
-CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
-	const TClip& clip = PickedClip();
-	return GetEditingLight(iTrack, iRow, clip.fPresent, clip.fColour, clip.fPattern, kColourYellow);
+int CLauncher::PickedTrack() const {
+	return PickedButton(fSetup) / kRowCount;
 }
 
-// The patterns of a fill-in are red, so that fill-in editing is not mistaken
-// for clip editing.
-CLauncher::TLight CLauncher::GetFillInEditingLight(int iTrack, int iRow) const {
+const CLauncher::TSettings& CLauncher::EditedSettings() const {
 	const TClip& clip = PickedClip();
-	return GetEditingLight(iTrack, iRow, clip.fFillInPresent, clip.fFillInColour, clip.fFillInPattern, kColourRed);
-}
-
-CLauncher::TLight CLauncher::GetEditingLight(int iTrack, int iRow, bool iPresent, int iColour, int iPattern, int iPatternRowColour) {
-	if (iTrack == kEditingToggleTrack && iRow == kEditingToggleRow) {
-		return iPresent ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
+	if (IsFillInEditing(fSetup)) {
+		return clip.fFillIn;
 	}
-	// The colour and pattern controls only show while there is something to
-	// set up.
-	if (!iPresent) {
+	return clip;
+}
+
+CLauncher::TLight CLauncher::GetClipEditingLight(int iTrack, int iRow) const {
+	return GetEditingLight(iTrack, iRow, EditedSettings());
+}
+
+// Laid out as in clip editing, and lit the same: only the labels tell the two
+// apart.
+CLauncher::TLight CLauncher::GetFillInEditingLight(int iTrack, int iRow) const {
+	return GetEditingLight(iTrack, iRow, EditedSettings());
+}
+
+CLauncher::TLight CLauncher::GetEditingLight(int iTrack, int iRow, const TSettings& iSettings) const {
+	if (iTrack == kEditingToggleTrack && iRow == kEditingToggleRow) {
+		return iSettings.fPresent ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
+	}
+	// The colour and CV controls only show while there is something to set
+	// up.
+	if (!iSettings.fPresent) {
 		return kUnlitLight;
 	}
 	const bool isColourRow = iRow == kEditingFirstColourRow || iRow == kEditingFirstColourRow + 1;
 	if (isColourRow && iTrack < kEditingColoursPerRow) {
 		const int colour = (iRow - kEditingFirstColourRow) * kEditingColoursPerRow + iTrack;
-		return MakeLight(colour == iColour ? kVibrant : kDim, colour);
+		return MakeLight(colour == iSettings.fColour ? kVibrant : kDim, colour);
 	}
-	if (iRow == kEditingPatternRow) {
-		return MakeLight(iTrack == iPattern ? kVibrant : kDim, iPatternRowColour);
+	if (iRow < kEditingFirstOutputRow) {
+		return kUnlitLight;
 	}
-	return kUnlitLight;
+	const int output = iRow - kEditingFirstOutputRow;
+	const int cvMode = fCVModes[PickedTrack()][output];
+	// In pattern mode the chosen pattern is vibrant and the others dim, all in
+	// orange.
+	if (cvMode == kCVModePattern) {
+		return MakeLight(iTrack == iSettings.fPatterns[output] ? kVibrant : kDim, kColourOrange);
+	}
+	// The transition button is dim red while off, like SET/CLEAR, and
+	// otherwise vibrant in the colour of its transition in the diagram.
+	if (iTrack == kEditingTransitionTrack) {
+		static const int kTransitionColours[kTransitionCount] = { kColourRed, kColourLime, kColourLightBlue, kColourPurple, kColourPink };
+		const int transition = iSettings.fTransitions[output];
+		return MakeLight(transition == kTransitionOff ? kDim : kVibrant, kTransitionColours[transition]);
+	}
+	// A unipolar value is vibrant cyan, with the values below it dim. A
+	// bipolar value is vibrant fuchsia, with the values between it and 0 dim,
+	// 0 included.
+	if (cvMode == kCVModeUnipolar) {
+		const int value = iSettings.fUnipolar[output];
+		if (iTrack == value) {
+			return MakeLight(kVibrant, kColourCyan);
+		}
+		return iTrack < value ? MakeLight(kDim, kColourCyan) : kUnlitLight;
+	}
+	const int value = iSettings.fBipolar[output];
+	if (iTrack == value) {
+		return MakeLight(kVibrant, kColourFuchsia);
+	}
+	const bool between = (iTrack >= kBipolarZero && iTrack < value) || (iTrack <= kBipolarZero && iTrack > value);
+	return between ? MakeLight(kDim, kColourFuchsia) : kUnlitLight;
 }
 
 int CLauncher::GetLightValue(int iTrack, int iRow) const {
@@ -646,9 +947,37 @@ int CLauncher::GetLaunchLabelsFrame() const {
 		return PickedClip().fPresent ? 2 : 1;
 	}
 	if (IsFillInEditing(fSetup)) {
-		return PickedClip().fFillInPresent ? 4 : 3;
+		return PickedClip().fFillIn.fPresent ? 4 : 3;
 	}
 	return 0;
+}
+
+int CLauncher::GetOutputLabelsFrame(int iOutput) const {
+	if (!IsValidOutput(iOutput) || PickedButton(fSetup) < 0) {
+		return 0;
+	}
+	const TSettings& settings = EditedSettings();
+	if (!settings.fPresent) {
+		return 0;
+	}
+	const int first = IsFillInEditing(fSetup) ? 1 + kOutputLabelsFramesPerColour : 1;
+	const int cvMode = fCVModes[PickedTrack()][iOutput];
+	if (cvMode == kCVModePattern) {
+		return first;
+	}
+	const int transition = settings.fTransitions[iOutput];
+	return first + 1 + (cvMode == kCVModeUnipolar ? 0 : kTransitionCount) + transition;
+}
+
+int CLauncher::GetTransitionDiagramFrame() const {
+	return GetTransitionLabelsFrame() == 0 ? 1 : 0;
+}
+
+int CLauncher::GetTransitionLabelsFrame() const {
+	if (PickedButton(fSetup) < 0 || !EditedSettings().fPresent) {
+		return 0;
+	}
+	return IsFillInEditing(fSetup) ? 2 : 1;
 }
 
 CLauncher::TLight CLauncher::GetFillInLight() const {
@@ -698,7 +1027,15 @@ int CLauncher::GetSceneLabelFrame(int iScene) const {
 	return iScene == SceneForLength(fLength) ? 1 : 0;
 }
 
-double CLauncher::GetCVValue(int iTrack) const {
+double CLauncher::GetCVValue(int iTrack, int iOutput) const {
+	if (iTrack < 0 || iTrack >= kTrackCount || !IsValidOutput(iOutput)) {
+		return 0.0;
+	}
+	// Mutes and solos only silence the Player: unipolar and bipolar values go
+	// on as before.
+	if (fCVModes[iTrack][iOutput] != kCVModePattern) {
+		return fValues[iTrack][iOutput];
+	}
 	// The Combinator rounds its CV input to the nearest of nine evenly spaced
 	// steps (Off, 1..8), so these values sit in the middle of each step. A
 	// fill-in takes effect at once, and so does any change to it. A mute or a
@@ -706,9 +1043,9 @@ double CLauncher::GetCVValue(int iTrack) const {
 	if (IsSilenced(iTrack)) {
 		return 0.0;
 	}
-	int emitted = fEmitted[iTrack];
+	int emitted = fEmitted[iTrack][iOutput];
 	if (PlaysFillIn(iTrack)) {
-		emitted = Clip(iTrack, fActive[iTrack]).fFillInPattern + 1;
+		emitted = Clip(iTrack, fActive[iTrack]).fFillIn.fPatterns[iOutput] + 1;
 	}
 	return static_cast<double>(emitted) / kPatternCount;
 }

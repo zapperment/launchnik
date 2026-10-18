@@ -3,8 +3,9 @@
 #include "Jukebox.h"
 #include "Launcher.h"
 
-// Connects the rules in CLauncher to the host: feeds it selections, clips, the
-// setup state, the function, mute and solo presses and the transport, and writes states, lights, lamps, labels and CV back.
+// Connects the rules in CLauncher to the host: feeds it selections, clips, CV
+// modes, the setup state, the function, mute and solo presses and the
+// transport, and writes states, lights, lamps, labels and CV back.
 class CLaunchnik {
 	public: explicit CLaunchnik(TJBox_Float32 iSampleRate);
 
@@ -13,6 +14,8 @@ class CLaunchnik {
 	private: void LoadEverything();
 	private: void HandleChanges(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UInt32 iDiffCount);
 	private: void HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue);
+	// A change of a setting of a clip's or a fill-in's CV output.
+	private: void HandleOutputSettingChange(TJBox_Tag iTag, int iValue);
 	private: CLauncher::TTransport ReadTransport() const;
 	private: void WriteOutputs();
 	// Stores a number unless it is what was last stored.
@@ -21,7 +24,7 @@ class CLaunchnik {
 	private: CLauncher fLauncher;
 	private: TJBox_ObjectRef fCustomProps;
 	private: TJBox_ObjectRef fTransport;
-	private: TJBox_ObjectRef fCVOutputs[CLauncher::kTrackCount];
+	private: TJBox_ObjectRef fCVOutputs[CLauncher::kTrackCount][CLauncher::kOutputCount];
 	private: TJBox_Float32 fSampleRate;
 	private: bool fIsFirstBatch;
 	private: bool fSetupLampLit;
@@ -38,6 +41,9 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenSetFillInLight;
 	private: TJBox_Int32 fWrittenSetFillInLightFrame;
 	private: TJBox_Int32 fWrittenSetFillInLabelFrame;
+	private: TJBox_Int32 fWrittenTransitionDiagramFrame;
+	private: TJBox_Int32 fWrittenTransitionLabelsFrame;
+	private: TJBox_Int32 fWrittenOutputLabelsFrames[CLauncher::kOutputCount];
 	private: TJBox_Int32 fWrittenSceneLabelFrames[CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenFunctionLights[CLauncher::kTrackCount];
 	private: TJBox_Int32 fWrittenFunctionLightFrames[CLauncher::kTrackCount];
@@ -47,5 +53,6 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenLightFrames[CLauncher::kTrackCount][CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenSceneLights[CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenSceneLightFrames[CLauncher::kRowCount];
-	private: TJBox_Float64 fWrittenCVValues[CLauncher::kTrackCount];
+	private: TJBox_Float64 fWrittenCVValues[CLauncher::kTrackCount][CLauncher::kOutputCount];
+	private: TJBox_Int32 fWrittenCVModes[CLauncher::kTrackCount][CLauncher::kOutputCount];
 };

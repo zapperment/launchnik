@@ -21,12 +21,12 @@ const int kLaunchMode = CLauncher::kSetupLaunchMode;
 const int kClipPicking = CLauncher::kSetupClipPicking;
 
 void TestLaunchModeSelectsTheClip() {
-	CHECK(IsChange(CPress::LaunchButton(kLaunchMode, 2, 5, true, false), CPress::kSelection, 2, 5));
-	CHECK(IsChange(CPress::LaunchButton(kLaunchMode, 7, 8, true, false), CPress::kSelection, 7, 8));
+	CHECK(IsChange(CPress::LaunchButton(kLaunchMode, 2, 5, true, CPress::Edited(false)), CPress::kSelection, 2, 5));
+	CHECK(IsChange(CPress::LaunchButton(kLaunchMode, 7, 8, true, CPress::Edited(false)), CPress::kSelection, 7, 8));
 }
 
 void TestLaunchModeEmptyLaunchButtonSelectsStop() {
-	CHECK(IsChange(CPress::LaunchButton(kLaunchMode, 2, 5, false, false), CPress::kSelection, 2, CLauncher::kSelectionStop));
+	CHECK(IsChange(CPress::LaunchButton(kLaunchMode, 2, 5, false, CPress::Edited(false)), CPress::kSelection, 2, CLauncher::kSelectionStop));
 }
 
 void TestStopButtonSelectsStopInEveryMode() {
@@ -41,16 +41,16 @@ void TestSetupButtonSwitchesBetweenLaunchModeAndClipPicking() {
 }
 
 void TestClipPickingOpensThePressedLaunchButton() {
-	CHECK(IsChange(CPress::LaunchButton(kClipPicking, 0, 1, false, false), CPress::kSetup, 0, 2));
-	CHECK(IsChange(CPress::LaunchButton(kClipPicking, 7, 8, true, false), CPress::kSetup, 0, 65));
-	CHECK(IsChange(CPress::LaunchButton(kClipPicking, 3, 6, true, false), CPress::kSetup, 0, CLauncher::SetupForClipEditing(3, 6)));
+	CHECK(IsChange(CPress::LaunchButton(kClipPicking, 0, 1, false, CPress::Edited(false)), CPress::kSetup, 0, 2));
+	CHECK(IsChange(CPress::LaunchButton(kClipPicking, 7, 8, true, CPress::Edited(false)), CPress::kSetup, 0, 65));
+	CHECK(IsChange(CPress::LaunchButton(kClipPicking, 3, 6, true, CPress::Edited(false)), CPress::kSetup, 0, CLauncher::SetupForClipEditing(3, 6)));
 }
 
 void TestClipEditingToggleSwitchesThePickedClip() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
-	CHECK(IsChange(CPress::LaunchButton(editing, 7, 1, false, false), CPress::kClipPresent, picked, 1));
-	CHECK(IsChange(CPress::LaunchButton(editing, 7, 1, false, true), CPress::kClipPresent, picked, 0));
+	CHECK(IsChange(CPress::LaunchButton(editing, 7, 1, false, CPress::Edited(false)), CPress::kClipPresent, picked, 1));
+	CHECK(IsChange(CPress::LaunchButton(editing, 7, 1, false, CPress::Edited(true)), CPress::kClipPresent, picked, 0));
 }
 
 void TestBackButtonGoesBackOneStep() {
@@ -61,46 +61,70 @@ void TestBackButtonGoesBackOneStep() {
 	CHECK(IsChange(CPress::BackButton(CLauncher::SetupForFillInEditing(3, 6)), CPress::kSetup, 0, CLauncher::SetupForClipEditing(3, 6)));
 }
 
-void TestClipEditingLastLaunchButtonDoesNothing() {
-	const int editing = CLauncher::SetupForClipEditing(3, 6);
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 8, false, true)));
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 8, false, false)));
+bool IsOutputChange(const CPress::TChange& iChange, CPress::EProperty iProperty, int iIndex, int iOutput, int iValue) {
+	return IsChange(iChange, iProperty, iIndex, iValue) && iChange.fOutput == iOutput;
+}
+
+// Output A in pattern mode, B unipolar, C bipolar, the others as on a new
+// device; transitions off, except C at B and D at D.
+CPress::TEdited MixedModes(bool iPresent) {
+	CPress::TEdited edited = CPress::Edited(iPresent);
+	edited.fCVModes[2] = CLauncher::kCVModeBipolar;
+	edited.fTransitions[2] = CLauncher::kTransitionB;
+	edited.fTransitions[3] = CLauncher::kTransitionD;
+	return edited;
 }
 
 void TestClipEditingColourRows() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	for (int column = 0; column < 7; ++column) {
-		CHECK(IsChange(CPress::LaunchButton(editing, column, 2, false, true), CPress::kClipColour, picked, column));
-		CHECK(IsChange(CPress::LaunchButton(editing, column, 3, false, true), CPress::kClipColour, picked, 7 + column));
+		CHECK(IsChange(CPress::LaunchButton(editing, column, 1, false, CPress::Edited(true)), CPress::kClipColour, picked, column));
+		CHECK(IsChange(CPress::LaunchButton(editing, column, 2, false, CPress::Edited(true)), CPress::kClipColour, picked, 7 + column));
 	}
-	// Column 8 of the colour rows is not a control.
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 2, false, true)));
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 3, false, true)));
+	// Column 8 of the second colour row is not a control.
+	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 2, false, CPress::Edited(true))));
 }
 
-void TestClipEditingPatternRow() {
+void TestClipEditingPatternMode() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
+	// Output A, in row 3, is in pattern mode: all eight columns are patterns.
 	for (int column = 0; column < 8; ++column) {
-		CHECK(IsChange(CPress::LaunchButton(editing, column, 5, false, true), CPress::kClipPattern, picked, column));
+		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 3, false, MixedModes(true)), CPress::kClipPattern, picked, 0, column));
 	}
+}
+
+void TestClipEditingUnipolarAndBipolarValues() {
+	const int editing = CLauncher::SetupForClipEditing(3, 6);
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	for (int column = 0; column < 7; ++column) {
+		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 4, false, MixedModes(true)), CPress::kClipUnipolar, picked, 1, column));
+		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 5, false, MixedModes(true)), CPress::kClipBipolar, picked, 2, column));
+		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 8, false, MixedModes(true)), CPress::kClipUnipolar, picked, 5, column));
+	}
+}
+
+void TestClipEditingTransitionButtonGoesRound() {
+	const int editing = CLauncher::SetupForClipEditing(3, 6);
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	CHECK(IsOutputChange(CPress::LaunchButton(editing, 7, 4, false, MixedModes(true)), CPress::kClipTransition, picked, 1, CLauncher::kTransitionA));
+	CHECK(IsOutputChange(CPress::LaunchButton(editing, 7, 5, false, MixedModes(true)), CPress::kClipTransition, picked, 2, CLauncher::kTransitionC));
+	// After D it is off again.
+	CHECK(IsOutputChange(CPress::LaunchButton(editing, 7, 6, false, MixedModes(true)), CPress::kClipTransition, picked, 3, CLauncher::kTransitionOff));
 }
 
 void TestClipEditingUnusedLaunchButtonsDoNothing() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 0, 1, false, true)));
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 3, 4, false, true)));
-	// Not even the picked launch button itself, whatever it holds.
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 3, 6, true, true)));
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 0, 8, false, true)));
+	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 2, true, CPress::Edited(true))));
 }
 
-void TestClipEditingWithoutClipHasNoColourOrPatternControls() {
+void TestClipEditingWithoutClipHasNoColourOrCVControls() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 2, 2, false, false)));
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 2, 3, false, false)));
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 2, 5, false, false)));
+	for (int row = 1; row <= 8; ++row) {
+		CHECK(IsNoChange(CPress::LaunchButton(editing, 2, row, false, MixedModes(false))));
+	}
+	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 4, false, MixedModes(false))));
 }
 
 void TestSceneButtonSelectsItsRowOnEveryTrack() {
@@ -171,56 +195,76 @@ void TestFillInButtonFollowsTheButton() {
 
 void TestLaunchButtonDoesNothingInFillInEditing() {
 	const int editing = CLauncher::SetupForFillInEditing(3, 6);
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 1, false, true)));
-	CHECK(IsNoChange(CPress::LaunchButton(editing, 0, 2, false, true)));
+	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 1, false, CPress::Edited(true))));
+	CHECK(IsNoChange(CPress::LaunchButton(editing, 0, 2, false, CPress::Edited(true))));
+}
+
+CPress::TClipValues SomeClipValues() {
+	CPress::TClipValues values;
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		values.fPatterns[output] = output;
+		values.fUnipolar[output] = 6 - output;
+		values.fBipolar[output] = output % 7;
+	}
+	return values;
 }
 
 void TestFillInEditingDoesNothingElsewhere() {
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(kLaunchMode, 7, 1, false, 2), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(kClipPicking, 7, 1, false, 2), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(CLauncher::SetupForClipEditing(3, 6), 7, 1, false, 2), 0));
+	CHECK(IsChanges(CPress::FillInEditingLaunchButton(kLaunchMode, 7, 1, CPress::Edited(false), SomeClipValues()), 0));
+	CHECK(IsChanges(CPress::FillInEditingLaunchButton(kClipPicking, 7, 1, CPress::Edited(false), SomeClipValues()), 0));
+	CHECK(IsChanges(CPress::FillInEditingLaunchButton(CLauncher::SetupForClipEditing(3, 6), 7, 1, CPress::Edited(false), SomeClipValues()), 0));
 }
 
 void TestFillInEditingToggleSetsUpANewFillIn() {
 	const int editing = CLauncher::SetupForFillInEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 
-	// A new fill-in has the pattern of its clip, in white.
-	const CPress::TChanges set = CPress::FillInEditingLaunchButton(editing, 7, 1, false, 4);
-	CHECK(IsChanges(set, 3));
+	// A new fill-in is a copy of its clip's values, with every transition
+	// off, in white.
+	const CPress::TChanges set = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
+	CHECK(IsChanges(set, 2 + 4 * CLauncher::kOutputCount));
 	CHECK(IsChange(set.fChanges[0], CPress::kFillInPresent, picked, 1));
-	CHECK(IsChange(set.fChanges[1], CPress::kFillInPattern, picked, 4));
-	CHECK(IsChange(set.fChanges[2], CPress::kFillInColour, picked, CLauncher::kColourWhite));
+	CHECK(IsChange(set.fChanges[1], CPress::kFillInColour, picked, CLauncher::kColourWhite));
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		const CPress::TChange* changes = set.fChanges + 2 + 4 * output;
+		CHECK(IsOutputChange(changes[0], CPress::kFillInPattern, picked, output, output));
+		CHECK(IsOutputChange(changes[1], CPress::kFillInUnipolar, picked, output, 6 - output));
+		CHECK(IsOutputChange(changes[2], CPress::kFillInBipolar, picked, output, output % 7));
+		CHECK(IsOutputChange(changes[3], CPress::kFillInTransition, picked, output, CLauncher::kTransitionOff));
+	}
 
-	const CPress::TChanges clear = CPress::FillInEditingLaunchButton(editing, 7, 1, true, 4);
+	const CPress::TChanges clear = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(clear, 1));
 	CHECK(IsChange(clear.fChanges[0], CPress::kFillInPresent, picked, 0));
 }
 
-void TestFillInEditingColourAndPatternRows() {
+void TestFillInEditingColourAndCVRows() {
 	const int editing = CLauncher::SetupForFillInEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	for (int column = 0; column < 7; ++column) {
-		const CPress::TChanges first = CPress::FillInEditingLaunchButton(editing, column, 2, true, 0);
+		const CPress::TChanges first = CPress::FillInEditingLaunchButton(editing, column, 1, MixedModes(true), SomeClipValues());
 		CHECK(IsChanges(first, 1) && IsChange(first.fChanges[0], CPress::kFillInColour, picked, column));
-		const CPress::TChanges second = CPress::FillInEditingLaunchButton(editing, column, 3, true, 0);
+		const CPress::TChanges second = CPress::FillInEditingLaunchButton(editing, column, 2, MixedModes(true), SomeClipValues());
 		CHECK(IsChanges(second, 1) && IsChange(second.fChanges[0], CPress::kFillInColour, picked, 7 + column));
+		const CPress::TChanges unipolar = CPress::FillInEditingLaunchButton(editing, column, 4, MixedModes(true), SomeClipValues());
+		CHECK(IsChanges(unipolar, 1) && IsOutputChange(unipolar.fChanges[0], CPress::kFillInUnipolar, picked, 1, column));
+		const CPress::TChanges bipolar = CPress::FillInEditingLaunchButton(editing, column, 5, MixedModes(true), SomeClipValues());
+		CHECK(IsChanges(bipolar, 1) && IsOutputChange(bipolar.fChanges[0], CPress::kFillInBipolar, picked, 2, column));
 	}
 	for (int column = 0; column < 8; ++column) {
-		const CPress::TChanges pattern = CPress::FillInEditingLaunchButton(editing, column, 5, true, 0);
-		CHECK(IsChanges(pattern, 1) && IsChange(pattern.fChanges[0], CPress::kFillInPattern, picked, column));
+		const CPress::TChanges pattern = CPress::FillInEditingLaunchButton(editing, column, 3, MixedModes(true), SomeClipValues());
+		CHECK(IsChanges(pattern, 1) && IsOutputChange(pattern.fChanges[0], CPress::kFillInPattern, picked, 0, column));
 	}
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 7, 2, true, 0), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 0, 1, true, 0), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 3, 6, true, 0), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 0, 8, true, 0), 0));
+	const CPress::TChanges transition = CPress::FillInEditingLaunchButton(editing, 7, 5, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(transition, 1) && IsOutputChange(transition.fChanges[0], CPress::kFillInTransition, picked, 2, CLauncher::kTransitionC));
+	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 7, 2, MixedModes(true), SomeClipValues()), 0));
 }
 
-void TestFillInEditingWithoutFillInHasNoColourOrPatternControls() {
+void TestFillInEditingWithoutFillInHasNoColourOrCVControls() {
 	const int editing = CLauncher::SetupForFillInEditing(3, 6);
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 2, 2, false, 0), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 2, 3, false, 0), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 2, 5, false, 0), 0));
+	for (int row = 1; row <= 8; ++row) {
+		CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 2, row, MixedModes(false), SomeClipValues()), 0));
+	}
 }
 
 void TestSceneButtonDoesNothingInFillInEditing() {
@@ -264,11 +308,12 @@ int main() {
 	TestClipPickingOpensThePressedLaunchButton();
 	TestClipEditingToggleSwitchesThePickedClip();
 	TestBackButtonGoesBackOneStep();
-	TestClipEditingLastLaunchButtonDoesNothing();
 	TestClipEditingColourRows();
-	TestClipEditingPatternRow();
+	TestClipEditingPatternMode();
+	TestClipEditingUnipolarAndBipolarValues();
+	TestClipEditingTransitionButtonGoesRound();
 	TestClipEditingUnusedLaunchButtonsDoNothing();
-	TestClipEditingWithoutClipHasNoColourOrPatternControls();
+	TestClipEditingWithoutClipHasNoColourOrCVControls();
 	TestSceneButtonSelectsItsRowOnEveryTrack();
 	TestSceneButtonStopsTracksWithAnEmptyLaunchButton();
 	TestSceneButtonOfAnEmptySceneStopsEveryTrack();
@@ -281,8 +326,8 @@ int main() {
 	TestLaunchButtonDoesNothingInFillInEditing();
 	TestFillInEditingDoesNothingElsewhere();
 	TestFillInEditingToggleSetsUpANewFillIn();
-	TestFillInEditingColourAndPatternRows();
-	TestFillInEditingWithoutFillInHasNoColourOrPatternControls();
+	TestFillInEditingColourAndCVRows();
+	TestFillInEditingWithoutFillInHasNoColourOrCVControls();
 	TestSceneButtonDoesNothingInFillInEditing();
 
 	TestFunctionButtonInStopFunctionSelectsStop();

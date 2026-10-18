@@ -11,7 +11,7 @@
             <Value property="track1_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip1_pattern"  type="number" >
+            <Value property="track1_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track1_clip1_colour"  type="number" >
@@ -20,7 +20,7 @@
             <Value property="track1_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip2_pattern"  type="number" >
+            <Value property="track1_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track1_clip2_colour"  type="number" >
@@ -29,7 +29,7 @@
             <Value property="track1_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip3_pattern"  type="number" >
+            <Value property="track1_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track1_clip3_colour"  type="number" >
@@ -38,7 +38,7 @@
             <Value property="track1_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip4_pattern"  type="number" >
+            <Value property="track1_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track1_clip4_colour"  type="number" >
@@ -47,7 +47,7 @@
             <Value property="track1_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip5_pattern"  type="number" >
+            <Value property="track1_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track1_clip5_colour"  type="number" >
@@ -56,7 +56,7 @@
             <Value property="track1_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip6_pattern"  type="number" >
+            <Value property="track1_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track1_clip6_colour"  type="number" >
@@ -65,7 +65,7 @@
             <Value property="track1_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip7_pattern"  type="number" >
+            <Value property="track1_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track1_clip7_colour"  type="number" >
@@ -74,7 +74,7 @@
             <Value property="track1_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track1_clip8_pattern"  type="number" >
+            <Value property="track1_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track1_clip8_colour"  type="number" >
@@ -83,7 +83,7 @@
             <Value property="track2_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip1_pattern"  type="number" >
+            <Value property="track2_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track2_clip1_colour"  type="number" >
@@ -92,7 +92,7 @@
             <Value property="track2_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip2_pattern"  type="number" >
+            <Value property="track2_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track2_clip2_colour"  type="number" >
@@ -101,7 +101,7 @@
             <Value property="track2_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip3_pattern"  type="number" >
+            <Value property="track2_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track2_clip3_colour"  type="number" >
@@ -110,7 +110,7 @@
             <Value property="track2_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip4_pattern"  type="number" >
+            <Value property="track2_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track2_clip4_colour"  type="number" >
@@ -119,7 +119,7 @@
             <Value property="track2_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip5_pattern"  type="number" >
+            <Value property="track2_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track2_clip5_colour"  type="number" >
@@ -128,7 +128,7 @@
             <Value property="track2_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip6_pattern"  type="number" >
+            <Value property="track2_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track2_clip6_colour"  type="number" >
@@ -137,7 +137,7 @@
             <Value property="track2_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip7_pattern"  type="number" >
+            <Value property="track2_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track2_clip7_colour"  type="number" >
@@ -146,7 +146,7 @@
             <Value property="track2_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track2_clip8_pattern"  type="number" >
+            <Value property="track2_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track2_clip8_colour"  type="number" >
@@ -155,7 +155,7 @@
             <Value property="track3_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip1_pattern"  type="number" >
+            <Value property="track3_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track3_clip1_colour"  type="number" >
@@ -164,7 +164,7 @@
             <Value property="track3_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip2_pattern"  type="number" >
+            <Value property="track3_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track3_clip2_colour"  type="number" >
@@ -173,7 +173,7 @@
             <Value property="track3_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip3_pattern"  type="number" >
+            <Value property="track3_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track3_clip3_colour"  type="number" >
@@ -182,7 +182,7 @@
             <Value property="track3_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip4_pattern"  type="number" >
+            <Value property="track3_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track3_clip4_colour"  type="number" >
@@ -191,7 +191,7 @@
             <Value property="track3_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip5_pattern"  type="number" >
+            <Value property="track3_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track3_clip5_colour"  type="number" >
@@ -200,7 +200,7 @@
             <Value property="track3_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip6_pattern"  type="number" >
+            <Value property="track3_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track3_clip6_colour"  type="number" >
@@ -209,7 +209,7 @@
             <Value property="track3_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip7_pattern"  type="number" >
+            <Value property="track3_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track3_clip7_colour"  type="number" >
@@ -218,7 +218,7 @@
             <Value property="track3_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track3_clip8_pattern"  type="number" >
+            <Value property="track3_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track3_clip8_colour"  type="number" >
@@ -227,7 +227,7 @@
             <Value property="track4_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip1_pattern"  type="number" >
+            <Value property="track4_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track4_clip1_colour"  type="number" >
@@ -236,7 +236,7 @@
             <Value property="track4_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip2_pattern"  type="number" >
+            <Value property="track4_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track4_clip2_colour"  type="number" >
@@ -245,7 +245,7 @@
             <Value property="track4_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip3_pattern"  type="number" >
+            <Value property="track4_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track4_clip3_colour"  type="number" >
@@ -254,7 +254,7 @@
             <Value property="track4_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip4_pattern"  type="number" >
+            <Value property="track4_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track4_clip4_colour"  type="number" >
@@ -263,7 +263,7 @@
             <Value property="track4_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip5_pattern"  type="number" >
+            <Value property="track4_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track4_clip5_colour"  type="number" >
@@ -272,7 +272,7 @@
             <Value property="track4_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip6_pattern"  type="number" >
+            <Value property="track4_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track4_clip6_colour"  type="number" >
@@ -281,7 +281,7 @@
             <Value property="track4_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip7_pattern"  type="number" >
+            <Value property="track4_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track4_clip7_colour"  type="number" >
@@ -290,7 +290,7 @@
             <Value property="track4_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track4_clip8_pattern"  type="number" >
+            <Value property="track4_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track4_clip8_colour"  type="number" >
@@ -299,7 +299,7 @@
             <Value property="track5_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip1_pattern"  type="number" >
+            <Value property="track5_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track5_clip1_colour"  type="number" >
@@ -308,7 +308,7 @@
             <Value property="track5_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip2_pattern"  type="number" >
+            <Value property="track5_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track5_clip2_colour"  type="number" >
@@ -317,7 +317,7 @@
             <Value property="track5_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip3_pattern"  type="number" >
+            <Value property="track5_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track5_clip3_colour"  type="number" >
@@ -326,7 +326,7 @@
             <Value property="track5_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip4_pattern"  type="number" >
+            <Value property="track5_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track5_clip4_colour"  type="number" >
@@ -335,7 +335,7 @@
             <Value property="track5_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip5_pattern"  type="number" >
+            <Value property="track5_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track5_clip5_colour"  type="number" >
@@ -344,7 +344,7 @@
             <Value property="track5_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip6_pattern"  type="number" >
+            <Value property="track5_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track5_clip6_colour"  type="number" >
@@ -353,7 +353,7 @@
             <Value property="track5_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip7_pattern"  type="number" >
+            <Value property="track5_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track5_clip7_colour"  type="number" >
@@ -362,7 +362,7 @@
             <Value property="track5_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track5_clip8_pattern"  type="number" >
+            <Value property="track5_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track5_clip8_colour"  type="number" >
@@ -371,7 +371,7 @@
             <Value property="track6_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip1_pattern"  type="number" >
+            <Value property="track6_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track6_clip1_colour"  type="number" >
@@ -380,7 +380,7 @@
             <Value property="track6_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip2_pattern"  type="number" >
+            <Value property="track6_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track6_clip2_colour"  type="number" >
@@ -389,7 +389,7 @@
             <Value property="track6_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip3_pattern"  type="number" >
+            <Value property="track6_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track6_clip3_colour"  type="number" >
@@ -398,7 +398,7 @@
             <Value property="track6_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip4_pattern"  type="number" >
+            <Value property="track6_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track6_clip4_colour"  type="number" >
@@ -407,7 +407,7 @@
             <Value property="track6_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip5_pattern"  type="number" >
+            <Value property="track6_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track6_clip5_colour"  type="number" >
@@ -416,7 +416,7 @@
             <Value property="track6_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip6_pattern"  type="number" >
+            <Value property="track6_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track6_clip6_colour"  type="number" >
@@ -425,7 +425,7 @@
             <Value property="track6_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip7_pattern"  type="number" >
+            <Value property="track6_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track6_clip7_colour"  type="number" >
@@ -434,7 +434,7 @@
             <Value property="track6_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track6_clip8_pattern"  type="number" >
+            <Value property="track6_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track6_clip8_colour"  type="number" >
@@ -443,7 +443,7 @@
             <Value property="track7_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip1_pattern"  type="number" >
+            <Value property="track7_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track7_clip1_colour"  type="number" >
@@ -452,7 +452,7 @@
             <Value property="track7_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip2_pattern"  type="number" >
+            <Value property="track7_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track7_clip2_colour"  type="number" >
@@ -461,7 +461,7 @@
             <Value property="track7_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip3_pattern"  type="number" >
+            <Value property="track7_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track7_clip3_colour"  type="number" >
@@ -470,7 +470,7 @@
             <Value property="track7_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip4_pattern"  type="number" >
+            <Value property="track7_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track7_clip4_colour"  type="number" >
@@ -479,7 +479,7 @@
             <Value property="track7_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip5_pattern"  type="number" >
+            <Value property="track7_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track7_clip5_colour"  type="number" >
@@ -488,7 +488,7 @@
             <Value property="track7_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip6_pattern"  type="number" >
+            <Value property="track7_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track7_clip6_colour"  type="number" >
@@ -497,7 +497,7 @@
             <Value property="track7_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip7_pattern"  type="number" >
+            <Value property="track7_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track7_clip7_colour"  type="number" >
@@ -506,7 +506,7 @@
             <Value property="track7_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track7_clip8_pattern"  type="number" >
+            <Value property="track7_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track7_clip8_colour"  type="number" >
@@ -515,7 +515,7 @@
             <Value property="track8_clip1_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip1_pattern"  type="number" >
+            <Value property="track8_clip1_a_pattern"  type="number" >
                 0
             </Value>
             <Value property="track8_clip1_colour"  type="number" >
@@ -524,7 +524,7 @@
             <Value property="track8_clip2_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip2_pattern"  type="number" >
+            <Value property="track8_clip2_a_pattern"  type="number" >
                 1
             </Value>
             <Value property="track8_clip2_colour"  type="number" >
@@ -533,7 +533,7 @@
             <Value property="track8_clip3_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip3_pattern"  type="number" >
+            <Value property="track8_clip3_a_pattern"  type="number" >
                 2
             </Value>
             <Value property="track8_clip3_colour"  type="number" >
@@ -542,7 +542,7 @@
             <Value property="track8_clip4_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip4_pattern"  type="number" >
+            <Value property="track8_clip4_a_pattern"  type="number" >
                 3
             </Value>
             <Value property="track8_clip4_colour"  type="number" >
@@ -551,7 +551,7 @@
             <Value property="track8_clip5_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip5_pattern"  type="number" >
+            <Value property="track8_clip5_a_pattern"  type="number" >
                 4
             </Value>
             <Value property="track8_clip5_colour"  type="number" >
@@ -560,7 +560,7 @@
             <Value property="track8_clip6_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip6_pattern"  type="number" >
+            <Value property="track8_clip6_a_pattern"  type="number" >
                 5
             </Value>
             <Value property="track8_clip6_colour"  type="number" >
@@ -569,7 +569,7 @@
             <Value property="track8_clip7_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip7_pattern"  type="number" >
+            <Value property="track8_clip7_a_pattern"  type="number" >
                 6
             </Value>
             <Value property="track8_clip7_colour"  type="number" >
@@ -578,7 +578,7 @@
             <Value property="track8_clip8_present"  type="boolean" >
                 true
             </Value>
-            <Value property="track8_clip8_pattern"  type="number" >
+            <Value property="track8_clip8_a_pattern"  type="number" >
                 7
             </Value>
             <Value property="track8_clip8_colour"  type="number" >

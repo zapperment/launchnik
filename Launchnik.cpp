@@ -12,12 +12,27 @@ const TJBox_Int32 kNothingWritten = -1;
 // The tags of the launch buttons' properties are a base plus 10 for each track
 // plus the row; a base of its own for each kind of property.
 const TJBox_Tag kClipPresentBase = 3000;
-const TJBox_Tag kClipPatternBase = 4000;
 const TJBox_Tag kClipColourBase = 5000;
 const TJBox_Tag kFillInPresentBase = 6000;
-const TJBox_Tag kFillInPatternBase = 7000;
 const TJBox_Tag kFillInColourBase = 8000;
 const TJBox_Tag kClipTagSpan = 1000;
+
+const TJBox_Tag kOutputSettingBases[] = {
+	kClipPatternBase, kClipUnipolarBase, kClipBipolarBase, kClipTransitionBase,
+	kFillInPatternBase, kFillInUnipolarBase, kFillInBipolarBase, kFillInTransitionBase,
+};
+
+// The names of the CV outputs in motherboard_def.lua, by track and output.
+const char* const kCVOutputPaths[CLauncher::kTrackCount][CLauncher::kOutputCount] = {
+	{ "/cv_outputs/track1_a", "/cv_outputs/track1_b", "/cv_outputs/track1_c", "/cv_outputs/track1_d", "/cv_outputs/track1_e", "/cv_outputs/track1_f" },
+	{ "/cv_outputs/track2_a", "/cv_outputs/track2_b", "/cv_outputs/track2_c", "/cv_outputs/track2_d", "/cv_outputs/track2_e", "/cv_outputs/track2_f" },
+	{ "/cv_outputs/track3_a", "/cv_outputs/track3_b", "/cv_outputs/track3_c", "/cv_outputs/track3_d", "/cv_outputs/track3_e", "/cv_outputs/track3_f" },
+	{ "/cv_outputs/track4_a", "/cv_outputs/track4_b", "/cv_outputs/track4_c", "/cv_outputs/track4_d", "/cv_outputs/track4_e", "/cv_outputs/track4_f" },
+	{ "/cv_outputs/track5_a", "/cv_outputs/track5_b", "/cv_outputs/track5_c", "/cv_outputs/track5_d", "/cv_outputs/track5_e", "/cv_outputs/track5_f" },
+	{ "/cv_outputs/track6_a", "/cv_outputs/track6_b", "/cv_outputs/track6_c", "/cv_outputs/track6_d", "/cv_outputs/track6_e", "/cv_outputs/track6_f" },
+	{ "/cv_outputs/track7_a", "/cv_outputs/track7_b", "/cv_outputs/track7_c", "/cv_outputs/track7_d", "/cv_outputs/track7_e", "/cv_outputs/track7_f" },
+	{ "/cv_outputs/track8_a", "/cv_outputs/track8_b", "/cv_outputs/track8_c", "/cv_outputs/track8_d", "/cv_outputs/track8_e", "/cv_outputs/track8_f" },
+};
 
 } // namespace
 
@@ -38,21 +53,20 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fWrittenFillInLabelFrame(kNothingWritten),
 	fWrittenSetFillInLight(kNothingWritten),
 	fWrittenSetFillInLightFrame(kNothingWritten),
-	fWrittenSetFillInLabelFrame(kNothingWritten)
+	fWrittenSetFillInLabelFrame(kNothingWritten),
+	fWrittenTransitionDiagramFrame(kNothingWritten),
+	fWrittenTransitionLabelsFrame(kNothingWritten)
 {
-	const char* const cvOutputPaths[CLauncher::kTrackCount] = {
-		"/cv_outputs/track1",
-		"/cv_outputs/track2",
-		"/cv_outputs/track3",
-		"/cv_outputs/track4",
-		"/cv_outputs/track5",
-		"/cv_outputs/track6",
-		"/cv_outputs/track7",
-		"/cv_outputs/track8",
-	};
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		fWrittenOutputLabelsFrames[output] = kNothingWritten;
+	}
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
-		fCVOutputs[track] = JBox_GetMotherboardObjectRef(cvOutputPaths[track]);
-		fWrittenCVValues[track] = -1.0;
+		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+			fCVOutputs[track][output] = JBox_GetMotherboardObjectRef(kCVOutputPaths[track][output]);
+			// Not a value any CV output can have, so the first batch writes them.
+			fWrittenCVValues[track][output] = -2.0;
+			fWrittenCVModes[track][output] = kNothingWritten;
+		}
 		fWrittenFunctionLights[track] = kNothingWritten;
 		fWrittenFunctionLightFrames[track] = kNothingWritten;
 		for (int row = 0; row < CLauncher::kRowCount; ++row) {
@@ -89,13 +103,22 @@ void CLaunchnik::LoadEverything() {
 	HandleChange(kCustomPropsTag_Function, JBox_LoadMOMPropertyByTag(fCustomProps, kCustomPropsTag_Function));
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		HandleChange(SelectionTag(track), JBox_LoadMOMPropertyByTag(fCustomProps, SelectionTag(track)));
+		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+			HandleChange(CVModeTag(track, output), JBox_LoadMOMPropertyByTag(fCustomProps, CVModeTag(track, output)));
+		}
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 			const TJBox_Tag tags[] = {
-				ClipPresentTag(track, row), ClipPatternTag(track, row), ClipColourTag(track, row),
-				FillInPresentTag(track, row), FillInPatternTag(track, row), FillInColourTag(track, row),
+				ClipPresentTag(track, row), ClipColourTag(track, row),
+				FillInPresentTag(track, row), FillInColourTag(track, row),
 			};
 			for (TJBox_Tag tag : tags) {
 				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
+			}
+			for (TJBox_Tag base : kOutputSettingBases) {
+				for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+					const TJBox_Tag tag = OutputSettingTag(base, track, row, output);
+					HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
+				}
 			}
 		}
 	}
@@ -142,6 +165,16 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		fLauncher.SetSelection(track, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
+	if (iTag >= CVModeTag(0, 0) && iTag <= CVModeTag(CLauncher::kTrackCount - 1, CLauncher::kOutputCount - 1)) {
+		const int track = static_cast<int>((iTag - CVModeTag(0, 0)) / 10);
+		const int output = static_cast<int>((iTag - CVModeTag(0, 0)) % 10);
+		fLauncher.SetCVMode(track, output, static_cast<int>(JBox_GetNumber(iValue)));
+		return;
+	}
+	if (iTag >= kClipPatternBase && iTag < kFillInTransitionBase + kOutputSettingTagSpan) {
+		HandleOutputSettingChange(iTag, static_cast<int>(JBox_GetNumber(iValue)));
+		return;
+	}
 	if (iTag < kClipPresentBase || iTag >= kFillInColourBase + kClipTagSpan) {
 		return;
 	}
@@ -151,20 +184,33 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 	if (base == kClipPresentBase) {
 		fLauncher.SetClipPresent(track, row, JBox_GetBoolean(iValue));
 	}
-	else if (base == kClipPatternBase) {
-		fLauncher.SetClipPattern(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
 	else if (base == kClipColourBase) {
 		fLauncher.SetClipColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
 	}
 	else if (base == kFillInPresentBase) {
 		fLauncher.SetFillInPresent(track, row, JBox_GetBoolean(iValue));
 	}
-	else if (base == kFillInPatternBase) {
-		fLauncher.SetFillInPattern(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
 	else if (base == kFillInColourBase) {
 		fLauncher.SetFillInColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	}
+}
+
+void CLaunchnik::HandleOutputSettingChange(TJBox_Tag iTag, int iValue) {
+	const TJBox_Tag base = iTag - (iTag % kOutputSettingTagSpan);
+	const int offset = static_cast<int>(iTag - base);
+	const int track = offset / 100 - 1;
+	const int row = (offset / 10) % 10;
+	const int output = offset % 10 - 1;
+	switch (base) {
+		case kClipPatternBase: fLauncher.SetClipPattern(track, row, output, iValue); break;
+		case kClipUnipolarBase: fLauncher.SetClipUnipolar(track, row, output, iValue); break;
+		case kClipBipolarBase: fLauncher.SetClipBipolar(track, row, output, iValue); break;
+		case kClipTransitionBase: fLauncher.SetClipTransition(track, row, output, iValue); break;
+		case kFillInPatternBase: fLauncher.SetFillInPattern(track, row, output, iValue); break;
+		case kFillInUnipolarBase: fLauncher.SetFillInUnipolar(track, row, output, iValue); break;
+		case kFillInBipolarBase: fLauncher.SetFillInBipolar(track, row, output, iValue); break;
+		case kFillInTransitionBase: fLauncher.SetFillInTransition(track, row, output, iValue); break;
+		default: break;
 	}
 }
 
@@ -224,6 +270,11 @@ void CLaunchnik::WriteOutputs() {
 	Write(kCustomPropsTag_SetFillInLight, fLauncher.GetSetFillInLightValue(), fWrittenSetFillInLight);
 	Write(kCustomPropsTag_SetFillInLightFrame, fLauncher.GetSetFillInLightFrame(), fWrittenSetFillInLightFrame);
 	Write(kCustomPropsTag_SetFillInLabelFrame, fLauncher.GetSetFillInLabelFrame(), fWrittenSetFillInLabelFrame);
+	Write(kCustomPropsTag_TransitionDiagramFrame, fLauncher.GetTransitionDiagramFrame(), fWrittenTransitionDiagramFrame);
+	Write(kCustomPropsTag_TransitionLabelsFrame, fLauncher.GetTransitionLabelsFrame(), fWrittenTransitionLabelsFrame);
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		Write(OutputLabelsFrameTag(output), fLauncher.GetOutputLabelsFrame(output), fWrittenOutputLabelsFrames[output]);
+	}
 
 	for (int function = 0; function < CLauncher::kFunctionCount; ++function) {
 		Write(FunctionSelectLightFrameTag(function), fLauncher.GetFunctionSelectLightFrame(function), fWrittenFunctionSelectLightFrames[function]);
@@ -248,10 +299,13 @@ void CLaunchnik::WriteOutputs() {
 			}
 		}
 
-		const TJBox_Float64 cvValue = fLauncher.GetCVValue(track);
-		if (cvValue != fWrittenCVValues[track]) {
-			fWrittenCVValues[track] = cvValue;
-			JBox_StoreMOMPropertyAsNumber(fCVOutputs[track], kJBox_CVOutputValue, cvValue);
+		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+			Write(CVModeCopyTag(track, output), fLauncher.GetCVMode(track, output), fWrittenCVModes[track][output]);
+			const TJBox_Float64 cvValue = fLauncher.GetCVValue(track, output);
+			if (cvValue != fWrittenCVValues[track][output]) {
+				fWrittenCVValues[track][output] = cvValue;
+				JBox_StoreMOMPropertyAsNumber(fCVOutputs[track][output], kJBox_CVOutputValue, cvValue);
+			}
 		}
 	}
 

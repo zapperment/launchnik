@@ -20,6 +20,8 @@ const TJBox_Tag kCustomPropsTag_FillInLabelFrame = 71;
 const TJBox_Tag kCustomPropsTag_SetFillInLightFrame = 72;
 const TJBox_Tag kCustomPropsTag_SetFillInLabelFrame = 73;
 const TJBox_Tag kCustomPropsTag_Function = 74;
+const TJBox_Tag kCustomPropsTag_TransitionDiagramFrame = 150;
+const TJBox_Tag kCustomPropsTag_TransitionLabelsFrame = 151;
 
 // Functions are numbered as in Launcher.h.
 inline TJBox_Tag FunctionSelectLightFrameTag(int iFunction) {
@@ -33,6 +35,21 @@ inline TJBox_Tag FunctionSelectCaptionFrameTag(int iFunction) {
 // Scenes are numbered from 1, like rows.
 inline TJBox_Tag SceneLabelFrameTag(int iScene) {
 	return 60 + iScene;
+}
+
+// CV outputs are numbered from 0 here, as in Launcher.h, and from 1 in the
+// tags.
+inline TJBox_Tag OutputLabelsFrameTag(int iOutput) {
+	return 140 + (iOutput + 1);
+}
+
+inline TJBox_Tag CVModeTag(int iTrack, int iOutput) {
+	return 200 + 10 * (iTrack + 1) + (iOutput + 1);
+}
+
+// The copy of a CV mode that control surfaces read.
+inline TJBox_Tag CVModeCopyTag(int iTrack, int iOutput) {
+	return 300 + 10 * (iTrack + 1) + (iOutput + 1);
 }
 
 inline TJBox_Tag SelectionTag(int iTrack) {
@@ -77,10 +94,6 @@ inline TJBox_Tag ClipPresentTag(int iTrack, int iRow) {
 	return 3000 + 10 * (iTrack + 1) + iRow;
 }
 
-inline TJBox_Tag ClipPatternTag(int iTrack, int iRow) {
-	return 4000 + 10 * (iTrack + 1) + iRow;
-}
-
 inline TJBox_Tag ClipColourTag(int iTrack, int iRow) {
 	return 5000 + 10 * (iTrack + 1) + iRow;
 }
@@ -89,10 +102,23 @@ inline TJBox_Tag FillInPresentTag(int iTrack, int iRow) {
 	return 6000 + 10 * (iTrack + 1) + iRow;
 }
 
-inline TJBox_Tag FillInPatternTag(int iTrack, int iRow) {
-	return 7000 + 10 * (iTrack + 1) + iRow;
-}
-
 inline TJBox_Tag FillInColourTag(int iTrack, int iRow) {
 	return 8000 + 10 * (iTrack + 1) + iRow;
+}
+
+// The settings of a clip's CV outputs, and of its fill-in's: a base of its
+// own for each kind of setting, plus 100 for each track, 10 for each row and
+// the output.
+const TJBox_Tag kOutputSettingTagSpan = 1000;
+const TJBox_Tag kClipPatternBase = 10000;
+const TJBox_Tag kClipUnipolarBase = 11000;
+const TJBox_Tag kClipBipolarBase = 12000;
+const TJBox_Tag kClipTransitionBase = 13000;
+const TJBox_Tag kFillInPatternBase = 14000;
+const TJBox_Tag kFillInUnipolarBase = 15000;
+const TJBox_Tag kFillInBipolarBase = 16000;
+const TJBox_Tag kFillInTransitionBase = 17000;
+
+inline TJBox_Tag OutputSettingTag(TJBox_Tag iBase, int iTrack, int iRow, int iOutput) {
+	return iBase + 100 * (iTrack + 1) + 10 * iRow + (iOutput + 1);
 }

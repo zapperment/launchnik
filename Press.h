@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Launcher.h"
+
 // What pressing a button changes, free of any dependency on the Jukebox SDK.
 // The front panel's click handler follows these rules; a codec for a control
 // surface has to follow the same ones (see docs/adr/0002).
@@ -15,13 +17,20 @@ class CPress {
 		kSetup,
 		// fValue is the length of the switch interval.
 		kLength,
-		// fIndex is the number of the launch button, see CLauncher::ButtonIndex.
+		// fIndex is the number of the launch button, see CLauncher::ButtonIndex;
+		// for the settings of a CV output, fOutput is the output.
 		kClipPresent,
-		kClipPattern,
 		kClipColour,
+		kClipPattern,
+		kClipUnipolar,
+		kClipBipolar,
+		kClipTransition,
 		kFillInPresent,
-		kFillInPattern,
 		kFillInColour,
+		kFillInPattern,
+		kFillInUnipolar,
+		kFillInBipolar,
+		kFillInTransition,
 		// fValue is 1 while the fill-in button is held down, 0 once it is let go.
 		kFillIn,
 		// fValue is the function.
@@ -39,29 +48,50 @@ class CPress {
 	public: struct TChange {
 		EProperty fProperty;
 		int fIndex;
+		int fOutput;
 		int fValue;
 	};
 
 	// What a press of a scene button changes: the selection of every track,
 	// the length and the setup state, or nothing at all (see docs/adr/0004).
-	// What a press of a launch button in fill-in editing changes: up to three
-	// settings of the fill-in.
-	public: static const int kMaxChangeCount = 8;
+	// What a press of a launch button in fill-in editing changes: up to every
+	// setting of the fill-in.
+	public: static const int kMaxChangeCount = 2 + 4 * CLauncher::kOutputCount;
 	public: struct TChanges {
 		int fCount;
 		TChange fChanges[kMaxChangeCount];
 	};
 
+	// What a press in clip editing or fill-in editing needs to know of the
+	// settings being edited: whether there are any (the picked launch button
+	// holds a clip, or in fill-in editing a fill-in), the CV modes of the
+	// picked launch button's track, and the transitions, which a press moves
+	// on to the next.
+	public: struct TEdited {
+		bool fPresent;
+		int fCVModes[CLauncher::kOutputCount];
+		int fTransitions[CLauncher::kOutputCount];
+	};
+	// Settings with a new device's CV modes and every transition off.
+	public: static TEdited Edited(bool iPresent);
+
+	// A clip's values, which a new fill-in starts as a copy of.
+	public: struct TClipValues {
+		int fPatterns[CLauncher::kOutputCount];
+		int fUnipolar[CLauncher::kOutputCount];
+		int fBipolar[CLauncher::kOutputCount];
+	};
+
 	// iPressedHoldsClip says whether the pressed launch button holds a clip.
-	// iPickedHoldsClip says the same of the launch button that is being edited
-	// and only matters in clip editing. In fill-in editing a press changes
-	// nothing here; see FillInEditingLaunchButton().
-	public: static TChange LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, bool iPickedHoldsClip);
-	// A press of a launch button in fill-in editing. iPickedHoldsFillIn says
-	// whether the launch button being edited holds a fill-in, iPickedPattern is
-	// the pattern of its clip, which a new fill-in starts with, in white.
-	// Outside fill-in editing a press changes nothing here.
-	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, bool iPickedHoldsFillIn, int iPickedPattern);
+	// iPicked describes the clip being edited and only matters in clip
+	// editing. In fill-in editing a press changes nothing here; see
+	// FillInEditingLaunchButton().
+	public: static TChange LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, const TEdited& iPicked);
+	// A press of a launch button in fill-in editing. iFillIn describes the
+	// fill-in being edited, iClip the values of its clip, which a new fill-in
+	// starts as a copy of, with every transition off, in white. Outside
+	// fill-in editing a press changes nothing here.
+	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip);
 
 	public: static TChange StopButton(int iTrack);
 

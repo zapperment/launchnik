@@ -5,6 +5,20 @@ local COLOUR_NAMES = {
 	"Cyan", "Light Blue", "Blue", "Dark Blue", "Purple", "Fuchsia", "Pink",
 }
 
+local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
+local UNIPOLAR_VALUES = { "0", "16.6", "33.3", "50", "66.6", "83.3", "100" }
+local BIPOLAR_VALUES = { "-100", "-66.6", "-33.3", "0", "+33.3", "+66.6", "+100" }
+local TRANSITIONS = { "Off", "A", "B", "C", "D" }
+
+-- The settings of a CV output: long name, the letters of the short name and
+-- the letter of the shortest.
+local OUTPUT_SETTINGS = {
+	{ "pattern", "Pattern", "Pt", "P" },
+	{ "unipolar", "Unipolar", "Un", "U" },
+	{ "bipolar", "Bipolar", "Bi", "B" },
+	{ "transition", "Transition", "Tr", "T" },
+}
+
 texts = {
 	["text_stop"] = "Stop",
 	["text_mute"] = "Mute",
@@ -64,15 +78,38 @@ texts = {
 	["gesture_setup"] = "Change setup mode",
 	["gesture_clip_present"] = "Switch clip on or off",
 	["gesture_clip_pattern"] = "Change clip pattern",
+	["gesture_clip_unipolar"] = "Change clip unipolar value",
+	["gesture_clip_bipolar"] = "Change clip bipolar value",
+	["gesture_clip_transition"] = "Change clip transition",
 	["gesture_clip_colour"] = "Change clip colour",
 	["gesture_fill_in"] = "Fill in",
 	["gesture_fill_in_present"] = "Switch fill-in on or off",
 	["gesture_fill_in_pattern"] = "Change fill-in pattern",
+	["gesture_fill_in_unipolar"] = "Change fill-in unipolar value",
+	["gesture_fill_in_bipolar"] = "Change fill-in bipolar value",
+	["gesture_fill_in_transition"] = "Change fill-in transition",
 	["gesture_fill_in_colour"] = "Change fill-in colour",
 	["gesture_function"] = "Change function",
 	["gesture_mute"] = "Mute or unmute track",
 	["gesture_solo"] = "Solo or unsolo track",
+
+	["text_cv_mode_bipolar"] = "Bipolar",
+	["text_cv_mode_unipolar"] = "Unipolar",
+	["text_cv_mode_pattern"] = "Pattern",
+	["text_transition_diagram"] = "Transition Diagram",
+	["text_transition_labels"] = "Transition Diagram Labels",
 }
+
+for index, letter in ipairs(OUTPUT_LETTERS) do
+	texts["text_output_" .. letter .. "_labels"] = "Output " .. string.upper(letter) .. " Labels"
+end
+for value = 1, 7 do
+	texts["text_unipolar" .. value] = UNIPOLAR_VALUES[value]
+	texts["text_bipolar" .. value] = BIPOLAR_VALUES[value]
+end
+for transition, name in ipairs(TRANSITIONS) do
+	texts["text_transition" .. transition] = name
+end
 
 for track = 1, 8 do
 	local selection = "text_track" .. track .. "_selection"
@@ -95,7 +132,15 @@ for track = 1, 8 do
 	texts[function_button .. "_light_short"] = "T" .. track .. " Func"
 	texts[function_button .. "_light_shortest"] = "T" .. track .. "Fn"
 
-	texts["text_cv_out_track" .. track] = "Track " .. track .. " CV Out"
+	for _, letter in ipairs(OUTPUT_LETTERS) do
+		local upper = string.upper(letter)
+		texts["text_cv_out_track" .. track .. "_" .. letter] = "Track " .. track .. " CV Out " .. upper
+		texts["text_track" .. track .. "_cv_mode_" .. letter] = "Track " .. track .. " Output " .. upper .. " CV Mode"
+		local copy = "text_track" .. track .. "_output_" .. letter .. "_cv_mode"
+		texts[copy] = "Track " .. track .. " Output " .. upper .. " CV Mode"
+		texts[copy .. "_short"] = "T" .. track .. " " .. upper .. "Mode"
+		texts[copy .. "_shortest"] = "M" .. track .. upper
+	end
 
 	for row = 1, 8 do
 		local clip = "text_track" .. track .. "_clip" .. row
@@ -107,10 +152,6 @@ for track = 1, 8 do
 		texts[clip .. "_present_short"] = short .. " On"
 		texts[clip .. "_present_shortest"] = "O" .. digits
 
-		texts[clip .. "_pattern"] = long .. " Pattern"
-		texts[clip .. "_pattern_short"] = short .. " Pat"
-		texts[clip .. "_pattern_shortest"] = "P" .. digits
-
 		texts[clip .. "_colour"] = long .. " Colour"
 		texts[clip .. "_colour_short"] = short .. " Col"
 		texts[clip .. "_colour_shortest"] = "C" .. digits
@@ -119,13 +160,26 @@ for track = 1, 8 do
 		texts[clip .. "_fill_in_present_short"] = short .. " FOn"
 		texts[clip .. "_fill_in_present_shortest"] = "FO" .. digits
 
-		texts[clip .. "_fill_in_pattern"] = long .. " Fill-In Pattern"
-		texts[clip .. "_fill_in_pattern_short"] = short .. " FPt"
-		texts[clip .. "_fill_in_pattern_shortest"] = "FP" .. digits
-
 		texts[clip .. "_fill_in_colour"] = long .. " Fill-In Colour"
 		texts[clip .. "_fill_in_colour_short"] = short .. " FCl"
 		texts[clip .. "_fill_in_colour_shortest"] = "FC" .. digits
+
+		-- The settings of the CV outputs, for example "T1C1 APt" and "11AP"
+		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in.
+		for _, letter in ipairs(OUTPUT_LETTERS) do
+			local upper = string.upper(letter)
+			for _, setting in ipairs(OUTPUT_SETTINGS) do
+				local name, short_letters, shortest_letter = setting[2], setting[3], setting[4]
+				local property = clip .. "_" .. letter .. "_" .. setting[1]
+				texts[property] = long .. " Output " .. upper .. " " .. name
+				texts[property .. "_short"] = short .. " " .. upper .. short_letters
+				texts[property .. "_shortest"] = digits .. upper .. shortest_letter
+				local fill_in = clip .. "_fill_in_" .. letter .. "_" .. setting[1]
+				texts[fill_in] = long .. " Fill-In Output " .. upper .. " " .. name
+				texts[fill_in .. "_short"] = short .. "F" .. upper .. short_letters
+				texts[fill_in .. "_shortest"] = digits .. letter .. string.lower(shortest_letter)
+			end
+		end
 
 		texts[clip .. "_light"] = long .. " Light"
 		texts[clip .. "_light_short"] = short .. " Lgt"

@@ -110,16 +110,39 @@ front.click_scenes = {
 	{ size = { SCENE_WIDTH, 1780 } },
 }
 
--- The labels sit centred below their buttons, their tops 20 pixels below the
--- buttons. Those of the launch buttons are one lamp whose film strip starts
+-- The labels sit centred below their buttons, their tops 8 pixels above the
+-- bottom of the buttons' images, right below the buttons themselves. Those of
+-- the launch buttons in scenes 1 and 2 are one lamp whose film strip starts
 -- 25 pixels left of the grid: all unlit, SET/CLEAR or all in yellow, or
--- SET/CLEAR or all in red (see tools/make-label-strips.sh). Each scene button has a lamp of its own, 250
--- pixels wide and unlit, white or green.
-local LABEL_GAP = 20
+-- SET/CLEAR or all in red (see tools/make-label-strips.sh). Each of scenes 3
+-- to 8, which stand for the CV outputs A to F, has a lamp of its own, with
+-- two lines below every launch button (see tools/make-cv-labels.py). Each
+-- scene button has a lamp of its own, 250 pixels wide and unlit, white or
+-- green.
+local LABEL_GAP = -8
 local SCENE_LABEL_WIDTH = 250
 front.labels_launch = {
 	offset = { LAUNCH_LEFT - 25, LAUNCH_TOP + BUTTON_HEIGHT + LABEL_GAP },
 	{ path = "Labels_Launch_5frames", frames = 5 },
+}
+local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
+for output, letter in ipairs(OUTPUT_LETTERS) do
+	front["labels_output_" .. letter] = {
+		offset = { LAUNCH_LEFT - 25, LAUNCH_TOP + ROW_PITCH * (output + 1) + BUTTON_HEIGHT + LABEL_GAP },
+		{ path = "Labels_Output_23frames", frames = 23 },
+	}
+end
+
+-- The diagram of the transitions stands to the right of the scene buttons,
+-- level with scenes 4 and 5, in colour or grey, with its labels beside and
+-- above it, unlit, yellow or red (see tools/make-cv-labels.py).
+front.transition_diagram = {
+	offset = { 3230, 1250 },
+	{ path = "Transition_Diagram_2frames", frames = 2 },
+}
+front.label_transitions = {
+	offset = { 3170, 1190 },
+	{ path = "Label_Transitions_3frames", frames = 3 },
 }
 for scene = 1, ROW_COUNT do
 	front["label_scene" .. scene] = {
@@ -256,13 +279,24 @@ back = {
 	},
 }
 
--- Together with their labels the CV outputs are vertically centred on the
--- back panel.
+-- Six CV outputs, A to F from the top, for each track, 220 pixels apart
+-- across and 200 down, each with the switch for its CV mode to its left: the
+-- stock bypass switch, whose frames from the bottom position up stand for
+-- bipolar, unipolar and pattern. Their captions are in Labels_Back (see
+-- tools/make-cv-labels.py).
 for track = 1, TRACK_COUNT do
-	back["cv_out_track" .. track] = {
-		offset = { 1100 + 220 * (track - 1), 1440 },
-		{ path = "SharedCVJack", frames = 3 },
-	}
+	for output, letter in ipairs(OUTPUT_LETTERS) do
+		local left = 1100 + 220 * (track - 1)
+		local top = 1440 + 200 * (output - 1)
+		back["cv_out_track" .. track .. "_" .. letter] = {
+			offset = { left, top },
+			{ path = "SharedCVJack", frames = 3 },
+		}
+		back["cv_mode_track" .. track .. "_" .. letter] = {
+			offset = { left - 90, top + 45 - 60 },
+			{ path = "CV_Mode_Switch_3frames", frames = 3 },
+		}
+	end
 end
 
 folded_front = {

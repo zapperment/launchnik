@@ -9,11 +9,11 @@ One of the 64 large buttons on the front panel, arranged in eight rows on each o
 _Avoid_: Clip button, pad, cell
 
 **Clip**:
-One pattern (1 to 8) of the track's Player together with a **colour**, held by a **launch button**; launching the clip makes the track's Player play that pattern. Several clips on a track may use the same pattern. A clip may also hold a **fill-in**.
+What a **launch button** holds: a **colour** and, for each of its track's six **CV outputs**, a **pattern**, a **unipolar value**, a **bipolar value** and a **transition**. Launching the clip makes each CV output emit whichever of the three its **CV mode** picks. A launch button keeps all of them while it is **empty**, so a clip comes back as it was; a new clip has, on every CV output, the pattern of its row, unipolar value 0, bipolar value 0 and transition off. Several clips on a track may use the same pattern. A clip may also hold a **fill-in**.
 _Avoid_: Slot, pattern (for the clip itself); a **scene** is a row of launch buttons, not a clip
 
 **Fill-in**:
-A second pattern and **colour** that a **clip** may hold, played instead of the clip's own pattern while a fill-in is **playing** and the clip is **active**. A launch button keeps its fill-in while it is **empty**, so that it comes back with the clip; an empty launch button has no fill-in to play. A new fill-in has the pattern of its clip and the colour white. Fill-ins are part of the **patch**.
+A second **colour** and, for each **CV output**, a second pattern, unipolar value, bipolar value and **transition** that a **clip** may hold, emitted instead of the clip's own while a fill-in is **playing** and the clip is **active**. It lies over the clip: underneath, the clip goes on as if there were no fill-in, its own transition included, and that is what the CV outputs emit again once the fill-in is cleared or over; at the **switch point** they jump, without a transition, to the clip's value or the queued clip's. A fill-in's transition is the exception to the rule that the active clip's transition counts: it moves from what is emitted at the press to the fill-in's value, landing on it at the switch point, like a riser; off jumps at the press. A launch button keeps its fill-in while it is **empty**, so that it comes back with the clip; an empty launch button has no fill-in to play. A new fill-in starts as a copy of its clip's patterns and values, with every transition off and the colour white, each time it is switched on. Fill-ins are part of the **patch**.
 _Avoid_: Fill, drum fill, fill-in mode (it is not a way of working like **launch mode** or **setup mode**)
 
 **Fill-in button**:
@@ -36,7 +36,7 @@ One of fourteen hues that mark a **clip** so that it can be recognised: white, r
 _Avoid_: Tint, label
 
 **Patch**:
-What all 64 **launch buttons** hold, together with the **length** of the switch interval, saved as a file that can be loaded into any Launchnik, in any song. It does not hold what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
+What all 64 **launch buttons** hold, together with the **length** of the switch interval and the **CV mode** of every **CV output**, saved as a file that can be loaded into any Launchnik, in any song. It does not hold what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
 _Avoid_: Template, preset, layout
 
 **Unlit**, **dim**, **vibrant**:
@@ -44,7 +44,7 @@ The three ways a **launch button** can look: showing no **colour** at all, showi
 _Avoid_: Inactive (for unlit), bright, lit
 
 **Stop**:
-The **selection** that stands for the Player's pattern selection being "off": the track emits no pattern. Choosing an **empty** launch button counts as choosing stop.
+The **selection** that stands for the Player's pattern selection being "off": the track's pattern outputs emit no pattern (0), while its unipolar and bipolar outputs go on emitting the value they last emitted. Choosing an **empty** launch button counts as choosing stop.
 _Avoid_: Off (an **off** button is something else)
 
 **Function**:
@@ -67,7 +67,7 @@ One of the buttons in the row below the **function buttons** that choose the **f
 _Avoid_: Mode button, function button (that is the row above)
 
 **Muted**:
-Said of a **track** from a click on its mute button until the next **switch point**, a second click, a jump of the song position, or until the track has no **clips** left. While it is muted and not **soloed**, its CV output emits 0; its **selection** and its **launch buttons** go on as before. Several tracks can be muted at once. With the **length** **immediate** there is no switch point, so a track stays muted until it is clicked again. A song always opens with no track muted.
+Said of a **track** from a click on its mute button until the next **switch point**, a second click, a jump of the song position, or until the track has no **clips** left. While it is muted and not **soloed**, its CV outputs in pattern mode emit 0, and those in unipolar or bipolar mode go on as if it were not muted; its **selection** and its **launch buttons** go on as before. Several tracks can be muted at once. With the **length** **immediate** there is no switch point, so a track stays muted until it is clicked again. A song always opens with no track muted.
 _Avoid_: Stopped (a stopped track has chosen **stop**), silenced
 
 **Soloed**:
@@ -75,10 +75,10 @@ Said of a **track** from a click on its solo button until the next **switch poin
 _Avoid_: Isolated
 
 **Solo-muted**:
-Said of a **track** that is not **soloed** while another track is. Its CV output emits 0, whether or not it is **muted**; nothing on the panel shows it apart from its dim blue solo button.
+Said of a **track** that is not **soloed** while another track is. Its CV outputs in pattern mode emit 0, whether or not it is **muted**, and the others go on as before; nothing on the panel shows it apart from its dim blue solo button.
 
 **Track**:
-One column of the front panel: eight **launch buttons**, one **function button** and the one CV output they drive.
+One column of the front panel: eight **launch buttons**, one **function button** and the six **CV outputs** they drive.
 _Avoid_: Column, channel, lane
 
 **Scene**:
@@ -88,6 +88,25 @@ _Avoid_: Row (in prose), line
 **Scene button**:
 The button to the right of a **scene**. In **launch mode**, clicking it means clicking all eight **launch buttons** of its scene at once, so a track whose launch button in that scene is **empty** stops. In **clip picking** the eight scene buttons stand for the eight **lengths** instead, immediate at the bottom and sixteen bars at the top: clicking one chooses that length and returns to launch mode. In **clip editing** a click does nothing. It never shows which scene was last chosen; outside clip picking its **light** belongs to the **interval meter**.
 _Avoid_: Scene launch button, row button
+
+**CV output**:
+One of the six jacks of a **track** on the back panel, lettered A to F, each driven by one row of settings in every **clip** of the track. Written "output A" in full, never a bare "A", since **transitions** are lettered too.
+_Avoid_: Jack, CV out, lane, channel
+
+**CV mode**:
+What a **CV output** emits, chosen with a three-way switch beside it on the back panel: **pattern**, **unipolar** or **bipolar**. It is part of the **patch**, cannot be automated, and can only be changed on the back panel, not from a control surface; a change takes effect at once, dropping any transition under way. A new device has output A in pattern mode and outputs B to F in unipolar mode.
+_Avoid_: Polarity, output mode, type
+
+**Pattern** (of a CV output):
+In pattern mode, which of the eight patterns of a Player a **clip** selects; the CV output emits it in the steps a Combinator reads as pattern selection, and 0 while the track is stopped, **muted** or **solo-muted**.
+
+**Unipolar value**, **bipolar value**:
+In unipolar mode, one of seven evenly spaced values from 0 to 1 (labelled 0 to 100); in bipolar mode, one of seven from −1 to +1 (labelled −100 to +100, 0 in the middle). A stopped track goes on emitting the value it last emitted; before any clip has played, that is 0.
+_Avoid_: Level, amount, CV value (when the mode matters)
+
+**Transition**:
+How a CV output in unipolar or bipolar mode moves from the value of the **active** clip to that of a **queued** clip on its track: **off**, A, B, C or D. It is the active clip's transition that counts, not the queued one's (a fill-in is the exception). Off keeps the active clip's value until the **switch point** and then jumps. A and B move from the moment of queueing to the switch point, A in a straight line and B along an exponential curve that starts slowly; C and D do the same as A and B, but only within the last bar before the switch point (so with a **length** of one bar or less, they behave like A and B). The movement follows the song position and lands on the new value at the switch point. A queued **stop**, a track that is stopped, and the length **immediate** never move: the value jumps. Whenever the queued clip changes, its value is edited or the active clip's transition is changed, the movement starts over from the value emitted at that moment; when nothing is left to move towards (the active clip chosen again, stop queued, transition switched off), the value jumps back to the active clip's.
+_Avoid_: Transition mode 1–4, interpolation, glide, ramp, slide
 
 **Selection**:
 What the user last chose on a **track**: **stop** or one of the track's **clips**. Choosing an **empty** launch button is a selection of stop. It is what is saved with the song; a selection that the track is not yet emitting is **queued**.

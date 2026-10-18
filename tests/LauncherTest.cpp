@@ -5,6 +5,8 @@
 
 #include "Check.h"
 
+#include <cmath>
+
 namespace {
 
 const double kBatch = 20.0; // about one batch at 120 BPM and 44.1 kHz
@@ -65,7 +67,7 @@ void TestInitialState() {
 		// With no clips to stop, the stop button is unlit.
 		CHECK(launcher.GetStopLight(track) == CLauncher::kUnlit);
 		CHECK(launcher.GetFunctionLightFrame(track) == 0);
-		CHECK(launcher.GetCVValue(track) == 0.0);
+		CHECK(launcher.GetCVValue(track, 0) == 0.0);
 		// A new device has only empty launch buttons.
 		for (int row = 1; row <= 8; ++row) {
 			CHECK(launcher.GetButtonState(track, row) == CLauncher::kOff);
@@ -84,7 +86,7 @@ void TestClickWhileStoppedTakesEffectAtOnce() {
 	launcher.Advance(Stopped());
 	CHECK(launcher.GetButtonState(2, 5) == CLauncher::kActive);
 	CHECK(launcher.GetButtonState(2, CLauncher::kSelectionStop) == CLauncher::kOff);
-	CHECK(launcher.GetCVValue(2) == 5.0 / 8.0);
+	CHECK(launcher.GetCVValue(2, 0) == 5.0 / 8.0);
 	// Other tracks are untouched.
 	CHECK(launcher.GetButtonState(3, CLauncher::kSelectionStop) == CLauncher::kActive);
 }
@@ -100,7 +102,7 @@ void TestClickWhilePlayingQueuesUntilSwitchPoint() {
 	// The outgoing button stays active and the CV keeps its value.
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
 	CHECK(launcher.GetStopLight(0) == CLauncher::kDim);
-	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 
 	// Still queued just before the switch point.
 	PlayThrough(launcher, kBar + 120, kInterval - 2 * kBatch);
@@ -110,7 +112,7 @@ void TestClickWhilePlayingQueuesUntilSwitchPoint() {
 	launcher.Advance(Playing(kInterval - kBatch / 2));
 	CHECK(launcher.GetButtonState(0, 3) == CLauncher::kActive);
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kOff);
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8.0);
 }
 
 void TestStopButtonQueuesLikeALaunchButton() {
@@ -125,7 +127,7 @@ void TestStopButtonQueuesLikeALaunchButton() {
 	launcher.Advance(Playing(kInterval - 1));
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
 	CHECK(launcher.GetButtonState(0, 4) == CLauncher::kOff);
-	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 }
 
 void TestLastClickWins() {
@@ -178,7 +180,7 @@ void TestStoppingTransportPromotesQueued() {
 	CHECK(launcher.GetButtonState(1, 7) == CLauncher::kQueued);
 	launcher.Advance(Stopped(140));
 	CHECK(launcher.GetButtonState(1, 7) == CLauncher::kActive);
-	CHECK(launcher.GetCVValue(1) == 7.0 / 8.0);
+	CHECK(launcher.GetCVValue(1, 0) == 7.0 / 8.0);
 	// Starting again keeps the same scene.
 	launcher.Advance(Playing(140));
 	CHECK(launcher.GetButtonState(1, 7) == CLauncher::kActive);
@@ -299,32 +301,32 @@ void TestOpenMakesSelectionsActive() {
 	launcher.Open();
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		CHECK(launcher.GetButtonState(track, selections[track]) == CLauncher::kActive);
-		CHECK(launcher.GetCVValue(track) == selections[track] / 8.0);
+		CHECK(launcher.GetCVValue(track, 0) == selections[track] / 8.0);
 	}
 }
 
 void TestClipEmitsItsPatternNotItsRow() {
 	CLauncher launcher;
 	launcher.SetClipPresent(0, 2, true);
-	launcher.SetClipPattern(0, 2, 6);
+	launcher.SetClipPattern(0, 2, 0, 6);
 	launcher.SetClipPresent(0, 7, true);
-	launcher.SetClipPattern(0, 7, 6);
+	launcher.SetClipPattern(0, 7, 0, 6);
 	launcher.Advance(Stopped());
 	launcher.SetSelection(0, 2);
 	launcher.Advance(Stopped());
-	CHECK(launcher.GetCVValue(0) == 7.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 7.0 / 8.0);
 	// Two clips of a track may use the same pattern.
 	launcher.SetSelection(0, 7);
 	launcher.Advance(Stopped());
 	CHECK(launcher.GetButtonState(0, 7) == CLauncher::kActive);
-	CHECK(launcher.GetCVValue(0) == 7.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 7.0 / 8.0);
 }
 
 void TestNewClipPlaysThePatternOfItsRow() {
 	CLauncher launcher;
 	launcher.SetClipPresent(4, 6, true);
 	OpenWith(launcher, 4, 6);
-	CHECK(launcher.GetCVValue(4) == 6.0 / 8.0);
+	CHECK(launcher.GetCVValue(4, 0) == 6.0 / 8.0);
 	// ...and has the colour of its track.
 	CHECK(IsLight(launcher.GetLight(4, 6), CLauncher::kVibrant, CLauncher::DefaultColour(4)));
 }
@@ -342,7 +344,7 @@ void TestSelectingEmptyLaunchButtonStopsTheTrack() {
 	CHECK(IsUnlit(launcher.GetLight(0, 5)));
 	launcher.Advance(Playing(kInterval - 1));
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
-	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 }
 
 void TestLaunchModeLights() {
@@ -382,30 +384,30 @@ void TestEditingActiveClipWaitsForSwitchPoint() {
 	OpenWith(launcher, 0, 1);
 	launcher.Advance(Playing(100));
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
-	launcher.SetClipPattern(0, 1, 4);
+	launcher.SetClipPattern(0, 1, 0, 4);
 	launcher.Advance(Playing(120));
-	CHECK(launcher.GetCVValue(0) == 1.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 1.0 / 8.0);
 	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
 	// It flashes while the new pattern waits, as a queued clip would.
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kFlashing, CLauncher::DefaultColour(0)));
 	launcher.Advance(Playing(kInterval - 1));
-	CHECK(launcher.GetCVValue(0) == 5.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 5.0 / 8.0);
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
 
 	// Changing it back before the switch point leaves nothing to wait for.
 	launcher.Advance(Playing(kInterval + 2 * kBatch));
-	launcher.SetClipPattern(0, 1, 6);
+	launcher.SetClipPattern(0, 1, 0, 6);
 	launcher.Advance(Playing(kInterval + 3 * kBatch));
 	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kFlashing);
-	launcher.SetClipPattern(0, 1, 4);
+	launcher.SetClipPattern(0, 1, 0, 4);
 	launcher.Advance(Playing(kInterval + 4 * kBatch));
 	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kVibrant);
 
 	// While the transport is stopped the change is heard at once.
 	launcher.Advance(Stopped());
-	launcher.SetClipPattern(0, 1, 7);
+	launcher.SetClipPattern(0, 1, 0, 7);
 	launcher.Advance(Stopped());
-	CHECK(launcher.GetCVValue(0) == 8.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8.0);
 }
 
 void TestSwitchingActiveClipOffStopsAtSwitchPoint() {
@@ -418,13 +420,13 @@ void TestSwitchingActiveClipOffStopsAtSwitchPoint() {
 	launcher.Advance(Playing(120));
 
 	// It plays on, in its colour, with the stop button queued.
-	CHECK(launcher.GetCVValue(0) == 1.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 1.0 / 8.0);
 	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, 5));
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kQueued);
 
 	launcher.Advance(Playing(kInterval - 1));
-	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
 	CHECK(IsUnlit(launcher.GetLight(0, 1)));
 
@@ -500,7 +502,7 @@ void TestClipPickingFlashesEveryLaunchButton() {
 		}
 	}
 	// Tracks go on playing and stop buttons go on showing their light.
-	CHECK(launcher.GetCVValue(2) == 4.0 / 8.0);
+	CHECK(launcher.GetCVValue(2, 0) == 4.0 / 8.0);
 	CHECK(launcher.GetStopLight(2) == CLauncher::kVibrant);
 	CHECK(launcher.GetStopLight(3) == CLauncher::kUnlit);
 }
@@ -544,38 +546,113 @@ void TestClipEditingShowsColoursAndPatterns() {
 	CLauncher launcher;
 	launcher.SetClipPresent(3, 6, true);
 	launcher.SetClipColour(3, 6, 9);
-	launcher.SetClipPattern(3, 6, 2);
+	launcher.SetClipPattern(3, 6, 0, 2);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 6));
 
 	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourGreen));
-	// The back button has taken over from the launch button in row 8, column 8.
-	CHECK(IsUnlit(launcher.GetLight(7, 8)));
 
-	// Row 2 holds white to turquoise, row 3 cyan to pink, in columns 1 to 7.
+	// Row 1 holds white to turquoise, row 2 cyan to pink, in columns 1 to 7.
 	for (int column = 0; column < 7; ++column) {
-		CHECK(IsLight(launcher.GetLight(column, 2), CLauncher::kDim, column));
+		CHECK(IsLight(launcher.GetLight(column, 1), CLauncher::kDim, column));
 		const int colour = 7 + column;
-		CHECK(IsLight(launcher.GetLight(column, 3), colour == 9 ? CLauncher::kVibrant : CLauncher::kDim, colour));
+		CHECK(IsLight(launcher.GetLight(column, 2), colour == 9 ? CLauncher::kVibrant : CLauncher::kDim, colour));
 	}
 	CHECK(IsUnlit(launcher.GetLight(7, 2)));
-	CHECK(IsUnlit(launcher.GetLight(7, 3)));
 
-	// Row 5 holds the eight patterns, in yellow like the mode colour.
+	// Row 3 stands for output A, in pattern mode: eight patterns, in orange.
 	for (int column = 0; column < 8; ++column) {
-		CHECK(IsLight(launcher.GetLight(column, 5), column == 2 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourYellow));
+		CHECK(IsLight(launcher.GetLight(column, 3), column == 2 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourOrange));
 	}
 
-	// Everything else is unlit, including the picked launch button itself.
-	const int unlitRows[] = { 4, 6, 7 };
-	for (int row : unlitRows) {
-		for (int column = 0; column < 8; ++column) {
+	// Rows 4 to 8 stand for outputs B to F, in unipolar mode at 0, with the
+	// transition off.
+	for (int row = 4; row <= 8; ++row) {
+		CHECK(IsLight(launcher.GetLight(0, row), CLauncher::kVibrant, CLauncher::kColourCyan));
+		for (int column = 1; column < 7; ++column) {
 			CHECK(IsUnlit(launcher.GetLight(column, row)));
 		}
+		CHECK(IsLight(launcher.GetLight(7, row), CLauncher::kDim, CLauncher::kColourRed));
 	}
+}
+
+void TestPatternsAreOrangeInEveryStep() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	launcher.SetFillInPresent(3, 6, true);
+	launcher.SetFillInPattern(3, 6, 0, 4);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
+	for (int column = 0; column < 8; ++column) {
+		CHECK(IsLight(launcher.GetLight(column, 3), column == 4 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourOrange));
+	}
+}
+
+void TestUnipolarValueLightsTheValuesBelowIt() {
+	CLauncher launcher;
+	launcher.SetClipPresent(0, 3, true);
+	launcher.SetClipUnipolar(0, 3, 1, 5);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 3));
+	for (int column = 0; column < 5; ++column) {
+		CHECK(IsLight(launcher.GetLight(column, 4), CLauncher::kDim, CLauncher::kColourCyan));
+	}
+	CHECK(IsLight(launcher.GetLight(5, 4), CLauncher::kVibrant, CLauncher::kColourCyan));
+	CHECK(IsUnlit(launcher.GetLight(6, 4)));
+}
+
+void TestBipolarValueLightsTheValuesBackToZero() {
+	CLauncher launcher;
+	launcher.SetClipPresent(0, 3, true);
+	launcher.SetCVMode(0, 2, CLauncher::kCVModeBipolar);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 3));
+
+	// At 0 only the middle is lit.
 	for (int column = 0; column < 7; ++column) {
-		CHECK(IsUnlit(launcher.GetLight(column, 1)));
-		CHECK(IsUnlit(launcher.GetLight(column, 8)));
+		if (column == 3) {
+			CHECK(IsLight(launcher.GetLight(column, 5), CLauncher::kVibrant, CLauncher::kColourFuchsia));
+		}
+		else {
+			CHECK(IsUnlit(launcher.GetLight(column, 5)));
+		}
 	}
+
+	launcher.SetClipBipolar(0, 3, 2, 5);
+	CHECK(IsUnlit(launcher.GetLight(2, 5)));
+	CHECK(IsLight(launcher.GetLight(3, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
+	CHECK(IsLight(launcher.GetLight(4, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
+	CHECK(IsLight(launcher.GetLight(5, 5), CLauncher::kVibrant, CLauncher::kColourFuchsia));
+	CHECK(IsUnlit(launcher.GetLight(6, 5)));
+
+	launcher.SetClipBipolar(0, 3, 2, 0);
+	CHECK(IsLight(launcher.GetLight(0, 5), CLauncher::kVibrant, CLauncher::kColourFuchsia));
+	CHECK(IsLight(launcher.GetLight(1, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
+	CHECK(IsLight(launcher.GetLight(2, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
+	CHECK(IsLight(launcher.GetLight(3, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
+	CHECK(IsUnlit(launcher.GetLight(4, 5)));
+}
+
+void TestTransitionButtonShowsTheColourOfItsTransition() {
+	CLauncher launcher;
+	launcher.SetClipPresent(0, 3, true);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 3));
+	const int colours[] = { CLauncher::kColourRed, CLauncher::kColourLime, CLauncher::kColourLightBlue, CLauncher::kColourPurple, CLauncher::kColourPink };
+	for (int transition = 0; transition < CLauncher::kTransitionCount; ++transition) {
+		launcher.SetClipTransition(0, 3, 3, transition);
+		CHECK(IsLight(launcher.GetLight(7, 6), transition == 0 ? CLauncher::kDim : CLauncher::kVibrant, colours[transition]));
+	}
+	// A CV output in pattern mode has no transition button.
+	launcher.SetCVMode(0, 3, CLauncher::kCVModePattern);
+	CHECK(IsLight(launcher.GetLight(7, 6), CLauncher::kDim, CLauncher::kColourOrange));
+}
+
+void TestEditingFollowsTheCVModesOfThePickedTrack() {
+	CLauncher launcher;
+	launcher.SetClipPresent(2, 1, true);
+	launcher.SetCVMode(2, 1, CLauncher::kCVModePattern);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 1));
+	CHECK(IsLight(launcher.GetLight(7, 4), CLauncher::kDim, CLauncher::kColourOrange));
+	// Another track's CV modes make no difference.
+	launcher.SetSetup(CLauncher::SetupForClipEditing(1, 1));
+	launcher.SetClipPresent(1, 1, true);
+	CHECK(IsLight(launcher.GetLight(7, 4), CLauncher::kDim, CLauncher::kColourRed));
 }
 
 void TestLeavingSetupModeShowsTheEditedClip() {
@@ -617,14 +694,14 @@ void TestOutOfRangeClipSettingsAreIgnored() {
 	CLauncher launcher;
 	launcher.SetClipPresent(0, 1, true);
 	launcher.SetClipColour(0, 1, 14);
-	launcher.SetClipPattern(0, 1, 8);
+	launcher.SetClipPattern(0, 1, 0, 8);
 	launcher.SetClipPresent(8, 1, true);
 	launcher.SetClipPresent(0, 0, true);
 	launcher.SetClipPresent(0, 9, true);
 	launcher.SetSetup(CLauncher::kSetupCount);
 	OpenWith(launcher, 0, 1);
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
-	CHECK(launcher.GetCVValue(0) == 1.0 / 8.0);
+	CHECK(launcher.GetCVValue(0, 0) == 1.0 / 8.0);
 }
 
 void TestOneActiveAndAtMostOneQueuedPerTrack() {
@@ -830,7 +907,7 @@ void TestImmediateNeverQueues() {
 	launcher.SetSelection(0, 1);
 	launcher.Advance(Playing(120));
 	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
-	CHECK(launcher.GetCVValue(0) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 1.0 / 8);
 	// There is no interval to measure.
 	CHECK(CountLitSceneButtons(launcher) == 0);
 }
@@ -1026,12 +1103,12 @@ void TestSceneLabelsShowTheLength() {
 // pattern 6 in cyan; track 1 plays a clip without a fill-in; track 2 is stopped.
 void SetUpFillIns(CLauncher& iLauncher) {
 	iLauncher.SetClipPresent(0, 1, true);
-	iLauncher.SetClipPattern(0, 1, 2);
+	iLauncher.SetClipPattern(0, 1, 0, 2);
 	iLauncher.SetFillInPresent(0, 1, true);
-	iLauncher.SetFillInPattern(0, 1, 5);
+	iLauncher.SetFillInPattern(0, 1, 0, 5);
 	iLauncher.SetFillInColour(0, 1, 7);
 	iLauncher.SetClipPresent(1, 1, true);
-	iLauncher.SetClipPattern(1, 1, 0);
+	iLauncher.SetClipPattern(1, 1, 0, 0);
 	iLauncher.SetClipPresent(2, 1, true);
 	iLauncher.SetSelection(0, 1);
 	iLauncher.SetSelection(1, 1);
@@ -1049,53 +1126,53 @@ void TestNewFillInHasThePatternOfItsClipInWhite() {
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
 	launcher.SetFillInPresent(3, 6, true);
 	// The pattern of a new clip in row 6 is 6.
-	CHECK(IsLight(launcher.GetLight(5, 5), CLauncher::kVibrant, CLauncher::kColourRed));
-	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, CLauncher::kColourWhite));
+	CHECK(IsLight(launcher.GetLight(5, 3), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::kColourWhite));
 }
 
 void TestFillInPlaysUntilTheNextSwitchPoint() {
 	CLauncher launcher;
 	SetUpFillIns(launcher);
 	PlayThrough(launcher, 0.0, kBar);
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 	CHECK(!launcher.IsFillInPlaying());
 
 	Press(launcher);
 	launcher.Advance(Playing(kBar));
 	CHECK(launcher.IsFillInPlaying());
 	// It takes effect at once, not at the switch point.
-	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
 	// A track whose active clip has no fill-in, and a stopped track, go on as
 	// before.
-	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
-	CHECK(launcher.GetCVValue(2) == 0.0);
+	CHECK(launcher.GetCVValue(1, 0) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(2, 0) == 0.0);
 
 	PlayThrough(launcher, kBar + kBatch, kInterval);
 	CHECK(launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
 
 	launcher.Advance(Playing(kInterval - kBatch / 2));
 	CHECK(!launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
 void TestFillInGivesWayToWhatIsQueued() {
 	CLauncher launcher;
 	SetUpFillIns(launcher);
 	launcher.SetClipPresent(0, 2, true);
-	launcher.SetClipPattern(0, 2, 7);
+	launcher.SetClipPattern(0, 2, 0, 7);
 	PlayThrough(launcher, 0.0, kBar);
 
 	Press(launcher);
 	launcher.SetSelection(0, 2);
 	launcher.Advance(Playing(kBar));
 	// The queued clip waits for the switch point; the fill-in plays meanwhile.
-	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
 	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kQueued);
 
 	PlayThrough(launcher, kBar + kBatch, kInterval + kBatch);
 	CHECK(!launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0) == 8.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
 	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
 }
 
@@ -1147,7 +1224,7 @@ void TestNoFillInWithTheLengthImmediate() {
 	Press(launcher);
 	launcher.Advance(Playing(kBar));
 	CHECK(!launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 
 	// Changing to immediate ends a fill-in, as there is no switch point left to
 	// end at.
@@ -1166,7 +1243,7 @@ void TestFillInWaitsWhileTheTransportIsStopped() {
 	Press(launcher);
 	launcher.Advance(Stopped(kBar));
 	CHECK(launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0) == 6.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
 	for (int batch = 0; batch < 1000; ++batch) {
 		launcher.Advance(Stopped(kBar));
 	}
@@ -1180,19 +1257,19 @@ void TestChangesToTheFillInTakeEffectAtOnce() {
 	SetUpFillIns(launcher);
 	Press(launcher);
 	launcher.Advance(Playing(kBar));
-	launcher.SetFillInPattern(0, 1, 1);
+	launcher.SetFillInPattern(0, 1, 0, 1);
 	launcher.Advance(Playing(kBar + kBatch));
-	CHECK(launcher.GetCVValue(0) == 2.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
 
 	// Track 1 gets a fill-in while one is playing, and plays it straight away.
 	launcher.SetFillInPresent(1, 1, true);
-	launcher.SetFillInPattern(1, 1, 4);
+	launcher.SetFillInPattern(1, 1, 0, 4);
 	launcher.Advance(Playing(kBar + 2 * kBatch));
-	CHECK(launcher.GetCVValue(1) == 5.0 / 8);
+	CHECK(launcher.GetCVValue(1, 0) == 5.0 / 8);
 
 	launcher.SetFillInPresent(0, 1, false);
 	launcher.Advance(Playing(kBar + 3 * kBatch));
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
 void TestEmptyLaunchButtonHasNoFillInToPlay() {
@@ -1205,7 +1282,7 @@ void TestEmptyLaunchButtonHasNoFillInToPlay() {
 	Press(launcher);
 	launcher.Advance(Playing(kBar));
 	CHECK(launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
 void TestFillInLights() {
@@ -1284,28 +1361,27 @@ void TestFillInEditingShowsColoursAndPatterns() {
 	CLauncher launcher;
 	launcher.SetClipPresent(3, 6, true);
 	launcher.SetClipColour(3, 6, 2);
-	launcher.SetClipPattern(3, 6, 4);
+	launcher.SetClipPattern(3, 6, 0, 4);
+	launcher.SetClipUnipolar(3, 6, 1, 6);
 	launcher.SetFillInPresent(3, 6, true);
 	launcher.SetFillInColour(3, 6, 9);
-	launcher.SetFillInPattern(3, 6, 2);
+	launcher.SetFillInPattern(3, 6, 0, 2);
+	launcher.SetFillInUnipolar(3, 6, 1, 1);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
 
 	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourGreen));
 	for (int column = 0; column < 7; ++column) {
-		CHECK(IsLight(launcher.GetLight(column, 2), CLauncher::kDim, column));
+		CHECK(IsLight(launcher.GetLight(column, 1), CLauncher::kDim, column));
 		const int colour = 7 + column;
-		CHECK(IsLight(launcher.GetLight(column, 3), colour == 9 ? CLauncher::kVibrant : CLauncher::kDim, colour));
+		CHECK(IsLight(launcher.GetLight(column, 2), colour == 9 ? CLauncher::kVibrant : CLauncher::kDim, colour));
 	}
-	// The patterns are red.
+	// The fill-in's settings, not the clip's.
 	for (int column = 0; column < 8; ++column) {
-		CHECK(IsLight(launcher.GetLight(column, 5), column == 2 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourRed));
+		CHECK(IsLight(launcher.GetLight(column, 3), column == 2 ? CLauncher::kVibrant : CLauncher::kDim, CLauncher::kColourOrange));
 	}
-	const int unlitRows[] = { 4, 6, 7, 8 };
-	for (int row : unlitRows) {
-		for (int column = 0; column < 8; ++column) {
-			CHECK(IsUnlit(launcher.GetLight(column, row)));
-		}
-	}
+	CHECK(IsLight(launcher.GetLight(0, 4), CLauncher::kDim, CLauncher::kColourCyan));
+	CHECK(IsLight(launcher.GetLight(1, 4), CLauncher::kVibrant, CLauncher::kColourCyan));
+	CHECK(IsUnlit(launcher.GetLight(2, 4)));
 }
 
 void TestIntervalMeterRunsInFillInEditing() {
@@ -1320,11 +1396,11 @@ void TestIntervalMeterRunsInFillInEditing() {
 // clip but is stopped; track 4 has no clips. The song plays up to bar 2.
 void SetUpMutesAndSolos(CLauncher& iLauncher) {
 	iLauncher.SetClipPresent(0, 1, true);
-	iLauncher.SetClipPattern(0, 1, 2);
+	iLauncher.SetClipPattern(0, 1, 0, 2);
 	iLauncher.SetClipPresent(1, 1, true);
-	iLauncher.SetClipPattern(1, 1, 0);
+	iLauncher.SetClipPattern(1, 1, 0, 0);
 	iLauncher.SetClipPresent(2, 1, true);
-	iLauncher.SetClipPattern(2, 1, 4);
+	iLauncher.SetClipPattern(2, 1, 0, 4);
 	iLauncher.SetClipPresent(3, 1, true);
 	for (int track = 0; track < 3; ++track) {
 		iLauncher.SetSelection(track, 1);
@@ -1382,8 +1458,8 @@ void TestMuteSilencesATrackAtOnceUntilTheNextSwitchPoint() {
 	PressMute(launcher, 0);
 	launcher.Advance(Playing(kBar));
 	CHECK(launcher.IsMuted(0));
-	CHECK(launcher.GetCVValue(0) == 0.0);
-	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(1, 0) == 1.0 / 8);
 	// The launch buttons go on as before.
 	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
@@ -1392,7 +1468,7 @@ void TestMuteSilencesATrackAtOnceUntilTheNextSwitchPoint() {
 	CHECK(launcher.IsMuted(0));
 	launcher.Advance(Playing(kInterval - kBatch / 2));
 	CHECK(!launcher.IsMuted(0));
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
 void TestSecondPressUnmutes() {
@@ -1403,7 +1479,7 @@ void TestSecondPressUnmutes() {
 	PressMute(launcher, 0);
 	launcher.Advance(Playing(kBar + kBatch));
 	CHECK(!launcher.IsMuted(0));
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
 void TestSeveralTracksCanBeMuted() {
@@ -1412,9 +1488,9 @@ void TestSeveralTracksCanBeMuted() {
 	PressMute(launcher, 0);
 	PressMute(launcher, 2);
 	launcher.Advance(Playing(kBar));
-	CHECK(launcher.GetCVValue(0) == 0.0);
-	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
-	CHECK(launcher.GetCVValue(2) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(1, 0) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(2, 0) == 0.0);
 }
 
 void TestHoldingAMuteButtonTogglesOnlyOnce() {
@@ -1454,7 +1530,7 @@ void TestMuteLastsWithTheLengthImmediate() {
 	launcher.SetSelection(0, 1);
 	launcher.Advance(Playing(3 * kInterval + kBatch));
 	CHECK(launcher.IsMuted(0));
-	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 }
 
 void TestMuteWaitsWhileTheTransportIsStopped() {
@@ -1505,13 +1581,13 @@ void TestMuteAndSoloNeedClips() {
 	launcher.Advance(Playing(kBar));
 	CHECK(!launcher.IsMuted(4));
 	CHECK(!launcher.IsSoloed(4));
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 
 	// A stopped track that holds a clip can be soloed, and silences the others.
 	PressSolo(launcher, 3);
 	launcher.Advance(Playing(kBar + kBatch));
 	CHECK(launcher.IsSoloed(3));
-	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 
 	// A track that loses its last clip is neither muted nor soloed any more.
 	PressMute(launcher, 3);
@@ -1521,7 +1597,7 @@ void TestMuteAndSoloNeedClips() {
 	launcher.Advance(Playing(kBar + 3 * kBatch));
 	CHECK(!launcher.IsMuted(3));
 	CHECK(!launcher.IsSoloed(3));
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
 void TestSoloSilencesTheOtherTracksUntilTheNextSwitchPoint() {
@@ -1530,22 +1606,22 @@ void TestSoloSilencesTheOtherTracksUntilTheNextSwitchPoint() {
 	PressSolo(launcher, 1);
 	launcher.Advance(Playing(kBar));
 	CHECK(launcher.IsSoloed(1));
-	CHECK(launcher.GetCVValue(0) == 0.0);
-	CHECK(launcher.GetCVValue(1) == 1.0 / 8);
-	CHECK(launcher.GetCVValue(2) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(1, 0) == 1.0 / 8);
+	CHECK(launcher.GetCVValue(2, 0) == 0.0);
 	CHECK(launcher.IsSilenced(0));
 	CHECK(!launcher.IsSilenced(1));
 
 	// Several tracks can be soloed.
 	PressSolo(launcher, 2);
 	launcher.Advance(Playing(kBar + kBatch));
-	CHECK(launcher.GetCVValue(0) == 0.0);
-	CHECK(launcher.GetCVValue(2) == 5.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(2, 0) == 5.0 / 8);
 
 	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + kBatch);
 	CHECK(!launcher.IsSoloed(1));
 	CHECK(!launcher.IsSoloed(2));
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
 void TestSoloAndMuteCombine() {
@@ -1559,28 +1635,28 @@ void TestSoloAndMuteCombine() {
 	PressSolo(launcher, 0);
 	launcher.Advance(Playing(kBar + kBatch));
 	CHECK(launcher.IsMuted(0));
-	CHECK(launcher.GetCVValue(0) == 3.0 / 8);
-	CHECK(launcher.GetCVValue(2) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(2, 0) == 0.0);
 
 	// Switching the solo off leaves every track as it was: tracks 0 and 1
 	// muted, track 2 playing.
 	PressSolo(launcher, 0);
 	launcher.Advance(Playing(kBar + 2 * kBatch));
-	CHECK(launcher.GetCVValue(0) == 0.0);
-	CHECK(launcher.GetCVValue(1) == 0.0);
-	CHECK(launcher.GetCVValue(2) == 5.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(1, 0) == 0.0);
+	CHECK(launcher.GetCVValue(2, 0) == 5.0 / 8);
 }
 
 void TestMutedTrackPlaysNoFillIn() {
 	CLauncher launcher;
 	SetUpMutesAndSolos(launcher);
 	launcher.SetFillInPresent(0, 1, true);
-	launcher.SetFillInPattern(0, 1, 5);
+	launcher.SetFillInPattern(0, 1, 0, 5);
 	PressMute(launcher, 0);
 	launcher.SetFillInPressed(true);
 	launcher.Advance(Playing(kBar));
 	CHECK(launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0) == 0.0);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 }
 
 void TestFunctionLights() {
@@ -1621,6 +1697,413 @@ void TestFunctionLights() {
 	CHECK(IsLight(launcher.GetFunctionLight(1), CLauncher::kDim, CLauncher::kColourYellow));
 }
 
+// Tests of the CV outputs in unipolar and bipolar mode, and their
+// transitions. Output B, the second, is in unipolar mode on a new device.
+
+bool Near(double iActual, double iExpected) {
+	return std::fabs(iActual - iExpected) < 1e-9;
+}
+
+const int kOutputB = 1;
+
+// Track 1 plays the clip in row 1 at unipolar value iFrom, with transition
+// iTransition on output B; the clips in rows 2 and 3 have the values 6 and 0.
+void SetUpTransition(CLauncher& iLauncher, int iFrom, int iTransition) {
+	FillGrid(iLauncher);
+	iLauncher.SetClipUnipolar(0, 1, kOutputB, iFrom);
+	iLauncher.SetClipTransition(0, 1, kOutputB, iTransition);
+	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6);
+	OpenWith(iLauncher, 0, 1);
+}
+
+void TestCVModesOfANewDevice() {
+	CLauncher launcher;
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		CHECK(launcher.GetCVMode(track, 0) == CLauncher::kCVModePattern);
+		for (int output = 1; output < CLauncher::kOutputCount; ++output) {
+			CHECK(launcher.GetCVMode(track, output) == CLauncher::kCVModeUnipolar);
+			CHECK(launcher.GetCVValue(track, output) == 0.0);
+		}
+	}
+}
+
+void TestUnipolarAndBipolarSteps() {
+	CHECK(CLauncher::UnipolarCV(0) == 0.0);
+	CHECK(Near(CLauncher::UnipolarCV(1), 1.0 / 6));
+	CHECK(CLauncher::UnipolarCV(6) == 1.0);
+	CHECK(CLauncher::BipolarCV(0) == -1.0);
+	CHECK(CLauncher::BipolarCV(3) == 0.0);
+	CHECK(Near(CLauncher::BipolarCV(4), 1.0 / 3));
+	CHECK(CLauncher::BipolarCV(6) == 1.0);
+}
+
+void TestOutputsEmitTheValueOfTheirCVMode() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.SetClipPattern(0, 1, kOutputB, 4);
+	launcher.SetClipUnipolar(0, 1, kOutputB, 3);
+	launcher.SetClipBipolar(0, 1, kOutputB, 1);
+	OpenWith(launcher, 0, 1);
+	launcher.Advance(Stopped());
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	// Switching the CV mode takes effect at once, and loses nothing.
+	launcher.SetCVMode(0, kOutputB, CLauncher::kCVModeBipolar);
+	launcher.Advance(Stopped());
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), -2.0 / 3));
+	launcher.SetCVMode(0, kOutputB, CLauncher::kCVModePattern);
+	launcher.Advance(Stopped());
+	CHECK(launcher.GetCVValue(0, kOutputB) == 5.0 / 8);
+	launcher.SetCVMode(0, kOutputB, CLauncher::kCVModeUnipolar);
+	launcher.Advance(Stopped());
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestEditingAValueTakesEffectAtOnce() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 2, CLauncher::kTransitionOff);
+	launcher.Advance(Playing(kBar));
+	launcher.SetClipUnipolar(0, 1, kOutputB, 5);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 5.0 / 6));
+}
+
+void TestStoppedTrackHoldsItsValue() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 4, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, CLauncher::kSelectionStop);
+	// A queued stop never moves.
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 4.0 / 6));
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
+	// Output A, in pattern mode, emits 0; output B goes on with its value.
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 4.0 / 6));
+}
+
+void TestMuteAndSoloLeaveUnipolarAndBipolarOutputsAlone() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 4, CLauncher::kTransitionOff);
+	launcher.SetCVMode(0, 2, CLauncher::kCVModeBipolar);
+	launcher.SetMutePressed(0, true);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsMuted(0));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 4.0 / 6));
+	CHECK(launcher.GetCVValue(0, 2) == 0.0);
+	launcher.SetClipBipolar(0, 1, 2, 6);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.GetCVValue(0, 2) == 1.0);
+}
+
+void TestWithoutTransitionTheValueJumpsAtTheSwitchPoint() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionOff);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestTransitionAMovesInAStraightLine() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	// From the moment of queueing to the switch point, three bars later.
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	launcher.Advance(Playing(kBar * 3.25));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.75));
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestTheIncomingClipsTransitionDoesNotCount() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionOff);
+	launcher.SetClipTransition(0, 2, kOutputB, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+}
+
+void TestTransitionBFollowsAnExponentialCurve() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionB);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), (std::exp(2.0) - 1.0) / (std::exp(4.0) - 1.0)));
+	CHECK(Near(CLauncher::TransitionCurve(CLauncher::kTransitionD, 1.0), 1.0));
+	CHECK(CLauncher::TransitionCurve(CLauncher::kTransitionB, 0.5) < 0.5);
+}
+
+void TestTransitionCMovesOnlyInTheLastBar() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionC);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	launcher.Advance(Playing(kBar * 3.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	// Queued within the last bar, it moves from then on.
+	CLauncher late;
+	SetUpTransition(late, 0, CLauncher::kTransitionC);
+	late.Advance(Playing(kBar * 3.5));
+	late.SetSelection(0, 2);
+	late.Advance(Playing(kBar * 3.5));
+	late.Advance(Playing(kBar * 3.75));
+	CHECK(Near(late.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestTransitionCWithOneBarIsLikeA() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionC);
+	launcher.SetLength(CLauncher::kLengthFirstBars);
+	launcher.Advance(Playing(kBar + kBar / 4));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar + kBar / 4));
+	launcher.Advance(Playing(kBar + kBar * 5 / 8));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestNoTransitionWithTheLengthImmediate() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionA);
+	launcher.SetLength(CLauncher::kLengthImmediate);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestQueueingAnotherClipStartsOverFromWhereItIs() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	// Row 3 is at 0: from 0.5 down to 0 over the remaining bar and a half.
+	launcher.SetSelection(0, 3);
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	launcher.Advance(Playing(kBar * 3.25));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+}
+
+void TestEditingTheQueuedValueStartsOver() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	launcher.Advance(Playing(kBar * 2.5));
+	launcher.SetClipUnipolar(0, 2, kOutputB, 0);
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	launcher.Advance(Playing(kBar * 3.25));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+}
+
+void TestCancellingJumpsBack() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	launcher.Advance(Playing(kBar * 2.5));
+	// Choosing the active clip again.
+	launcher.SetSelection(0, 1);
+	launcher.Advance(Playing(kBar * 2.5 + kBatch));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	// Queueing stop.
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar * 3));
+	launcher.Advance(Playing(kBar * 3.5));
+	CHECK(launcher.GetCVValue(0, kOutputB) > 0.0);
+	launcher.SetSelection(0, CLauncher::kSelectionStop);
+	launcher.Advance(Playing(kBar * 3.5 + kBatch));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	// Switching the transition off.
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar * 3.5 + kBatch * 2));
+	launcher.Advance(Playing(kBar * 3.75));
+	CHECK(launcher.GetCVValue(0, kOutputB) > 0.0);
+	launcher.SetClipTransition(0, 1, kOutputB, CLauncher::kTransitionOff);
+	launcher.Advance(Playing(kBar * 3.75 + kBatch));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+}
+
+void TestChangingTheCVModeDropsTheTransition() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	launcher.Advance(Playing(kBar * 2.5));
+	// In bipolar mode both clips start at 0; the movement starts again from
+	// the active clip's value.
+	launcher.SetClipBipolar(0, 2, kOutputB, 6);
+	launcher.SetCVMode(0, kOutputB, CLauncher::kCVModeBipolar);
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	launcher.Advance(Playing(kBar * 3.25));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+// The clip in row 1 of track 1 is at unipolar 0 on output B, its fill-in at
+// 6 with transition iTransition.
+void SetUpRiser(CLauncher& iLauncher, int iTransition) {
+	SetUpTransition(iLauncher, 0, CLauncher::kTransitionOff);
+	iLauncher.SetFillInPresent(0, 1, true);
+	iLauncher.SetFillInUnipolar(0, 1, kOutputB, 6);
+	iLauncher.SetFillInTransition(0, 1, kOutputB, iTransition);
+}
+
+void TestFillInWithoutTransitionJumpsAtThePress() {
+	CLauncher launcher;
+	SetUpRiser(launcher, CLauncher::kTransitionOff);
+	launcher.Advance(Playing(kBar));
+	Press(launcher);
+	launcher.Advance(Playing(kBar * 2));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+	// At the switch point it jumps back to the clip.
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+}
+
+void TestFillInTransitionRisesToTheSwitchPoint() {
+	CLauncher launcher;
+	SetUpRiser(launcher, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	Press(launcher);
+	launcher.Advance(Playing(kBar * 2));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	// It jumps to whatever was queued meanwhile, without a transition.
+	launcher.SetSelection(0, 3);
+	launcher.SetClipUnipolar(0, 3, kOutputB, 3);
+	launcher.Advance(Playing(kBar * 3.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.75));
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestFillInTransitionDWaitsForTheLastBar() {
+	CLauncher launcher;
+	SetUpRiser(launcher, CLauncher::kTransitionD);
+	launcher.Advance(Playing(kBar));
+	Press(launcher);
+	launcher.Advance(Playing(kBar * 2));
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	launcher.Advance(Playing(kBar * 3.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), CLauncher::TransitionCurve(CLauncher::kTransitionD, 0.5)));
+}
+
+void TestFillInHidesTheClipsTransition() {
+	CLauncher launcher;
+	SetUpRiser(launcher, CLauncher::kTransitionA);
+	launcher.SetClipTransition(0, 1, kOutputB, CLauncher::kTransitionA);
+	launcher.SetFillInUnipolar(0, 1, kOutputB, 0);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	Press(launcher);
+	launcher.Advance(Playing(kBar * 2));
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	// Cleared, the fill-in shows the clip's transition underneath, half way
+	// from the second bar, when the queue was seen, to the switch point.
+	launcher.SetFillInPresent(0, 1, false);
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestFillInStartsFromWhatIsEmitted() {
+	CLauncher launcher;
+	SetUpRiser(launcher, CLauncher::kTransitionA);
+	launcher.SetClipTransition(0, 1, kOutputB, CLauncher::kTransitionA);
+	launcher.SetFillInUnipolar(0, 1, kOutputB, 0);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	Press(launcher);
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	launcher.Advance(Playing(kBar * 3.25));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+}
+
+void TestChangedPatternOnAnyOutputFlashes() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.SetCVMode(0, kOutputB, CLauncher::kCVModePattern);
+	OpenWith(launcher, 0, 1);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kVibrant);
+	launcher.SetClipPattern(0, 1, kOutputB, 5);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kFlashing);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0 / 8);
+	// A pattern on an output in another CV mode makes no difference.
+	launcher.SetClipPattern(0, 1, kOutputB, 0);
+	launcher.SetClipPattern(0, 1, 2, 5);
+	launcher.Advance(Playing(kBar + kBatch * 2));
+	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kVibrant);
+}
+
+void TestOutputLabelsFollowTheCVModeAndTransition() {
+	CLauncher launcher;
+	launcher.SetClipPresent(0, 1, true);
+	launcher.SetCVMode(0, 2, CLauncher::kCVModeBipolar);
+	launcher.SetClipTransition(0, 1, kOutputB, CLauncher::kTransitionC);
+	launcher.SetClipTransition(0, 1, 2, CLauncher::kTransitionA);
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		CHECK(launcher.GetOutputLabelsFrame(output) == 0);
+	}
+	CHECK(launcher.GetTransitionLabelsFrame() == 0);
+	CHECK(launcher.GetTransitionDiagramFrame() == 1);
+
+	// Patterns, then unipolar values with each transition, then bipolar ones.
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
+	CHECK(launcher.GetOutputLabelsFrame(0) == 1);
+	CHECK(launcher.GetOutputLabelsFrame(kOutputB) == 2 + CLauncher::kTransitionC);
+	CHECK(launcher.GetOutputLabelsFrame(2) == 7 + CLauncher::kTransitionA);
+	CHECK(launcher.GetOutputLabelsFrame(3) == 2);
+	CHECK(launcher.GetTransitionLabelsFrame() == 1);
+	CHECK(launcher.GetTransitionDiagramFrame() == 0);
+
+	// In fill-in editing in red, and only while there is a fill-in.
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(0, 1));
+	CHECK(launcher.GetOutputLabelsFrame(0) == 0);
+	CHECK(launcher.GetTransitionDiagramFrame() == 1);
+	launcher.SetFillInPresent(0, 1, true);
+	CHECK(launcher.GetOutputLabelsFrame(0) == 12);
+	CHECK(launcher.GetOutputLabelsFrame(2) == 18);
+	CHECK(launcher.GetOutputLabelsFrame(5) == 13);
+	CHECK(launcher.GetTransitionLabelsFrame() == 2);
+
+	// Without a clip they are unlit.
+	launcher.SetSetup(CLauncher::SetupForClipEditing(1, 1));
+	CHECK(launcher.GetOutputLabelsFrame(0) == 0);
+	CHECK(launcher.GetTransitionLabelsFrame() == 0);
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -1648,6 +2131,11 @@ int main() {
 	TestFlashingGoesOnWhileStopped();
 	TestClipEditingOfEmptyLaunchButtonShowsOnlyToggle();
 	TestClipEditingShowsColoursAndPatterns();
+	TestPatternsAreOrangeInEveryStep();
+	TestUnipolarValueLightsTheValuesBelowIt();
+	TestBipolarValueLightsTheValuesBackToZero();
+	TestTransitionButtonShowsTheColourOfItsTransition();
+	TestEditingFollowsTheCVModesOfThePickedTrack();
 	TestLeavingSetupModeShowsTheEditedClip();
 	TestButtonIndexAndSetupNumbering();
 	TestOutOfRangeClipSettingsAreIgnored();
@@ -1707,6 +2195,31 @@ int main() {
 	TestSoloAndMuteCombine();
 	TestMutedTrackPlaysNoFillIn();
 	TestFunctionLights();
+
+	TestCVModesOfANewDevice();
+	TestUnipolarAndBipolarSteps();
+	TestOutputsEmitTheValueOfTheirCVMode();
+	TestEditingAValueTakesEffectAtOnce();
+	TestStoppedTrackHoldsItsValue();
+	TestMuteAndSoloLeaveUnipolarAndBipolarOutputsAlone();
+	TestWithoutTransitionTheValueJumpsAtTheSwitchPoint();
+	TestTransitionAMovesInAStraightLine();
+	TestTheIncomingClipsTransitionDoesNotCount();
+	TestTransitionBFollowsAnExponentialCurve();
+	TestTransitionCMovesOnlyInTheLastBar();
+	TestTransitionCWithOneBarIsLikeA();
+	TestNoTransitionWithTheLengthImmediate();
+	TestQueueingAnotherClipStartsOverFromWhereItIs();
+	TestEditingTheQueuedValueStartsOver();
+	TestCancellingJumpsBack();
+	TestChangingTheCVModeDropsTheTransition();
+	TestFillInWithoutTransitionJumpsAtThePress();
+	TestFillInTransitionRisesToTheSwitchPoint();
+	TestFillInTransitionDWaitsForTheLastBar();
+	TestFillInHidesTheClipsTransition();
+	TestFillInStartsFromWhatIsEmitted();
+	TestChangedPatternOnAnyOutputFlashes();
+	TestOutputLabelsFollowTheCVModeAndTransition();
 
 	return ReportChecks("Launcher");
 }

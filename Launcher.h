@@ -9,7 +9,8 @@
 // active, light, label, mode colour, switch interval, switch point, length,
 // immediate, clip picking, clip editing, fill-in, fill-in editing, scene,
 // segment, interval meter, function, function button, function select button,
-// stop, muted, soloed, solo-muted.
+// stop, muted, soloed, solo-muted, CV output, CV mode, pattern, unipolar value,
+// bipolar value, transition.
 //
 // Tracks are numbered from 0 here. Rows are numbered from 1, so that a row is
 // also the selection that chooses its launch button, and the number of its
@@ -27,12 +28,46 @@ class CLauncher {
 
 	public: static const int kPatternCount = 8;
 
+	// Each track has six CV outputs, A to F, numbered from 0 here.
+	public: static const int kOutputCount = 6;
+
+	// What a CV output emits, in the order of the frames of its switch on the
+	// back panel, from the bottom up. A new device has output A in pattern
+	// mode and the others in unipolar mode.
+	public: enum ECVMode {
+		kCVModeBipolar = 0,
+		kCVModeUnipolar = 1,
+		kCVModePattern = 2
+	};
+	public: static const int kCVModeCount = 3;
+
+	// Unipolar and bipolar values are one of seven steps, the columns of the
+	// first seven tracks in clip editing: 0..1 and -1..+1, with bipolar 0 in
+	// the middle.
+	public: static const int kValueCount = 7;
+	public: static const int kBipolarZero = 3;
+
+	// Off, then A, B, C and D. A and C move in a straight line, B and D along
+	// an exponential curve; C and D only within the last bar.
+	public: static const int kTransitionOff = 0;
+	public: static const int kTransitionA = 1;
+	public: static const int kTransitionB = 2;
+	public: static const int kTransitionC = 3;
+	public: static const int kTransitionD = 4;
+	public: static const int kTransitionCount = 5;
+
 	public: static const int kColourCount = 14;
 	public: static const int kColourWhite = 0;
 	public: static const int kColourRed = 1;
+	public: static const int kColourOrange = 2;
 	public: static const int kColourYellow = 3;
+	public: static const int kColourLime = 4;
 	public: static const int kColourGreen = 5;
+	public: static const int kColourCyan = 7;
+	public: static const int kColourLightBlue = 8;
 	public: static const int kColourBlue = 9;
+	public: static const int kColourPurple = 11;
+	public: static const int kColourFuchsia = 12;
 	public: static const int kColourPink = 13;
 
 	// The setup state is one number: launch mode, clip picking, or clip editing
@@ -44,12 +79,16 @@ class CLauncher {
 	public: static const int kSetupCount = kSetupFirstFillInEditing + kButtonCount;
 
 	// Where the controls of clip editing sit on the grid; fill-in editing has
-	// them in the same places.
+	// them in the same places. The colours fill the first seven tracks of rows
+	// 1 and 2, and each of rows 3 to 8 stands for one CV output, A to F: eight
+	// patterns in pattern mode, otherwise seven values and, in the last track,
+	// the transition.
 	public: static const int kEditingToggleTrack = 7;
 	public: static const int kEditingToggleRow = 1;
-	public: static const int kEditingFirstColourRow = 2;
+	public: static const int kEditingFirstColourRow = 1;
 	public: static const int kEditingColoursPerRow = 7;
-	public: static const int kEditingPatternRow = 5;
+	public: static const int kEditingFirstOutputRow = 3;
+	public: static const int kEditingTransitionTrack = 7;
 
 	// The length of the switch interval is one of eight settings: immediate,
 	// one beat, half a bar, then 1, 2, 4, 8 and 16 bars. In clip picking the
@@ -150,17 +189,31 @@ class CLauncher {
 	// editing, or -1 in launch mode and clip picking.
 	public: static int PickedButton(int iSetup);
 
-	// Record what a launch button holds. A launch button keeps its pattern and
-	// colour while it is empty, so that a clip comes back as it was.
+	// Record what a launch button holds. A launch button keeps its settings
+	// while it is empty, so that a clip comes back as it was. A new clip has,
+	// on every CV output, the pattern of its row, unipolar value 0, bipolar
+	// value 0 and transition off.
 	public: void SetClipPresent(int iTrack, int iRow, bool iPresent);
-	public: void SetClipPattern(int iTrack, int iRow, int iPattern);
 	public: void SetClipColour(int iTrack, int iRow, int iColour);
+	public: void SetClipPattern(int iTrack, int iRow, int iOutput, int iPattern);
+	public: void SetClipUnipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetClipBipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetClipTransition(int iTrack, int iRow, int iOutput, int iTransition);
 
 	// Record the fill-in a launch button holds, which it keeps while it is
-	// empty, like its clip's pattern and colour.
+	// empty, like its clip's settings.
 	public: void SetFillInPresent(int iTrack, int iRow, bool iPresent);
-	public: void SetFillInPattern(int iTrack, int iRow, int iPattern);
 	public: void SetFillInColour(int iTrack, int iRow, int iColour);
+	public: void SetFillInPattern(int iTrack, int iRow, int iOutput, int iPattern);
+	public: void SetFillInUnipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetFillInBipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetFillInTransition(int iTrack, int iRow, int iOutput, int iTransition);
+
+	// The CV mode of a track's CV output. A change takes effect at once and
+	// drops any transition under way.
+	public: void SetCVMode(int iTrack, int iOutput, int iCVMode);
+	public: int GetCVMode(int iTrack, int iOutput) const;
+	public: static int DefaultCVMode(int iOutput);
 
 	public: void SetSetup(int iSetup);
 
@@ -279,13 +332,28 @@ class CLauncher {
 	// button: 0 unlit, 1 white, 2 green, 3 yellow.
 	public: int GetBackLabelFrame() const;
 
-	// The frame of the launch labels' film strip to show: 0 unlit, 1 SET/CLEAR
-	// lit in yellow, 2 all lit in yellow, 3 SET/CLEAR lit in red, 4 all lit in
-	// red. They are lit only in clip editing, in yellow, and in fill-in
-	// editing, in red; the labels of colours and patterns only while the
+	// The frame of the launch labels' film strip to show, for rows 1 and 2: 0
+	// unlit, 1 SET/CLEAR lit in yellow, 2 all lit in yellow, 3 SET/CLEAR lit
+	// in red, 4 all lit in red. They are lit only in clip editing, in yellow,
+	// and in fill-in editing, in red; the labels of colours only while the
 	// picked launch button holds a clip, or in fill-in editing a fill-in.
 	public: static const int kLaunchLabelsFrameCount = 5;
 	public: int GetLaunchLabelsFrame() const;
+
+	// The frame of the film strip of the labels of a CV output's row, lit like
+	// the colours': 0 unlit, then for yellow and for red in turn the patterns,
+	// the unipolar values with each of the five transitions, and the bipolar
+	// values with each of the five transitions. Only the labels that go with
+	// the output's CV mode are lit, and of the transitions only the one chosen.
+	public: static const int kOutputLabelsFramesPerColour = 1 + 2 * kTransitionCount;
+	public: static const int kOutputLabelsFrameCount = 1 + 2 * kOutputLabelsFramesPerColour;
+	public: int GetOutputLabelsFrame(int iOutput) const;
+
+	// The diagram of the transitions to the right of the scene buttons, and
+	// its labels, lit like the colours': the diagram's frame is 0 in colour
+	// and 1 grey, its labels' 0 unlit, 1 yellow, 2 red.
+	public: int GetTransitionDiagramFrame() const;
+	public: int GetTransitionLabelsFrame() const;
 
 	// What the fill-in button shows: dim white, or vibrant red while a fill-in
 	// is playing. The value is encoded like the light of a launch button, the
@@ -312,20 +380,53 @@ class CLauncher {
 	public: static const int kSceneLabelFrameCount = 3;
 	public: int GetSceneLabelFrame(int iScene) const;
 
-	// The CV value a track emits, in the range 0..1.
-	public: double GetCVValue(int iTrack) const;
+	// The CV value a track's CV output emits: in pattern mode 0..1 in the
+	// steps a Combinator reads as pattern selection, in unipolar mode 0..1, in
+	// bipolar mode -1..+1.
+	public: double GetCVValue(int iTrack, int iOutput) const;
+
+	// The CV a unipolar or bipolar value stands for.
+	public: static double UnipolarCV(int iValue);
+	public: static double BipolarCV(int iValue);
+	// How far a transition has come, 0..1, after the share iTime of its time.
+	public: static double TransitionCurve(int iTransition, double iTime);
 
 	// A length in PPQ; 0 for immediate, which has no switch intervals.
 	public: static long long ComputeSwitchIntervalLength(int iLength, int iNumerator, int iDenominator);
 
-	private: struct TClip {
+	// What a clip holds, and also what its fill-in holds.
+	private: struct TSettings {
 		bool fPresent;
-		int fPattern;
 		int fColour;
-		bool fFillInPresent;
-		int fFillInPattern;
-		int fFillInColour;
+		int fPatterns[kOutputCount];
+		int fUnipolar[kOutputCount];
+		int fBipolar[kOutputCount];
+		int fTransitions[kOutputCount];
 	};
+
+	private: struct TClip : TSettings {
+		TSettings fFillIn;
+	};
+
+	// A transition of a CV output in unipolar or bipolar mode, under way or
+	// waiting for its last bar. It starts over whenever what it was set up for
+	// changes.
+	private: struct TMovement {
+		bool fOn;
+		// The song position at which it begins to move.
+		double fStart;
+		// Where it moves from: the value it started over from, if it was moving
+		// then, or otherwise the active clip's value, whatever that is by now.
+		bool fFromFrozen;
+		double fFrom;
+		// What it was set up for: the row it moves towards, the transition, the
+		// value it moves to and the CV mode.
+		int fRow;
+		int fTransition;
+		int fValue;
+		int fCVMode;
+	};
+	private: static const TMovement kNoMovement;
 
 	private: bool ContainsSwitchPoint(const TTransport& iTransport) const;
 	// How many segments of its switch interval a song position has reached,
@@ -334,22 +435,44 @@ class CLauncher {
 	private: static bool IsValidButton(int iTrack, int iRow);
 
 	private: const TClip& Clip(int iTrack, int iRow) const;
+	private: TSettings* EditableSettings(int iTrack, int iRow, int iOutput, bool iFillIn);
+	// The value that settings hold for a CV output in a CV mode other than
+	// pattern: an index of the seven steps, and its CV.
+	private: static int ValueIndex(const TSettings& iSettings, int iOutput, int iCVMode);
+	private: static double ValueCV(const TSettings& iSettings, int iOutput, int iCVMode);
+	// Works out what the CV outputs in unipolar and bipolar mode emit, with
+	// their transitions, once a batch has switched.
+	private: void UpdateValues(const TTransport& iTransport);
+	private: double ComputeClipValue(int iTrack, int iOutput, const TTransport& iTransport);
+	private: double ComputeFillInValue(int iTrack, int iOutput, double iBelow, const TTransport& iTransport);
+	// Sets a movement up anew, from what is emitted now unless it had not
+	// begun to move.
+	private: void StartOver(TMovement& ioMovement, double iEmitted, int iRow, int iTransition, int iValue, int iCVMode, double iPosition, const TTransport& iTransport) const;
+	// Where a movement stands at a song position.
+	private: double MovementValue(const TMovement& iMovement, double iActiveValue, double iTo, double iPosition, const TTransport& iTransport) const;
+	// The next switch point after a song position, and the length of a bar.
+	private: double NextSwitchPoint(double iPosition, const TTransport& iTransport) const;
+	private: static double BarLength(const TTransport& iTransport);
 	// The selection a track is heading for: an empty launch button counts as
 	// the stop button.
 	private: int Target(int iTrack) const;
 	private: void Switch();
 	private: bool HasClips(int iTrack) const;
-	// Whether the active clip's pattern has been changed and the track has not
-	// switched to it yet.
+	// Whether a pattern of the active clip on a CV output in pattern mode has
+	// been changed and the track has not switched to it yet.
 	private: bool HasPendingPattern(int iTrack) const;
 	private: TLight GetLaunchModeLight(int iTrack, int iRow) const;
 	private: TLight GetClipPickingLight(int iTrack, int iRow) const;
 	private: TLight GetClipEditingLight(int iTrack, int iRow) const;
 	private: TLight GetFillInEditingLight(int iTrack, int iRow) const;
 	// The light of a launch button in clip editing or fill-in editing, given
-	// the settings being edited and the colour of the pattern row.
-	private: static TLight GetEditingLight(int iTrack, int iRow, bool iPresent, int iColour, int iPattern, int iPatternRowColour);
+	// the settings being edited and the CV modes of the picked track.
+	private: TLight GetEditingLight(int iTrack, int iRow, const TSettings& iSettings) const;
 	private: const TClip& PickedClip() const;
+	// The settings being edited: the picked clip's, or in fill-in editing its
+	// fill-in's.
+	private: const TSettings& EditedSettings() const;
+	private: int PickedTrack() const;
 	// Whether a track is playing the fill-in of its active clip.
 	private: bool PlaysFillIn(int iTrack) const;
 	// The frame of a film strip laid out like the scene buttons': unlit, then
@@ -371,9 +494,22 @@ class CLauncher {
 	private: int fLength;
 	private: int fSelections[kTrackCount];
 	private: int fActive[kTrackCount];
-	// 0 for nothing, 1..8 for the pattern each track is emitting. Changes only
-	// when the track switches, even if the active clip is edited meanwhile.
-	private: int fEmitted[kTrackCount];
+	// 0 for nothing, 1..8 for the pattern each CV output is emitting in
+	// pattern mode. Changes only when the track switches, even if the active
+	// clip is edited meanwhile.
+	private: int fEmitted[kTrackCount][kOutputCount];
+	private: int fCVModes[kTrackCount][kOutputCount];
+	// The row of the clip a track last played, whose values a stopped track
+	// goes on emitting in unipolar and bipolar mode; 0 before any.
+	private: int fLastActive[kTrackCount];
+	// What the CV outputs in unipolar and bipolar mode emit: underneath any
+	// fill-in, and altogether.
+	private: double fClipValues[kTrackCount][kOutputCount];
+	private: double fValues[kTrackCount][kOutputCount];
+	private: TMovement fMovements[kTrackCount][kOutputCount];
+	// The transitions of the fill-ins being played, which lie over those of
+	// the clips; fRow is the row of the clip that holds the fill-in.
+	private: TMovement fFillInMovements[kTrackCount][kOutputCount];
 	private: bool fFlashLit;
 	// Musical time that has passed while the transport was stopped, so that
 	// flashing goes on at the song's tempo.

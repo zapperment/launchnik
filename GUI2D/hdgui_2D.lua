@@ -2,6 +2,7 @@ format_version = "2.0"
 
 local TRACK_COUNT = 8
 local ROW_COUNT = 8
+local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
 
 -- The header is the same on the front and the folded front: the tape, the
 -- name of the patch, the buttons for browsing and saving patches, and the
@@ -97,6 +98,20 @@ table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "labels_launch" },
 	value = "/custom_properties/launch_labels_frame",
 })
+for _, letter in ipairs(OUTPUT_LETTERS) do
+	table.insert(front_widgets, jbox.sequence_meter{
+		graphics = { node = "labels_output_" .. letter },
+		value = "/custom_properties/output_" .. letter .. "_labels_frame",
+	})
+end
+table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "transition_diagram" },
+	value = "/custom_properties/transition_diagram_frame",
+})
+table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "label_transitions" },
+	value = "/custom_properties/transition_labels_frame",
+})
 for scene = 1, ROW_COUNT do
 	table.insert(front_widgets, jbox.sequence_meter{
 		graphics = { node = "label_scene" .. scene },
@@ -191,11 +206,20 @@ local back_widgets = {
 	},
 }
 
+-- Each CV output with the switch for its CV mode, a vertical fader with
+-- three positions that is dragged or clicked.
 for track = 1, TRACK_COUNT do
-	table.insert(back_widgets, jbox.cv_output_socket{
-		graphics = { node = "cv_out_track" .. track },
-		socket = "/cv_outputs/track" .. track,
-	})
+	for _, letter in ipairs(OUTPUT_LETTERS) do
+		table.insert(back_widgets, jbox.cv_output_socket{
+			graphics = { node = "cv_out_track" .. track .. "_" .. letter },
+			socket = "/cv_outputs/track" .. track .. "_" .. letter,
+		})
+		table.insert(back_widgets, jbox.sequence_fader{
+			graphics = { node = "cv_mode_track" .. track .. "_" .. letter },
+			handle_size = 0,
+			value = "/custom_properties/track" .. track .. "_cv_mode_" .. letter,
+		})
+	end
 end
 
 back = jbox.panel{
