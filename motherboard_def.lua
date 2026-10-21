@@ -22,6 +22,10 @@ format_version = "3.0"
 --   film strip frame of its caption:       80 + f
 --   film strip frame of the label of the scene button of row r: 60 + r
 --   selection of track t:            100 + t
+--   film strip frame of the labels of the row of CV output o: 140 + o
+--   film strip frames of the transition diagram and its labels: 150, 151
+--   CV mode of CV output o of track t:  200 + 10 * t + o
+--   the same, for control surfaces:     300 + 10 * t + o
 --   mute button of track t, held down or not: 110 + t
 --   solo button of track t, held down or not: 120 + t
 --   light of the function button:   1000 + 10 * t
@@ -31,16 +35,35 @@ format_version = "3.0"
 --   film strip frame of that light: 2000 + 10 * t
 --   film strip frame of a light:    2000 + 10 * t + r
 --   whether a launch button holds a clip: 3000 + 10 * t + r
---   pattern of its clip:            4000 + 10 * t + r
 --   colour of its clip:             5000 + 10 * t + r
 --   whether the clip holds a fill-in:  6000 + 10 * t + r
---   pattern of the fill-in:            7000 + 10 * t + r
 --   colour of the fill-in:             8000 + 10 * t + r
+--   and for CV output o, from 1 for A to 6 for F, of the clip and of the
+--   fill-in, each + 100 * t + 10 * r + o:
+--     pattern, unipolar value, bipolar value, transition of the clip:
+--                                      10000, 11000, 12000, 13000
+--     the same of the fill-in:         14000, 15000, 16000, 17000
 
 local TRACK_COUNT = 8
 local ROW_COUNT = 8
 local PATTERN_COUNT = 8
 local COLOUR_COUNT = 14
+
+-- Each track has six CV outputs, A to F. A CV output emits a pattern, a
+-- unipolar value or a bipolar value, chosen with a switch on the back panel;
+-- unipolar and bipolar values are one of seven steps, and each has a
+-- transition: off, A, B, C or D.
+local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
+local VALUE_COUNT = 7
+local TRANSITION_COUNT = 5
+-- Bipolar, unipolar, pattern: the switch's frames from the bottom up.
+local CV_MODE_COUNT = 3
+local CV_MODE_PATTERN = 2
+local CV_MODE_UNIPOLAR = 1
+-- A new clip's bipolar value is 0, in the middle.
+local BIPOLAR_ZERO = 3
+-- The settings of a CV output, in the order of their tag bases.
+local OUTPUT_SETTINGS = { "pattern", "unipolar", "bipolar", "transition" }
 
 -- Launch mode, clip picking, then clip editing and fill-in editing for each of
 -- the launch buttons
@@ -84,6 +107,32 @@ for colour = 1, COLOUR_COUNT do
 	table.insert(colour_texts, jbox.ui_text("text_colour" .. colour))
 end
 
+local unipolar_texts = {}
+local bipolar_texts = {}
+for value = 1, VALUE_COUNT do
+	table.insert(unipolar_texts, jbox.ui_text("text_unipolar" .. value))
+	table.insert(bipolar_texts, jbox.ui_text("text_bipolar" .. value))
+end
+
+local transition_texts = {}
+for transition = 1, TRANSITION_COUNT do
+	table.insert(transition_texts, jbox.ui_text("text_transition" .. transition))
+end
+
+local cv_mode_texts = {
+	jbox.ui_text("text_cv_mode_bipolar"),
+	jbox.ui_text("text_cv_mode_unipolar"),
+	jbox.ui_text("text_cv_mode_pattern"),
+}
+
+-- How each setting of a CV output is shown, and what a new clip has.
+local OUTPUT_SETTING_TYPES = {
+	pattern = { steps = PATTERN_COUNT, texts = pattern_texts },
+	unipolar = { steps = VALUE_COUNT, texts = unipolar_texts, default = 0 },
+	bipolar = { steps = VALUE_COUNT, texts = bipolar_texts, default = BIPOLAR_ZERO },
+	transition = { steps = TRANSITION_COUNT, texts = transition_texts, default = 0 },
+}
+
 local function plain_number(max)
 	return jbox.ui_linear({ min = 0, max = max, units = { { decimals = 0 } } })
 end
@@ -108,7 +157,7 @@ end
 -- CC chart. Numbers from 256 upwards enable automation without responding to
 -- any MIDI CC, so nothing a Launchpad sends can reach a selection by accident.
 -- Only the selections, the fill-in button and the mute and solo buttons are
--- automatable; clips, the setup state and the function are not.
+-- automatable; clips, CV modes, the setup state and the function are not.
 local FIRST_SELECTION_MIDI_CC = 256
 local FILL_IN_MIDI_CC = FIRST_SELECTION_MIDI_CC + TRACK_COUNT
 local FIRST_MUTE_MIDI_CC = FILL_IN_MIDI_CC + 1
@@ -300,6 +349,40 @@ rt_properties.back_label_frame = jbox.number{
 	ui_type = plain_number(3),
 }
 
+-- The labels of the rows of the CV outputs, lit only in clip editing and
+-- fill-in editing of a clip or fill-in: 0 = unlit, then in yellow and in red
+-- each 1 = the patterns, 2..6 = the unipolar values with transition off, A,
+-- B, C or D, 7..11 = the bipolar values with transition off, A, B, C or D.
+-- Computed by the realtime code from the CV mode of the picked track's output.
+local OUTPUT_LABELS_FRAME_COUNT = 1 + 2 * (1 + 2 * TRANSITION_COUNT)
+for output, letter in ipairs(OUTPUT_LETTERS) do
+	rt_properties["output_" .. letter .. "_labels_frame"] = jbox.number{
+		property_tag = 140 + output,
+		default = 0,
+		steps = OUTPUT_LABELS_FRAME_COUNT,
+		ui_name = jbox.ui_text("text_output_" .. letter .. "_labels"),
+		ui_type = plain_number(OUTPUT_LABELS_FRAME_COUNT - 1),
+	}
+end
+
+-- The diagram of the transitions, lit like the labels of the CV outputs: 0 =
+-- in colour, 1 = grey; its labels 0 = unlit, 1 = yellow, 2 = red.
+rt_properties.transition_diagram_frame = jbox.number{
+	property_tag = 150,
+	default = 1,
+	steps = 2,
+	ui_name = jbox.ui_text("text_transition_diagram"),
+	ui_type = plain_number(1),
+}
+
+rt_properties.transition_labels_frame = jbox.number{
+	property_tag = 151,
+	default = 0,
+	steps = 3,
+	ui_name = jbox.ui_text("text_transition_labels"),
+	ui_type = plain_number(2),
+}
+
 for scene = 1, ROW_COUNT do
 	rt_properties["scene" .. scene .. "_label_frame"] = jbox.number{
 		property_tag = 60 + scene,
@@ -324,6 +407,33 @@ for track = 1, TRACK_COUNT do
 	}
 	midi_cc_chart[FIRST_SELECTION_MIDI_CC + track - 1] = "/custom_properties/" .. selection
 	add_remote_item(selection, "Track " .. track .. " Selection")
+
+	-- The CV mode of each CV output, set with the switch beside it on the back
+	-- panel. Saved with the song and in patches, but not automatable, and not
+	-- changed from control surfaces: the host requires a Remote item to have a
+	-- widget on the front panel, and the switch is on the back. A copy written
+	-- by the realtime code is an output-only Remote item instead, so that a
+	-- codec can tell what a press in clip editing means.
+	for output, letter in ipairs(OUTPUT_LETTERS) do
+		local cv_mode = "track" .. track .. "_cv_mode_" .. letter
+		local default = output == 1 and CV_MODE_PATTERN or CV_MODE_UNIPOLAR
+		document_properties[cv_mode] = jbox.number{
+			property_tag = 200 + 10 * track + output,
+			default = default,
+			steps = CV_MODE_COUNT,
+			ui_name = jbox.ui_text("text_" .. cv_mode),
+			ui_type = jbox.ui_selector(cv_mode_texts),
+		}
+		local copy = "track" .. track .. "_output_" .. letter .. "_cv_mode"
+		rt_properties[copy] = jbox.number{
+			property_tag = 300 + 10 * track + output,
+			default = default,
+			steps = CV_MODE_COUNT,
+			ui_name = jbox.ui_text("text_" .. copy),
+			ui_type = jbox.ui_selector(cv_mode_texts),
+		}
+		add_remote_item(copy, "Track " .. track .. " Output " .. string.upper(letter) .. " CV Mode")
+	end
 
 	-- 1 while the track's mute or solo button is held down. The realtime code
 	-- switches the track's mute or solo when it goes down; that is also what
@@ -373,9 +483,9 @@ for track = 1, TRACK_COUNT do
 		local clip = "track" .. track .. "_clip" .. row
 		local remote_name = "Track " .. track .. " Clip " .. row
 
-		-- What the launch button holds. Pattern, colour and fill-in are kept while
-		-- it is empty, so that a clip comes back as it was. These six make up a
-		-- patch.
+		-- What the launch button holds. Its settings and fill-in are kept while
+		-- it is empty, so that a clip comes back as it was. All of them make up
+		-- a patch.
 		document_properties[clip .. "_present"] = jbox.boolean{
 			property_tag = 3000 + 10 * track + row,
 			default = false,
@@ -383,16 +493,6 @@ for track = 1, TRACK_COUNT do
 			ui_type = plain_number(1),
 		}
 		add_remote_item(clip .. "_present", remote_name .. " Present")
-
-		-- A new clip plays the pattern of its row.
-		document_properties[clip .. "_pattern"] = jbox.number{
-			property_tag = 4000 + 10 * track + row,
-			default = row - 1,
-			steps = PATTERN_COUNT,
-			ui_name = jbox.ui_text("text_" .. clip .. "_pattern"),
-			ui_type = jbox.ui_selector(pattern_texts),
-		}
-		add_remote_item(clip .. "_pattern", remote_name .. " Pattern")
 
 		document_properties[clip .. "_colour"] = jbox.number{
 			property_tag = 5000 + 10 * track + row,
@@ -403,9 +503,10 @@ for track = 1, TRACK_COUNT do
 		}
 		add_remote_item(clip .. "_colour", remote_name .. " Colour")
 
-		-- The clip's fill-in. A new one has the pattern of its clip, in white:
-		-- whoever sets one up writes all three (see Press.h), so these defaults
-		-- only matter for a fill-in set up some other way.
+		-- The clip's fill-in. A new one is a copy of its clip's values, with
+		-- every transition off, in white: whoever sets one up writes all of
+		-- them (see Press.h), so these defaults only matter for a fill-in set
+		-- up some other way.
 		document_properties[clip .. "_fill_in_present"] = jbox.boolean{
 			property_tag = 6000 + 10 * track + row,
 			default = false,
@@ -413,15 +514,6 @@ for track = 1, TRACK_COUNT do
 			ui_type = plain_number(1),
 		}
 		add_remote_item(clip .. "_fill_in_present", remote_name .. " Fill-In Present")
-
-		document_properties[clip .. "_fill_in_pattern"] = jbox.number{
-			property_tag = 7000 + 10 * track + row,
-			default = row - 1,
-			steps = PATTERN_COUNT,
-			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_pattern"),
-			ui_type = jbox.ui_selector(pattern_texts),
-		}
-		add_remote_item(clip .. "_fill_in_pattern", remote_name .. " Fill-In Pattern")
 
 		document_properties[clip .. "_fill_in_colour"] = jbox.number{
 			property_tag = 8000 + 10 * track + row,
@@ -431,6 +523,29 @@ for track = 1, TRACK_COUNT do
 			ui_type = jbox.ui_selector(colour_texts),
 		}
 		add_remote_item(clip .. "_fill_in_colour", remote_name .. " Fill-In Colour")
+
+		-- For each CV output, a pattern, a unipolar value, a bipolar value and
+		-- a transition, of the clip and of its fill-in (see docs/adr/0006). A
+		-- new clip plays the pattern of its row, at unipolar and bipolar 0,
+		-- with every transition off.
+		for kind_index, kind in ipairs({ "", "_fill_in" }) do
+			for setting_index, setting in ipairs(OUTPUT_SETTINGS) do
+				local setting_type = OUTPUT_SETTING_TYPES[setting]
+				local base = 10000 + 1000 * (4 * (kind_index - 1) + setting_index - 1)
+				for output, letter in ipairs(OUTPUT_LETTERS) do
+					local property = clip .. kind .. "_" .. letter .. "_" .. setting
+					document_properties[property] = jbox.number{
+						property_tag = base + 100 * track + 10 * row + output,
+						default = setting_type.default or row - 1,
+						steps = setting_type.steps,
+						ui_name = jbox.ui_text("text_" .. property),
+						ui_type = jbox.ui_selector(setting_type.texts),
+					}
+					local remote_kind = kind == "" and "" or " Fill-In"
+					add_remote_item(property, remote_name .. remote_kind .. " Output " .. string.upper(letter) .. " " .. setting:gsub("^%l", string.upper))
+				end
+			end
+		end
 
 		-- What the launch button shows, for control surfaces: 0 = unlit, then
 		-- dim, vibrant and flashing for each colour. Flashing is one steady value.
@@ -500,7 +615,9 @@ midi_implementation_chart = {
 
 cv_outputs = {}
 for track = 1, TRACK_COUNT do
-	cv_outputs["track" .. track] = jbox.cv_output{
-		ui_name = jbox.ui_text("text_cv_out_track" .. track)
-	}
+	for _, letter in ipairs(OUTPUT_LETTERS) do
+		cv_outputs["track" .. track .. "_" .. letter] = jbox.cv_output{
+			ui_name = jbox.ui_text("text_cv_out_track" .. track .. "_" .. letter)
+		}
+	end
 end

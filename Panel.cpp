@@ -95,10 +95,39 @@ bool TrackHoldsClips(TJBox_ObjectRef iCustomProps, int iTrack) {
 	return false;
 }
 
-int ClipPattern(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
+int LoadNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag) {
+	return static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(iCustomProps, iTag)));
+}
+
+// What a press in clip editing or fill-in editing needs to know of the
+// settings being edited, the clip's or its fill-in's.
+CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, bool iFillIn) {
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
-	return static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(iCustomProps, ClipPatternTag(track, row))));
+	CPress::TEdited edited;
+	edited.fPresent = iFillIn ? HoldsFillIn(iCustomProps, iButtonIndex) : HoldsClip(iCustomProps, iButtonIndex);
+	const TJBox_Tag transitionBase = iFillIn ? kFillInTransitionBase : kClipTransitionBase;
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		edited.fCVModes[output] = LoadNumber(iCustomProps, CVModeTag(track, output));
+		edited.fTransitions[output] = LoadNumber(iCustomProps, OutputSettingTag(transitionBase, track, row, output));
+	}
+	return edited;
+}
+
+CPress::TClipValues LoadClipValues(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
+	const int track = iButtonIndex / CLauncher::kRowCount;
+	const int row = iButtonIndex % CLauncher::kRowCount + 1;
+	CPress::TClipValues values;
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		values.fPatterns[output] = LoadNumber(iCustomProps, OutputSettingTag(kClipPatternBase, track, row, output));
+		values.fUnipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(kClipUnipolarBase, track, row, output));
+		values.fBipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(kClipBipolarBase, track, row, output));
+	}
+	return values;
+}
+
+void StoreNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag, int iValue) {
+	JBox_StoreMOMPropertyByTag(iCustomProps, iTag, JBox_MakeNumber(iValue));
 }
 
 // Writes the one property a press changes. The names of the changes are keys
@@ -125,8 +154,20 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			iArgs.fGestureNameKey = "gesture_clip_present";
 			break;
 		case CPress::kClipPattern:
-			JBox_StoreMOMPropertyByTag(iCustomProps, ClipPatternTag(track, row), JBox_MakeNumber(iChange.fValue));
+			StoreNumber(iCustomProps, OutputSettingTag(kClipPatternBase, track, row, iChange.fOutput), iChange.fValue);
 			iArgs.fGestureNameKey = "gesture_clip_pattern";
+			break;
+		case CPress::kClipUnipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kClipUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_clip_unipolar";
+			break;
+		case CPress::kClipBipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kClipBipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_clip_bipolar";
+			break;
+		case CPress::kClipTransition:
+			StoreNumber(iCustomProps, OutputSettingTag(kClipTransitionBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_clip_transition";
 			break;
 		case CPress::kClipColour:
 			JBox_StoreMOMPropertyByTag(iCustomProps, ClipColourTag(track, row), JBox_MakeNumber(iChange.fValue));
@@ -137,8 +178,20 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			iArgs.fGestureNameKey = "gesture_fill_in_present";
 			break;
 		case CPress::kFillInPattern:
-			JBox_StoreMOMPropertyByTag(iCustomProps, FillInPatternTag(track, row), JBox_MakeNumber(iChange.fValue));
+			StoreNumber(iCustomProps, OutputSettingTag(kFillInPatternBase, track, row, iChange.fOutput), iChange.fValue);
 			iArgs.fGestureNameKey = "gesture_fill_in_pattern";
+			break;
+		case CPress::kFillInUnipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kFillInUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_fill_in_unipolar";
+			break;
+		case CPress::kFillInBipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kFillInBipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_fill_in_bipolar";
+			break;
+		case CPress::kFillInTransition:
+			StoreNumber(iCustomProps, OutputSettingTag(kFillInTransitionBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_fill_in_transition";
 			break;
 		case CPress::kFillInColour:
 			JBox_StoreMOMPropertyByTag(iCustomProps, FillInColourTag(track, row), JBox_MakeNumber(iChange.fValue));
@@ -296,7 +349,7 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 
 	const int picked = CLauncher::PickedButton(setup);
 	if (CLauncher::IsFillInEditing(setup)) {
-		const CPress::TChanges changes = CPress::FillInEditingLaunchButton(setup, track, row, HoldsFillIn(customProps, picked), ClipPattern(customProps, picked));
+		const CPress::TChanges changes = CPress::FillInEditingLaunchButton(setup, track, row, LoadEdited(customProps, picked, true), LoadClipValues(customProps, picked));
 		for (int i = 0; i < changes.fCount; ++i) {
 			Apply(changes.fChanges[i], customProps, iArgs);
 		}
@@ -308,8 +361,8 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		return;
 	}
 	const bool pressedHoldsClip = HoldsClip(customProps, CLauncher::ButtonIndex(track, row));
-	const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
-	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedHoldsClip), customProps, iArgs);
+	const CPress::TEdited pickedClip = picked >= 0 ? LoadEdited(customProps, picked, false) : CPress::Edited(false);
+	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedClip), customProps, iArgs);
 }
 
 void SetUpPanelDisplay(const TJBox_DisplayArgs& iArgs) {

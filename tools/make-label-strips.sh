@@ -2,11 +2,12 @@
 # Builds the film strips of the labels below the launch buttons and the scene
 # buttons (see "Label" in CONTEXT.md):
 #
-# - GUI2D/Labels_Launch_5frames.png holds every label of the launch buttons,
-#   placed as on the panel: all unlit, then SET/CLEAR lit in yellow, all lit
-#   in yellow, SET/CLEAR lit in red, all lit in red. Yellow is for clip
-#   editing, red for fill-in editing. The labels of colours and patterns stay
-#   unlit while there is no clip, or no fill-in, to set up.
+# - GUI2D/Labels_Launch_5frames.png holds the labels of the launch buttons in
+#   scenes 1 and 2, placed as on the panel: all unlit, then SET/CLEAR lit in
+#   yellow, all lit in yellow, SET/CLEAR lit in red, all lit in red. Yellow is
+#   for clip editing, red for fill-in editing. The labels of colours stay
+#   unlit while there is no clip, or no fill-in, to set up. The labels of the
+#   CV outputs in scenes 3 to 8 are made by tools/make-cv-labels.py.
 # - GUI2D/Label_Scene<n>_3frames.png holds the label of scene button n:
 #   unlit, then lit in white, then lit in green.
 # - GUI2D/Label_Back_4frames.png holds the label of the back button: unlit,
@@ -19,12 +20,13 @@
 #   Caption_Stop_2frames.png hold the captions of the function select buttons:
 #   white, then yellow, blue and red.
 # - GUI2D/Labels_Front.png holds the caption SETUP, which is always white, as
-#   large as the panel: to the left of the setup button, its right edge 30
-#   pixels from the button and vertically centred on it.
+#   large as the panel: to the left of the setup button, its right edge 8
+#   pixels from the button and 2 pixels above its vertical centre.
 #
 # The labels are set in Arial Bold, capitals 26 pixels high, in white or
-# coloured. Each one is centred below its button with its top 20 pixels below
-# the button. The layout numbers must match GUI2D/device_2D.lua.
+# coloured. Each one is centred below its button, its top 8 pixels above the
+# bottom of the button's image, where the button itself ends. The layout
+# numbers must match GUI2D/device_2D.lua.
 #
 # Needs ImageMagick.
 set -e
@@ -42,13 +44,14 @@ BLUE="#0598fe"
 
 # Launch buttons are 205 pixels wide, 252 apart, with 235 pixels from one
 # scene to the next. The strip starts 25 pixels left of the first track and
-# level with the top of the labels of scene 1; one label is 30 pixels high.
+# level with the top of the labels of scene 1, and covers scenes 1 and 2; one
+# label is 30 pixels high.
 TRACK_PITCH=252
 ROW_PITCH=235
 BUTTON_WIDTH=205
 LAUNCH_MARGIN=25
 LAUNCH_WIDTH=2020
-LAUNCH_SIZE=${LAUNCH_WIDTH}x1675
+LAUNCH_SIZE=${LAUNCH_WIDTH}x265
 SCENE_SIZE=250x30
 
 WORK=$(mktemp -d)
@@ -60,28 +63,20 @@ trap 'rm -rf "$WORK"' EXIT
 # with "|" for a space.
 LAUNCH_LABELS="
 control 8 1 SET/CLEAR
-setting 1 2 WHITE
-setting 2 2 RED
-setting 3 2 ORANGE
-setting 4 2 YELLOW
-setting 5 2 LIME
-setting 6 2 GREEN
-setting 7 2 TURQUOISE
-setting 1 3 CYAN
-setting 2 3 LIGHT|BLUE
-setting 3 3 BLUE
-setting 4 3 DARK|BLUE
-setting 5 3 PURPLE
-setting 6 3 FUCHSIA
-setting 7 3 PINK
-setting 1 5 PATTERN|1
-setting 2 5 PATTERN|2
-setting 3 5 PATTERN|3
-setting 4 5 PATTERN|4
-setting 5 5 PATTERN|5
-setting 6 5 PATTERN|6
-setting 7 5 PATTERN|7
-setting 8 5 PATTERN|8
+setting 1 1 WHITE
+setting 2 1 RED
+setting 3 1 ORANGE
+setting 4 1 YELLOW
+setting 5 1 LIME
+setting 6 1 GREEN
+setting 7 1 TURQUOISE
+setting 1 2 CYAN
+setting 2 2 LIGHT|BLUE
+setting 3 2 BLUE
+setting 4 2 DARK|BLUE
+setting 5 2 PURPLE
+setting 6 2 FUCHSIA
+setting 7 2 PINK
 "
 
 # Draws every label of the launch buttons, the controls in one colour and the
@@ -157,5 +152,5 @@ draw_strip "$SCENE_SIZE" "$POINTSIZE" STOP GUI2D/Caption_Stop_2frames.png "$WHIT
 SETUP_LEFT=720
 FUNCTION_TOP=2338
 magick -size 300x80 xc:none -font "$FONT" -pointsize "$POINTSIZE" -fill "$WHITE" -annotate +10+50 SETUP -trim +repage "PNG32:$WORK/setup.png"
-magick -size 3770x2760 xc:none "$WORK/setup.png" -geometry "+$((SETUP_LEFT - 30 - 118))+$((FUNCTION_TOP + (75 - 26) / 2))" -composite "PNG32:GUI2D/Labels_Front.png"
+magick -size 3770x2760 xc:none "$WORK/setup.png" -geometry "+$((SETUP_LEFT - 8 - 118))+$((FUNCTION_TOP + (75 - 26) / 2 - 2))" -composite "PNG32:GUI2D/Labels_Front.png"
 echo "Wrote GUI2D/Labels_Front.png"

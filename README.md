@@ -1,14 +1,14 @@
 # Launchnik
 
-Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Which pattern each launch button plays, and in which colour it shows, is set up on the panel itself.
+Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d12, a development build. Requires Reason 14 or later.
+Version 1.0.0d13, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. The back panel has eight CV outputs, one per track.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. To the right of the scene buttons is the **transition diagram**. The back panel has six **CV outputs**, A to F, for each track, each with a switch for its **CV mode**.
 
-A launch button either holds a **clip** or is **empty**. A clip is one of the Player's patterns 1–8 together with one of fourteen colours. A new device has only empty launch buttons.
+A launch button either holds a **clip** or is **empty**. A clip has one of fourteen colours and, for each of its track's six CV outputs, a pattern 1–8, a unipolar value, a bipolar value and a transition. A new device has only empty launch buttons.
 
 In **launch mode**, the normal way of working, a button is in one of three states:
 
@@ -33,7 +33,7 @@ A song always opens with the function STOP, in which the function buttons are **
 
 The function select buttons work like radio buttons: the one for the current function is lit in its colour, red for STOP, yellow for MUTE, blue for SOLO, with its caption; the others are dim white with a white caption. Choosing a function changes only what the function buttons do, never what any track plays.
 
-In MUTE the function buttons are yellow. Click one to **mute** its track: from the click until the next switch point its CV output emits 0, and its function button is dim yellow; the launch buttons go on as before. Click it again to unmute the track sooner. Several tracks can be muted at once.
+In MUTE the function buttons are yellow. Click one to **mute** its track: from the click until the next switch point its CV outputs in pattern mode emit 0 (those in unipolar or bipolar mode carry on), and its function button is dim yellow; the launch buttons go on as before. Click it again to unmute the track sooner. Several tracks can be muted at once.
 
 In SOLO the function buttons are blue. Click one to **solo** its track: from the click until the next switch point every track that is not soloed emits 0, and the soloed track's function button is vibrant blue. Several tracks can be soloed at once. A soloed track plays even if it is muted; switching the solo off again leaves every track muted or not, as it was.
 
@@ -56,14 +56,41 @@ A scene button does not show which scene was launched; the launch buttons do tha
 
 The meter follows the song position whether the song plays or not, and goes on running in clip editing. Before the start of the song, and while the length of the switch interval is "immediate", all scene buttons are unlit.
 
-## Connecting a track
+## CV outputs
+
+Each track has six CV outputs on the back panel, A to F, with a three-way switch to the left of each that chooses its **CV mode**:
+
+| CV mode | What the output emits |
+|---|---|
+| Pattern | The pattern of the playing clip, in the steps a Combinator reads as pattern selection; 0 (Off) while the track is stopped, muted or solo-muted. |
+| Unipolar | One of seven values from 0 to 1 (labelled 0 to 100). |
+| Bipolar | One of seven values from −1 to +1 (labelled −100 to +100, 0 in the middle). |
+
+A new device has output A in pattern mode and B to F in unipolar mode. The CV modes are saved with the song and in patches, but cannot be automated or changed from a control surface. Flipping a switch takes effect at once.
+
+Unipolar and bipolar outputs ignore mute and solo, and when a track stops they go on emitting the value they last had; before any clip has played, that is 0.
+
+### Connecting a track to a Player
 
 1. Put a Player device (for example PolyStep Sequencer) and its instrument in a Combinator.
-2. Connect one of Launchnik's CV outputs to a CV input on the back of the Combinator.
+2. Connect a CV output in pattern mode, such as output A, to a CV input on the back of the Combinator.
 3. In the Combinator's editor, add a mapping with that CV input as the source and the Player's pattern selection as the target.
 4. Set the mapping to Min = Off, Max = 8, and leave the source range at 0 %–100 %.
 
-A clip with pattern N on that track now selects pattern N, and the stop button selects Off.
+A clip with pattern N on that output now selects pattern N, and the stop button selects Off. A unipolar or bipolar output can be connected to any CV input, for example a filter's cutoff.
+
+### Transitions
+
+A unipolar or bipolar output of a clip can have a **transition**: off, A, B, C or D. While the clip is playing and another clip on its track is queued, the transition moves the output from the playing clip's value to the queued clip's, landing on it at the switch point. It is the playing clip's transition that counts. With transition off the value jumps at the switch point.
+
+| Transition | Moves | When |
+|---|---|---|
+| A | In a straight line | From the moment the other clip is queued |
+| B | Along an exponential curve, slowly at first | From the moment the other clip is queued |
+| C | In a straight line | Within the last bar before the switch point |
+| D | Along an exponential curve | Within the last bar before the switch point |
+
+With a switch interval of one bar or less, C and D behave like A and B. A queued stop, a stopped track and the length "immediate" never move: the value jumps. Queueing a different clip, editing the queued clip's value or changing the transition starts the movement over from where the output is; choosing the playing clip again, or queueing stop, makes the value jump back. Stopping the transport makes whatever is queued take effect at once, without a transition.
 
 ## Setting up clips
 
@@ -75,12 +102,22 @@ Click the setup button to enter **setup mode**; the logo in the header shows the
 | Where | What it does |
 |---|---|
 | Row 1, column 8 | Switches the clip on and off: vibrant green with a clip, dim red without. |
-| Rows 2 and 3, columns 1–7 | The colour: white, red, orange, yellow, lime, green, turquoise in row 2; cyan, light blue, blue, dark blue, purple, fuchsia, pink in row 3. The chosen one is vibrant. |
-| Row 5 | The pattern, 1–8, in yellow. The chosen one is vibrant. |
+| Rows 1 and 2, columns 1–7 | The colour: white, red, orange, yellow, lime, green, turquoise in row 1; cyan, light blue, blue, dark blue, purple, fuchsia, pink in row 2. The chosen one is vibrant. |
+| Rows 3 to 8 | One row for each CV output, A to F, laid out by the output's CV mode (see below). |
 
-The colour and pattern rows only show while the launch button holds a clip. A new clip plays the pattern of its row and has the colour of its track: red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8. A clip that is switched off and on again comes back with its pattern and colour.
+Each CV output's row shows what its CV mode needs:
 
-3. **Fill-in editing.** While the launch button holds a clip, the **set fill-in** button beside the back button lights up in red. Click it to set up the clip's **fill-in**; the logo turns red. The grid is laid out as in clip editing, with the patterns in red: SET/CLEAR switches the fill-in on and off, and the colour and pattern rows only show while there is one. A new fill-in has the pattern of its clip, in white. The labels are red instead of yellow.
+| CV mode | Columns 1–7 | Column 8 |
+|---|---|---|
+| Pattern | Patterns 1–7, dim orange, the chosen one vibrant orange | Pattern 8 |
+| Unipolar | Values 0 to 100: the chosen one vibrant cyan, those to its left dim cyan | The transition |
+| Bipolar | Values −100 to +100: the chosen one vibrant fuchsia, those between it and 0 dim fuchsia, 0 included | The transition |
+
+Clicking the transition button goes round from off through A, B, C and D. It is dim red while off and otherwise vibrant in the colour of its transition in the diagram: lime for A, light blue for B, purple for C, pink for D. The labels below each launch button have two lines: the unipolar value on the left and the bipolar value on the right (in column 8 the transitions OFF A B C D), and the pattern below. Only the labels that go with the output's CV mode are lit, in the mode colour, and of the transitions only the chosen one. The transition diagram is in colour, with its labels lit, whenever the CV labels are.
+
+The colour and CV rows only show while the launch button holds a clip. A new clip has the colour of its track (red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8) and, on every CV output, the pattern of its row, unipolar and bipolar value 0 and transition off. A clip that is switched off and on again comes back with all its settings. Changing a unipolar or bipolar value of the playing clip takes effect at once.
+
+3. **Fill-in editing.** While the launch button holds a clip, the **set fill-in** button beside the back button lights up in red. Click it to set up the clip's **fill-in**; the logo turns red. The grid is laid out and lit as in clip editing: SET/CLEAR switches the fill-in on and off, and the colour and CV rows only show while there is one. A new fill-in is a copy of its clip's patterns and values, with every transition off, in white. The labels are red instead of yellow.
 
 Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to: vibrant yellow in fill-in editing, it returns to clip editing; vibrant green in clip editing, it returns to clip picking; vibrant white in clip picking, it returns to launch mode. In launch mode it is dark and does nothing.
 
@@ -91,6 +128,8 @@ A fill-in is a pattern that a clip plays for a short while instead of its own, s
 The fill-in button is dim white, and vibrant red, with its caption, from the click until the switch point, whether or not any track has a fill-in to play. It works in launch mode and in setup mode alike. A click while a fill-in is playing does nothing, and so does a click while the switch interval is "immediate", which has no switch point to end the fill-in at. With the transport stopped, a fill-in goes on until the song plays through the next switch point.
 
 Changing a playing clip's fill-in takes effect at once. A launch button keeps its fill-in while it is empty, so that it comes back with the clip; fill-ins are part of a patch.
+
+On unipolar and bipolar outputs a fill-in's transition works differently from a clip's: it moves from whatever the output emits at the click to the fill-in's own value, landing on it at the switch point, like a riser, and then the output jumps to the clip's value, or to the queued clip's. With transition off the value jumps to the fill-in's at the click. While a fill-in plays, any transition of its clip is hidden.
 
 ## Setting the length of the switch interval
 
@@ -117,7 +156,7 @@ Clips are saved with the song, and each change is a step in the undo history. Se
 
 ## Patches
 
-A **patch** is what all 64 launch buttons hold, together with the length of the switch interval, saved as a file, so that the same set of clips can be used in any song. The header of the panel, folded or not, shows the name of the patch and Reason's buttons for stepping through patches, browsing and saving.
+A **patch** is what all 64 launch buttons hold, together with the length of the switch interval and the CV modes of the CV outputs, saved as a file, so that the same set of clips can be used in any song. The header of the panel, folded or not, shows the name of the patch and Reason's buttons for stepping through patches, browsing and saving.
 
 A patch does not hold what the tracks are playing. Loading one does not change what any track has selected, so it can be loaded while the song plays: a clip whose pattern changes switches at the next switch point, and a track whose selected launch button is now empty stops there. If the patch has another length, the switch points move as they do when the length is changed by hand.
 
@@ -130,7 +169,7 @@ Launchnik comes with two patches: "Init Patch", in which every launch button is 
 - **While the transport is running**, a click queues the button. At the next switch point it becomes active, the previously active button on the track goes off, and the CV changes.
 - **While the transport is stopped**, a click takes effect at once.
 - Clicking another button on the same track before the switch point replaces the queued one. Clicking the queued button again does nothing. Clicking the active button cancels whatever is queued.
-- When the transport stops, queued buttons become active immediately and the CV outputs keep their values.
+- When the transport stops, queued buttons become active immediately, without a transition, and the CV outputs otherwise keep their values.
 - Each track's choice is saved with the song. On reopening, it is active straight away.
 
 ## Automation and Remote
@@ -155,11 +194,15 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
 | `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green, and in clip picking 3 = flashing white, 18 = flashing green |
 | `Track N Clip M Present` (64 items) | Input and output | 0 = empty, 1 = holds a clip |
-| `Track N Clip M Pattern` (64 items) | Input and output | 0–7 for patterns 1–8 |
 | `Track N Clip M Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Track N Clip M Output X Pattern` (384 items, X = A–F) | Input and output | 0–7 for patterns 1–8 |
+| `Track N Clip M Output X Unipolar` (384 items) | Input and output | 0–6 for 0 to 100 |
+| `Track N Clip M Output X Bipolar` (384 items) | Input and output | 0–6 for −100 to +100 |
+| `Track N Clip M Output X Transition` (384 items) | Input and output | 0 = off, 1–4 = A–D |
 | `Track N Clip M Fill-In Present` (64 items) | Input and output | 0 = no fill-in, 1 = holds one |
-| `Track N Clip M Fill-In Pattern` (64 items) | Input and output | 0–7 for patterns 1–8 |
 | `Track N Clip M Fill-In Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Track N Clip M Fill-In Output X Pattern`, `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
+| `Track N Output X CV Mode` (48 items) | Output only | 0 = bipolar, 1 = unipolar, 2 = pattern; a copy of the switch on the back panel, which only the mouse can change |
 | `Fill-In` | Input and output | 1 while the fill-in button is held down, 0 otherwise |
 | `Fill-In Light` | Output only | As for a launch button: 1 = dim white, 5 = vibrant red |
 | `Set Fill-In Light` | Output only | As for a launch button: 0 = unlit, 5 = vibrant red |
@@ -215,6 +258,16 @@ The logo's four frames, light grey, green, yellow and red, are built from the ve
 ./tools/make-logo-strip.sh
 ```
 
+The labels below the launch buttons in scenes 1 and 2, of the scene buttons and the other buttons, and the SETUP caption are drawn with ImageMagick; those of the CV outputs, of the transition diagram and of the back panel with Pillow, through uv, which also copies the diagram and the CV mode switch into `GUI2D`:
+
+```bash
+./tools/make-label-strips.sh
+```
+
+```bash
+./tools/make-cv-labels.py
+```
+
 After changing anything in `GUI2D`, regenerate the panel graphics first, from the `RE2DRender` directory of the SDK download:
 
 ```bash
@@ -246,7 +299,7 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 |---|---|
 | `Launcher.h`, `Launcher.cpp` | The rules: when a track switches, what it emits, what every button shows. Plain C++ with no dependency on the SDK. |
 | `Press.h`, `Press.cpp` | What a press of a button changes, in launch mode and in setup mode. Also free of the SDK. |
-| `Launchnik.h`, `Launchnik.cpp` | Connects the rules to the host: reads selections, clips, the setup state and the transport, writes states, lights, lamps and CV. |
+| `Launchnik.h`, `Launchnik.cpp` | Connects the rules to the host: reads selections, clips, CV modes, the setup state and the transport, writes states, lights, lamps, labels and CV. |
 | `Panel.h`, `Panel.cpp` | The click handler of the launch buttons, the scene buttons, the function buttons, the function select buttons and the buttons of setup mode and fill-ins. |
 | `Tags.h` | The property tags shared by the two. |
 | `JukeBoxExports.cpp` | Entry points the host calls. |
