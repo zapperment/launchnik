@@ -312,15 +312,18 @@ back = {
 	},
 }
 
--- Six CV outputs, A to F from the top, for each track, 220 pixels apart
--- across and 200 down, each with the switch for its CV mode to its left: the
--- stock bypass switch, whose frames from the bottom position up stand for
--- bipolar, unipolar and pattern. Their captions are in Labels_Back (see
--- tools/make-cv-labels.py).
+-- Six CV outputs, A to F from the top, for each track, 300 pixels apart
+-- across, which leaves room for the track names, and 200 down, each with the
+-- switch for its CV mode to its left: the stock bypass switch, whose frames
+-- from the bottom position up stand for bipolar, unipolar and pattern. Their
+-- captions are in Labels_Back (see tools/make-cv-labels.py).
+local JACK_LEFT = 840
+local JACK_TOP = 1265
+local JACK_PITCH = 300
 for track = 1, TRACK_COUNT do
 	for output, letter in ipairs(OUTPUT_LETTERS) do
-		local left = 1100 + 220 * (track - 1)
-		local top = 1440 + 200 * (output - 1)
+		local left = JACK_LEFT + JACK_PITCH * (track - 1)
+		local top = JACK_TOP + 200 * (output - 1)
 		back["cv_out_track" .. track .. "_" .. letter] = {
 			offset = { left, top },
 			{ path = "SharedCVJack", frames = 3 },
@@ -330,11 +333,10 @@ for track = 1, TRACK_COUNT do
 			{ path = "CV_Mode_Switch_3frames", frames = 3 },
 		}
 	end
-	-- The track name above the column, in place of the track number it had,
-	-- centred over the switches and the jacks, as wide as the columns are
-	-- apart and as tall as on the front.
-	local column_centre = 1100 + 220 * (track - 1) - 5
-	add_name_areas(back, "track" .. track .. "_name", column_centre - 110, 1343, "Name_Area_Back")
+	-- The track name above the column, centred over the switches and the
+	-- jacks, as wide as the columns are apart and as tall as on the front.
+	local column_centre = JACK_LEFT + JACK_PITCH * (track - 1) - 5
+	add_name_areas(back, "track" .. track .. "_name", column_centre - JACK_PITCH / 2, JACK_TOP - 97, "Name_Area_Back")
 end
 
 folded_front = {

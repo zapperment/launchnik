@@ -76,14 +76,14 @@ HEADING_LEFT = 3186
 HEADING_TOP = 1242
 LETTER_CENTRE = 3199
 
-# The back panel: the jacks of track 1 start 1100 pixels from the left, 220
-# apart, the jacks of output A 1440 pixels from the top, 200 apart; a jack is
+# The back panel: the jacks of track 1 start 840 pixels from the left, 300
+# apart, the jacks of output A 1265 pixels from the top, 200 apart; a jack is
 # 80 pixels wide and 90 high. The switches stand 90 pixels left of their
 # jacks.
 PANEL_SIZE = (3770, 2760)
-JACK_LEFT = 1100
-JACK_TOP = 1440
-JACK_PITCH = 220
+JACK_LEFT = 840
+JACK_TOP = 1265
+JACK_PITCH = 300
 OUTPUT_PITCH = 200
 JACK_WIDTH = 80
 JACK_HEIGHT = 90
@@ -172,7 +172,7 @@ def make_back_labels():
 	heading = font(REGULAR, 68)
 	numbers = font(REGULAR, 54)
 	middle = (jack_centre(0) + jack_centre(TRACK_COUNT - 1)) // 2
-	draw_text(draw, (middle, 1227 - heading.getbbox("C", anchor="la")[1]), "CV OUT", BACK_TEXT, heading, "ma")
+	draw_text(draw, (middle, JACK_TOP - 213 - heading.getbbox("C", anchor="la")[1]), "CV OUT", BACK_TEXT, heading, "ma")
 
 	# The letters of the CV outputs to the right of the last track.
 	letter_centre = jack_centre(TRACK_COUNT - 1) + 120
