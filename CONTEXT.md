@@ -13,7 +13,7 @@ What a **launch button** holds: a **colour** and, for each of its track's six **
 _Avoid_: Slot, pattern (for the clip itself); a **scene** is a row of launch buttons, not a clip
 
 **Clip name**:
-Text that the user gives a **launch button** so that its **clip** can be recognised. It is shown above the launch button and changed by double-clicking it. A launch button keeps and shows its clip name while it is **empty**, like its clip's other settings, so the name comes back with the clip. Like a **track name**, it shows about 12 characters. It is never shown empty: clearing it gives the launch button its default name back, Clip 1 to Clip 8 by **scene**, which is also what a new device shows. A **fill-in** has no name of its own. It is part of the **patch**, cannot be automated, and is not available to a control surface. It is shown in **launch mode** and **clip picking** and hidden in **clip editing** and **fill-in editing**.
+Text that the user gives a **launch button** so that its **clip** can be recognised. It is shown above the launch button and changed by double-clicking it. A launch button keeps and shows its clip name while it is **empty**, like its clip's other settings, so the name comes back with the clip. Like a **track name**, it shows about 12 characters. It is never shown empty: clearing it gives the launch button its default name back, Clip 1 to Clip 8 by **scene**, which is also what a new device shows. A **fill-in** has no name of its own. It is part of the **patch**, cannot be automated, and is not available to a control surface. It is shown in **launch mode** and **clip picking**; in **clip editing** and **fill-in editing** only the clip name of the launch button being set up is shown.
 _Avoid_: Clip label, launch button name, title
 
 **Fill-in**:
@@ -86,7 +86,7 @@ One column of the front panel: eight **launch buttons**, one **function button**
 _Avoid_: Column, channel, lane
 
 **Track name**:
-Text that the user gives a **track** so that it can be recognised, such as the instrument it plays. It is shown above the track on the front panel and above its **CV outputs** on the back panel, the same on both, and changed by double-clicking either. The panel shows about 12 characters, centred; a longer name is kept in full but shown cut off at both ends. It is never shown empty: clearing it gives the track its default name back, Track 1 to Track 8, which is also what a new device shows. It is part of the **patch**, cannot be automated, and is not available to a control surface. On the front panel it is shown in **launch mode** and **clip picking** and hidden in **clip editing** and **fill-in editing**; on the back panel it is always shown.
+Text that the user gives a **track** so that it can be recognised, such as the instrument it plays. It is shown above the track on the front panel and above its **CV outputs** on the back panel, the same on both, and changed by double-clicking either. The panel shows about 12 characters, centred; a longer name is kept in full but shown cut off at both ends. It is never shown empty: clearing it gives the track its default name back, Track 1 to Track 8, which is also what a new device shows. It is part of the **patch**, cannot be automated, and is not available to a control surface. On the front panel it is shown in **launch mode** and **clip picking**; in **clip editing** and **fill-in editing** only the track name of the launch button being set up is shown. On the back panel it is always shown.
 _Avoid_: Track label, track title, caption
 
 **Scene**:

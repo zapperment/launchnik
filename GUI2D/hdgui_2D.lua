@@ -206,14 +206,10 @@ local NAME_COLOUR = { 208, 208, 208 }
 local TRACK_NAME_STYLE = "Arial medium small font"
 local NAME_STYLE = "Arial small font"
 
-local function add_name_widgets(widgets, name, text_style, default_key, mode_shown)
+-- values are the properties the visibility functions read; shown and
+-- default_shown name those functions.
+local function add_name_widgets(widgets, name, text_style, default_key, values, shown, default_shown)
 	local property = "/custom_properties/" .. name
-	local values = { property }
-	local suffix = ""
-	if mode_shown then
-		values = { "/custom_properties/setup", property }
-		suffix = "_" .. mode_shown
-	end
 	table.insert(widgets, jbox.value_display{
 		graphics = { node = name .. "_value" },
 		value = property,
@@ -221,7 +217,7 @@ local function add_name_widgets(widgets, name, text_style, default_key, mode_sho
 		text_color = NAME_COLOUR,
 		show_remote_box = false,
 		show_automation_rect = false,
-		visibility = { values = values, func = "is_name_shown" .. suffix },
+		visibility = { values = values, func = shown },
 	})
 	-- A template without ^0 is shown as it is.
 	table.insert(widgets, jbox.value_display{
@@ -232,21 +228,31 @@ local function add_name_widgets(widgets, name, text_style, default_key, mode_sho
 		value_templates = { jbox.ui_text(default_key) },
 		show_remote_box = false,
 		show_automation_rect = false,
-		visibility = { values = values, func = "is_default_name_shown" .. suffix },
+		visibility = { values = values, func = default_shown },
 	})
 end
 
+-- On the front panel, every name depends on the setup state as well: track
+-- names and clip names have functions of their own, since in clip editing and
+-- fill-in editing only those of the launch button being edited are shown.
+local function add_front_name_widgets(name, text_style, default_key, shown, default_shown)
+	add_name_widgets(front_widgets, name, text_style, default_key,
+		{ "/custom_properties/setup", "/custom_properties/" .. name }, shown, default_shown)
+end
+
 for track = 1, TRACK_COUNT do
-	add_name_widgets(front_widgets, "track" .. track .. "_name", TRACK_NAME_STYLE,
-		"text_default_track_name" .. track, "in_launch_mode_and_clip_picking")
+	local track_name = "track" .. track .. "_name"
+	add_front_name_widgets(track_name, TRACK_NAME_STYLE, "text_default_track_name" .. track,
+		"is_" .. track_name .. "_shown", "is_" .. track_name .. "_default_shown")
 	for row = 1, ROW_COUNT do
-		add_name_widgets(front_widgets, "track" .. track .. "_clip" .. row .. "_name", NAME_STYLE,
-			"text_default_clip_name" .. row, "in_launch_mode_and_clip_picking")
+		local clip_name = "track" .. track .. "_clip" .. row .. "_name"
+		add_front_name_widgets(clip_name, NAME_STYLE, "text_default_clip_name" .. row,
+			"is_" .. clip_name .. "_shown", "is_" .. clip_name .. "_default_shown")
 	end
 end
 for scene = 1, ROW_COUNT do
-	add_name_widgets(front_widgets, "scene" .. scene .. "_name", NAME_STYLE,
-		"text_default_scene_name" .. scene, "in_launch_mode")
+	add_front_name_widgets("scene" .. scene .. "_name", NAME_STYLE, "text_default_scene_name" .. scene,
+		"is_name_shown_in_launch_mode", "is_default_name_shown_in_launch_mode")
 end
 
 front = jbox.panel{
@@ -279,7 +285,8 @@ end
 -- The track names on the back panel are always shown.
 for track = 1, TRACK_COUNT do
 	add_name_widgets(back_widgets, "track" .. track .. "_name", TRACK_NAME_STYLE,
-		"text_default_track_name" .. track)
+		"text_default_track_name" .. track, { "/custom_properties/track" .. track .. "_name" },
+		"is_name_shown", "is_default_name_shown")
 end
 
 back = jbox.panel{

@@ -64,7 +64,7 @@ Double-click a name to change it: a text field opens with the name selected. Typ
 
 About twelve characters fit; a longer name is kept in full, but shown cut off at both ends. Names are not in capitals, unlike the labels.
 
-Track names and clip names are shown in launch mode and clip picking, and hidden in clip editing and fill-in editing, where the launch buttons stand for a clip's settings. Scene names are shown in launch mode only, since in clip picking the scene buttons stand for the lengths of the switch interval. On the back panel the track names are always shown.
+Track names and clip names are shown in launch mode and clip picking. In clip editing and fill-in editing, where the launch buttons stand for a clip's settings, only the name of the clip being set up and of its track stay visible, so you can see which one it is. Scene names are shown in launch mode only, since in clip picking the scene buttons stand for the lengths of the switch interval. On the back panel the track names are always shown.
 
 A launch button keeps its clip name while it is empty, like the rest of its clip, so the name comes back with the clip. Fill-ins have no names of their own.
 
@@ -235,7 +235,6 @@ Launchnik does not respond to MIDI CC messages.
 - At the lengths of one beat and half a bar the interval meter runs very fast.
 - Switch points are worked out from the current time signature. In a song whose time signature changes part-way through, they may not line up with the bar numbers in the sequencer.
 - Only playing through a switch point fires a queued button. Dragging the song position past one does not, and a loop that neither contains nor ends on a switch point keeps a button queued indefinitely.
-- Clip editing does not show which launch button is being edited.
 - A clip that was switched off while its track's selection still named it is queued again as soon as it is switched back on.
 - There is no stop-all button.
 - A scene launch is recorded as automation of each track's selection, not as one event.
@@ -321,9 +320,9 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `JukeBoxExports.cpp` | Entry points the host calls. |
 | `motherboard_def.lua` | Properties, Remote items, automation and CV outputs. |
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
-| `GUI2D/` | Panel layout and the graphics it uses; `gui_functions.lua` decides when the names are shown. |
+| `GUI2D/` | Panel layout and the graphics it uses; `gui_functions.lua`, written by `tools/make-gui-functions.py`, decides when the names are shown. |
 | `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
-| `tools/` | Scripts that build the film strips of the launch, scene, side and function buttons, of the labels and of the logo. |
+| `tools/` | Scripts that build the film strips of the launch, scene, side and function buttons, of the labels and of the logo, and `GUI2D/gui_functions.lua`. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |
