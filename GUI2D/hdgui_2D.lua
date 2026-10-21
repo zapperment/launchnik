@@ -132,7 +132,7 @@ table.insert(front_widgets, jbox.custom_display{
 	graphics = { node = "click_grid" },
 	background = "transparent",
 	display_width_pixels = 1970,
-	display_height_pixels = 1780,
+	display_height_pixels = 1885,
 	display_id = 1,
 	values = { "/custom_properties/setup" },
 })
@@ -140,7 +140,7 @@ table.insert(front_widgets, jbox.custom_display{
 	graphics = { node = "click_scenes" },
 	background = "transparent",
 	display_width_pixels = 130,
-	display_height_pixels = 1780,
+	display_height_pixels = 1885,
 	display_id = 3,
 	values = { "/custom_properties/setup" },
 })
@@ -195,6 +195,60 @@ for index, name in ipairs(FUNCTIONS) do
 	})
 end
 
+-- The names (see docs/adr/0007): each is two text widgets on top of each
+-- other, bound to the same property, that open the host's text field on a
+-- double click. One shows the name while it is not empty, the other the
+-- default name while it is. They come after the click displays, so that
+-- clicks on a name reach the name. Track names are larger than clip and scene
+-- names, all in the light grey of the labels; the functions that show or hide
+-- them are in gui_functions.lua.
+local NAME_COLOUR = { 208, 208, 208 }
+local TRACK_NAME_STYLE = "Arial medium small font"
+local NAME_STYLE = "Arial small font"
+
+local function add_name_widgets(widgets, name, text_style, default_key, mode_shown)
+	local property = "/custom_properties/" .. name
+	local values = { property }
+	local suffix = ""
+	if mode_shown then
+		values = { "/custom_properties/setup", property }
+		suffix = "_" .. mode_shown
+	end
+	table.insert(widgets, jbox.value_display{
+		graphics = { node = name .. "_value" },
+		value = property,
+		text_style = text_style,
+		text_color = NAME_COLOUR,
+		show_remote_box = false,
+		show_automation_rect = false,
+		visibility = { values = values, func = "is_name_shown" .. suffix },
+	})
+	-- A template without ^0 is shown as it is.
+	table.insert(widgets, jbox.value_display{
+		graphics = { node = name .. "_default" },
+		value = property,
+		text_style = text_style,
+		text_color = NAME_COLOUR,
+		value_templates = { jbox.ui_text(default_key) },
+		show_remote_box = false,
+		show_automation_rect = false,
+		visibility = { values = values, func = "is_default_name_shown" .. suffix },
+	})
+end
+
+for track = 1, TRACK_COUNT do
+	add_name_widgets(front_widgets, "track" .. track .. "_name", TRACK_NAME_STYLE,
+		"text_default_track_name" .. track, "in_launch_mode_and_clip_picking")
+	for row = 1, ROW_COUNT do
+		add_name_widgets(front_widgets, "track" .. track .. "_clip" .. row .. "_name", NAME_STYLE,
+			"text_default_clip_name" .. row, "in_launch_mode_and_clip_picking")
+	end
+end
+for scene = 1, ROW_COUNT do
+	add_name_widgets(front_widgets, "scene" .. scene .. "_name", NAME_STYLE,
+		"text_default_scene_name" .. scene, "in_launch_mode")
+end
+
 front = jbox.panel{
 	graphics = { node = "Bg" },
 	widgets = front_widgets,
@@ -220,6 +274,12 @@ for track = 1, TRACK_COUNT do
 			value = "/custom_properties/track" .. track .. "_cv_mode_" .. letter,
 		})
 	end
+end
+
+-- The track names on the back panel are always shown.
+for track = 1, TRACK_COUNT do
+	add_name_widgets(back_widgets, "track" .. track .. "_name", TRACK_NAME_STYLE,
+		"text_default_track_name" .. track)
 end
 
 back = jbox.panel{

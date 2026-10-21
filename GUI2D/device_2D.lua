@@ -2,15 +2,16 @@ format_version = "2.0"
 
 local TRACK_COUNT = 8
 
--- Layout of the button grid, in pixels. Everything below the header sits 50
--- pixels higher than the grid alone would, centred, to make room for the row
--- of function select buttons at the bottom.
+-- Layout of the button grid, in pixels. Each scene has a row of clip names
+-- above its launch buttons and a row of labels below them, and the first one
+-- the track names above as well; the back button and the set fill-in button
+-- sit right below the header, the function select buttons near the bottom.
 local LAUNCH_LEFT = 907
-local LAUNCH_TOP = 462
+local LAUNCH_TOP = 460
 local TRACK_PITCH = 252
-local ROW_PITCH = 235
+local ROW_PITCH = 250
 local FUNCTION_LEFT = 974
-local FUNCTION_TOP = 2338
+local FUNCTION_TOP = 2440
 local FUNCTION_WIDTH = 70
 local FUNCTION_HEIGHT = 75
 
@@ -88,9 +89,10 @@ for track = 1, TRACK_COUNT do
 		}
 	end
 end
+local GRID_HEIGHT = ROW_PITCH * (ROW_COUNT - 1) + BUTTON_HEIGHT
 front.click_grid = {
 	offset = { LAUNCH_LEFT, LAUNCH_TOP },
-	{ size = { 1970, 1780 } },
+	{ size = { 1970, GRID_HEIGHT } },
 }
 
 -- The scene buttons stand one track further to the right, each centred in the
@@ -107,7 +109,7 @@ for scene = 1, ROW_COUNT do
 end
 front.click_scenes = {
 	offset = { SCENE_LEFT, LAUNCH_TOP },
-	{ size = { SCENE_WIDTH, 1780 } },
+	{ size = { SCENE_WIDTH, GRID_HEIGHT } },
 }
 
 -- The labels sit centred below their buttons, their tops 8 pixels above the
@@ -136,12 +138,13 @@ end
 -- The diagram of the transitions stands to the right of the scene buttons,
 -- level with scenes 4 and 5, in colour or grey, with its labels beside and
 -- above it, unlit, yellow or red (see tools/make-cv-labels.py).
+local SCENE4_TOP = LAUNCH_TOP + ROW_PITCH * 3
 front.transition_diagram = {
-	offset = { 3230, 1250 },
+	offset = { 3230, SCENE4_TOP + 83 },
 	{ path = "Transition_Diagram_2frames", frames = 2 },
 }
 front.label_transitions = {
-	offset = { 3170, 1190 },
+	offset = { 3170, SCENE4_TOP + 23 },
 	{ path = "Label_Transitions_3frames", frames = 3 },
 }
 for scene = 1, ROW_COUNT do
@@ -152,6 +155,35 @@ for scene = 1, ROW_COUNT do
 		},
 		{ path = "Label_Scene" .. scene .. "_3frames", frames = 3 },
 	}
+end
+
+-- The names the user types (see "Track name", "Clip name" and "Scene name" in
+-- CONTEXT.md) are drawn by the host into transparent areas as wide as a track,
+-- centred over their buttons. Each name has two areas on top of each other:
+-- one for the name, one for the default that stands in while it is empty.
+-- A clip name sits right above its launch button, in the space between the
+-- labels of the scene above and the button; a scene name likewise above its
+-- scene button. The track names sit above the clip names of scene 1, in a
+-- taller area for their larger font.
+local NAME_WIDTH = 250
+local NAME_HEIGHT = 50
+local TRACK_NAME_HEIGHT = 60
+local NAME_INSET = math.floor((BUTTON_WIDTH - NAME_WIDTH) / 2)
+local function add_name_areas(panel, name, left, top, path)
+	panel[name .. "_value"] = { offset = { left, top }, { path = path } }
+	panel[name .. "_default"] = { offset = { left, top }, { path = path } }
+end
+for track = 1, TRACK_COUNT do
+	local left = LAUNCH_LEFT + TRACK_PITCH * (track - 1) + NAME_INSET
+	add_name_areas(front, "track" .. track .. "_name", left, LAUNCH_TOP - NAME_HEIGHT - TRACK_NAME_HEIGHT, "Name_Area_Track")
+	for row = 1, ROW_COUNT do
+		local top = LAUNCH_TOP + ROW_PITCH * (row - 1) - NAME_HEIGHT
+		add_name_areas(front, "track" .. track .. "_clip" .. row .. "_name", left, top, "Name_Area")
+	end
+end
+for scene = 1, ROW_COUNT do
+	local top = LAUNCH_TOP + ROW_PITCH * (scene - 1) - NAME_HEIGHT
+	add_name_areas(front, "scene" .. scene .. "_name", SCENE_LEFT + (SCENE_WIDTH - NAME_WIDTH) / 2, top, "Name_Area")
 end
 
 -- A function button is a lamp showing one of seven frames (unlit, then dim and
@@ -169,11 +201,12 @@ front.click_functions = {
 }
 
 -- The back button stands above the first track, centred in the width of a
--- launch button and as far above it as the launch buttons are apart, all as
--- drawn: 122 pixels. It is a lamp showing one of nine frames, with a
--- transparent display of the same size on top.
+-- launch button, 20 pixels below the header, which leaves room for the track
+-- names and the clip names of scene 1 between its label and the grid. It is a
+-- lamp showing one of nine frames, with a transparent display of the same
+-- size on top.
 local BACK_LEFT = LAUNCH_LEFT + 38
-local BACK_TOP = LAUNCH_TOP - 232
+local BACK_TOP = 180
 front.lamp_back = {
 	offset = { BACK_LEFT, BACK_TOP },
 	{ path = "Back_Button_9frames", frames = 9 },
@@ -297,6 +330,11 @@ for track = 1, TRACK_COUNT do
 			{ path = "CV_Mode_Switch_3frames", frames = 3 },
 		}
 	end
+	-- The track name above the column, in place of the track number it had,
+	-- centred over the switches and the jacks, as wide as the columns are
+	-- apart and as tall as on the front.
+	local column_centre = 1100 + 220 * (track - 1) - 5
+	add_name_areas(back, "track" .. track .. "_name", column_centre - 110, 1343, "Name_Area_Back")
 end
 
 folded_front = {

@@ -24,6 +24,9 @@ format_version = "3.0"
 --   selection of track t:            100 + t
 --   film strip frame of the labels of the row of CV output o: 140 + o
 --   film strip frames of the transition diagram and its labels: 150, 151
+--   name of track t:                 400 + t
+--   name of the scene of row r:      410 + r
+--   name of a launch button's clip:  4000 + 10 * t + r
 --   CV mode of CV output o of track t:  200 + 10 * t + o
 --   the same, for control surfaces:     300 + 10 * t + o
 --   mute button of track t, held down or not: 110 + t
@@ -132,6 +135,18 @@ local OUTPUT_SETTING_TYPES = {
 	bipolar = { steps = VALUE_COUNT, texts = bipolar_texts, default = BIPOLAR_ZERO },
 	transition = { steps = TRANSITION_COUNT, texts = transition_texts, default = 0 },
 }
+
+-- A track, clip or scene name: text the user types on the panel. Saved with
+-- the song and in patches (see docs/adr/0003), not automatable and not a
+-- Remote item. Empty stands for the default name, which the panel shows in
+-- its place and which is never stored (see docs/adr/0007).
+local function name_property(tag, text_key)
+	return jbox.string{
+		property_tag = tag,
+		default = "",
+		ui_name = jbox.ui_text(text_key),
+	}
+end
 
 local function plain_number(max)
 	return jbox.ui_linear({ min = 0, max = max, units = { { decimals = 0 } } })
@@ -435,6 +450,9 @@ for track = 1, TRACK_COUNT do
 		add_remote_item(copy, "Track " .. track .. " Output " .. string.upper(letter) .. " CV Mode")
 	end
 
+	local track_name = "track" .. track .. "_name"
+	document_properties[track_name] = name_property(400 + track, "text_" .. track_name)
+
 	-- 1 while the track's mute or solo button is held down. The realtime code
 	-- switches the track's mute or solo when it goes down; that is also what
 	-- automation records and plays back. Not saved, so that a song never opens
@@ -503,6 +521,10 @@ for track = 1, TRACK_COUNT do
 		}
 		add_remote_item(clip .. "_colour", remote_name .. " Colour")
 
+		-- The clip name belongs to the launch button and is kept while it is
+		-- empty, like the clip's settings.
+		document_properties[clip .. "_name"] = name_property(4000 + 10 * track + row, "text_" .. clip .. "_name")
+
 		-- The clip's fill-in. A new one is a copy of its clip's values, with
 		-- every transition off, in white: whoever sets one up writes all of
 		-- them (see Press.h), so these defaults only matter for a fill-in set
@@ -570,6 +592,9 @@ for track = 1, TRACK_COUNT do
 end
 
 for scene = 1, ROW_COUNT do
+	local scene_name = "scene" .. scene .. "_name"
+	document_properties[scene_name] = name_property(410 + scene, "text_" .. scene_name)
+
 	-- What the scene button shows as its part of the interval meter, for
 	-- control surfaces; encoded like the light of a launch button. A scene
 	-- button has no property for presses: a press writes the selection of
