@@ -6,11 +6,14 @@ local TRACK_COUNT = 8
 -- above its launch buttons and a row of labels below them, and the first one
 -- the track names above as well; the back button and the set fill-in button
 -- sit right below the header, the function select buttons near the bottom.
-local LAUNCH_LEFT = 907
+-- The grid is centred on the panel: the fill-in button on the left and the
+-- scene buttons on the right are 100 pixels from it, and 562 pixels from the
+-- edges of the panel (see SIDE_GAP below).
+local LAUNCH_LEFT = 792
 local LAUNCH_TOP = 460
-local TRACK_PITCH = 252
+local TRACK_PITCH = 283
 local ROW_PITCH = 250
-local FUNCTION_LEFT = 974
+local FUNCTION_LEFT = LAUNCH_LEFT + 67
 local FUNCTION_TOP = 2440
 local FUNCTION_WIDTH = 70
 local FUNCTION_HEIGHT = 75
@@ -75,7 +78,6 @@ front = {
 local ROW_COUNT = 8
 local BUTTON_WIDTH = 205
 local BUTTON_HEIGHT = 135
-local SETUP_LEFT = 720
 
 -- The launch buttons are lamps showing one frame of a film strip: unlit, then
 -- dim and vibrant for each of the fourteen colours. One transparent display
@@ -89,18 +91,20 @@ for track = 1, TRACK_COUNT do
 		}
 	end
 end
+local GRID_WIDTH = TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH + 4
 local GRID_HEIGHT = ROW_PITCH * (ROW_COUNT - 1) + BUTTON_HEIGHT
 front.click_grid = {
 	offset = { LAUNCH_LEFT, LAUNCH_TOP },
-	{ size = { 1970, GRID_HEIGHT } },
+	{ size = { GRID_WIDTH, GRID_HEIGHT } },
 }
 
--- The scene buttons stand one track further to the right, each centred in the
--- width of a launch button and level with its scene. They are lamps as well,
+-- The scene buttons stand 100 pixels to the right of the grid, each level with
+-- its scene. They are lamps as well,
 -- showing one of nine frames (unlit, then dim and vibrant for red, green,
 -- yellow and white), with one transparent display on top of all eight.
 local SCENE_WIDTH = 130
-local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * TRACK_COUNT + 35
+local SIDE_GAP = 100
+local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH + SIDE_GAP
 for scene = 1, ROW_COUNT do
 	front["lamp_scene" .. scene] = {
 		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
@@ -140,11 +144,11 @@ end
 -- above it, unlit, yellow or red (see tools/make-cv-labels.py).
 local SCENE4_TOP = LAUNCH_TOP + ROW_PITCH * 3
 front.transition_diagram = {
-	offset = { 3230, SCENE4_TOP + 83 },
+	offset = { 3387, SCENE4_TOP + 83 },
 	{ path = "Transition_Diagram_2frames", frames = 2 },
 }
 front.label_transitions = {
-	offset = { 3170, SCENE4_TOP + 23 },
+	offset = { 3327, SCENE4_TOP + 23 },
 	{ path = "Label_Transitions_3frames", frames = 3 },
 }
 for scene = 1, ROW_COUNT do
@@ -163,9 +167,11 @@ end
 -- one for the name, one for the default that stands in while it is empty.
 -- A clip name sits right above its launch button, in the space between the
 -- labels of the scene above and the button; a scene name likewise above its
--- scene button. The track names sit above the clip names of scene 1, in a
--- taller area for their larger font.
-local NAME_WIDTH = 250
+-- scene button, in a narrower area that keeps clear of the clip names of
+-- track 8. The track names sit above the clip names of scene 1, in a taller
+-- area for their larger font.
+local NAME_WIDTH = 280
+local SCENE_NAME_WIDTH = 250
 local NAME_HEIGHT = 50
 local TRACK_NAME_HEIGHT = 60
 local NAME_INSET = math.floor((BUTTON_WIDTH - NAME_WIDTH) / 2)
@@ -183,7 +189,7 @@ for track = 1, TRACK_COUNT do
 end
 for scene = 1, ROW_COUNT do
 	local top = LAUNCH_TOP + ROW_PITCH * (scene - 1) - NAME_HEIGHT
-	add_name_areas(front, "scene" .. scene .. "_name", SCENE_LEFT + (SCENE_WIDTH - NAME_WIDTH) / 2, top, "Name_Area")
+	add_name_areas(front, "scene" .. scene .. "_name", SCENE_LEFT + (SCENE_WIDTH - SCENE_NAME_WIDTH) / 2, top, "Name_Area_Scene")
 end
 
 -- A function button is a lamp showing one of seven frames (unlit, then dim and
@@ -197,7 +203,7 @@ for track = 1, TRACK_COUNT do
 end
 front.click_functions = {
 	offset = { FUNCTION_LEFT, FUNCTION_TOP },
-	{ size = { 1835, FUNCTION_HEIGHT } },
+	{ size = { TRACK_PITCH * (TRACK_COUNT - 1) + FUNCTION_WIDTH + 4, FUNCTION_HEIGHT } },
 }
 
 -- The back button stands above the first track, centred in the width of a
@@ -284,7 +290,9 @@ for name, track in pairs(FUNCTION_SELECT_TRACKS) do
 	}
 end
 
--- The setup button is a lamp with a transparent display on top, like the grid.
+-- The setup button is a lamp with a transparent display on top, like the grid,
+-- centred below the fill-in button.
+local SETUP_LEFT = FILL_IN_LEFT + (SCENE_WIDTH - 70) / 2
 front.lamp_setup = {
 	offset = { SETUP_LEFT, FUNCTION_TOP },
 	{ path = "Button_21_green_2frames", frames = 2 },

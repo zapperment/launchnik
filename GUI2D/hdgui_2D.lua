@@ -131,7 +131,7 @@ end
 table.insert(front_widgets, jbox.custom_display{
 	graphics = { node = "click_grid" },
 	background = "transparent",
-	display_width_pixels = 1970,
+	display_width_pixels = 2190,
 	display_height_pixels = 1885,
 	display_id = 1,
 	values = { "/custom_properties/setup" },
@@ -179,7 +179,7 @@ table.insert(front_widgets, jbox.custom_display{
 table.insert(front_widgets, jbox.custom_display{
 	graphics = { node = "click_functions" },
 	background = "transparent",
-	display_width_pixels = 1835,
+	display_width_pixels = 2055,
 	display_height_pixels = 75,
 	display_id = 7,
 	values = { "/custom_properties/selected_function" },

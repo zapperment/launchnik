@@ -47,10 +47,10 @@ RED = "#ff5e5e"
 BACK_TEXT = "#e0e0e0"
 
 # The launch buttons, as in tools/make-label-strips.sh.
-TRACK_PITCH = 252
+TRACK_PITCH = 283
 BUTTON_WIDTH = 205
 LAUNCH_MARGIN = 25
-LAUNCH_WIDTH = 2020
+LAUNCH_WIDTH = 2240
 
 # One frame of the labels of a scene: the values on top, the pattern 32
 # pixels below them.
@@ -67,14 +67,14 @@ TRANSITIONS = ["OFF", "A", "B", "C", "D"]
 # its size, and where TRANSITION and the letters go on the panel. The diagram
 # itself is at DIAGRAM_LEFT, DIAGRAM_TOP, with the middle of its four boxes
 # DIAGRAM_ROWS pixels below its top.
-TRANSITION_LABELS_LEFT = 3170
+TRANSITION_LABELS_LEFT = 3327
 TRANSITION_LABELS_TOP = 1233
 TRANSITION_LABELS_SIZE = (250, 300)
 DIAGRAM_TOP = 1293
 DIAGRAM_ROWS = [28, 92, 156, 219]
-HEADING_LEFT = 3186
+HEADING_LEFT = 3343
 HEADING_TOP = 1242
-LETTER_CENTRE = 3199
+LETTER_CENTRE = 3356
 
 # The back panel: the jacks of track 1 start 840 pixels from the left, 300
 # apart, the jacks of output A 1265 pixels from the top, 200 apart; a jack is

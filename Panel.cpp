@@ -7,7 +7,7 @@
 namespace {
 
 // Layout of the grid display, in its own pixels; matches GUI2D/device_2D.lua.
-const TJBox_Float32 kTrackPitch = 252.0f;
+const TJBox_Float32 kTrackPitch = 283.0f;
 const TJBox_Float32 kRowPitch = 250.0f;
 const TJBox_Float32 kButtonWidth = 205.0f;
 const TJBox_Float32 kButtonHeight = 135.0f;
