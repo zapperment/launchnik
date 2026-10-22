@@ -27,6 +27,7 @@ format_version = "3.0"
 --   name of track t:                 400 + t
 --   name of the scene of row r:      410 + r
 --   name of a launch button's clip:  4000 + 10 * t + r
+--   name of CV output o of track t:  500 + 10 * t + o
 --   CV mode of CV output o of track t:  200 + 10 * t + o
 --   the same, for control surfaces:     300 + 10 * t + o
 --   mute button of track t, held down or not: 110 + t
@@ -136,7 +137,7 @@ local OUTPUT_SETTING_TYPES = {
 	transition = { steps = TRANSITION_COUNT, texts = transition_texts, default = 0 },
 }
 
--- A track, clip or scene name: text the user types on the panel. Saved with
+-- A track, clip, scene or CV output name: text the user types on the panel. Saved with
 -- the song and in patches (see docs/adr/0003), not automatable and not a
 -- Remote item. Empty stands for the default name, which the panel shows in
 -- its place and which is never stored (see docs/adr/0007).
@@ -448,6 +449,9 @@ for track = 1, TRACK_COUNT do
 			ui_type = jbox.ui_selector(cv_mode_texts),
 		}
 		add_remote_item(copy, "Track " .. track .. " Output " .. string.upper(letter) .. " CV Mode")
+
+		local output_name = "track" .. track .. "_output_" .. letter .. "_name"
+		document_properties[output_name] = name_property(500 + 10 * track + output, "text_" .. output_name)
 	end
 
 	local track_name = "track" .. track .. "_name"

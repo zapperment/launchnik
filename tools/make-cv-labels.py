@@ -18,8 +18,7 @@ CONTEXT.md):
   diagram to the right of the scene buttons: TRANSITION and the letters A to
   D, unlit, yellow or red.
 - GUI2D/Labels_Back.png holds every caption of the back panel, as large as
-  the panel: CV OUT, the letters of the CV outputs and,
-  left of the first track, the names of the CV modes with lines to the
+  the panel: CV OUT and, left of the first track, the names of the CV modes with lines to the
   positions of the switch.
 
 It also copies the transition diagram and the CV mode switch into GUI2D.
@@ -77,14 +76,14 @@ HEADING_TOP = 1242
 LETTER_CENTRE = 3356
 
 # The back panel: the jacks of track 1 start 840 pixels from the left, 300
-# apart, the jacks of output A 1265 pixels from the top, 200 apart; a jack is
+# apart, the jacks of output A 1065 pixels from the top, 240 apart; a jack is
 # 80 pixels wide and 90 high. The switches stand 90 pixels left of their
 # jacks.
 PANEL_SIZE = (3770, 2760)
 JACK_LEFT = 840
-JACK_TOP = 1265
+JACK_TOP = 1065
 JACK_PITCH = 300
-OUTPUT_PITCH = 200
+OUTPUT_PITCH = 240
 JACK_WIDTH = 80
 JACK_HEIGHT = 90
 SWITCH_LEFT = JACK_LEFT - 90
@@ -167,17 +166,11 @@ def make_back_labels():
 	jack_centre = lambda track: JACK_LEFT + JACK_WIDTH // 2 + JACK_PITCH * track
 	row_centre = lambda output: JACK_TOP + JACK_HEIGHT // 2 + OUTPUT_PITCH * output
 
-	# CV OUT centred over the jacks. The track names below it are text
-	# widgets (see GUI2D/device_2D.lua).
+	# CV OUT centred over the jacks. The track names below it, and the names
+	# of the CV outputs, are text widgets (see GUI2D/device_2D.lua).
 	heading = font(REGULAR, 68)
-	numbers = font(REGULAR, 54)
 	middle = (jack_centre(0) + jack_centre(TRACK_COUNT - 1)) // 2
-	draw_text(draw, (middle, JACK_TOP - 213 - heading.getbbox("C", anchor="la")[1]), "CV OUT", BACK_TEXT, heading, "ma")
-
-	# The letters of the CV outputs to the right of the last track.
-	letter_centre = jack_centre(TRACK_COUNT - 1) + 120
-	for output, letter in enumerate(OUTPUT_LETTERS):
-		draw_text(draw, (letter_centre, row_centre(output)), letter, BACK_TEXT, numbers, "mm")
+	draw_text(draw, (middle, JACK_TOP - 251 - heading.getbbox("C", anchor="la")[1]), "CV OUT", BACK_TEXT, heading, "ma")
 
 	# Left of the first track, the names of the CV modes, each pointing with a
 	# line to its position of the switch. The lines' image has a margin of 16

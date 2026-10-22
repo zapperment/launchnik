@@ -40,7 +40,7 @@ One of fourteen hues that mark a **clip** so that it can be recognised: white, r
 _Avoid_: Tint, label
 
 **Patch**:
-What all 64 **launch buttons** hold (their **clip names** included), together with the **length** of the switch interval, the **CV mode** of every **CV output**, the **track names** and the **scene names**, saved as a file that can be loaded into any Launchnik, in any song. It does not hold what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
+What all 64 **launch buttons** hold (their **clip names** included), together with the **length** of the switch interval, the **CV mode** and **CV output name** of every **CV output**, the **track names** and the **scene names**, saved as a file that can be loaded into any Launchnik, in any song. It does not hold what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
 _Avoid_: Template, preset, layout
 
 **Unlit**, **dim**, **vibrant**:
@@ -105,6 +105,10 @@ _Avoid_: Scene launch button, row button
 One of the six jacks of a **track** on the back panel, lettered A to F, each driven by one row of settings in every **clip** of the track. Written "output A" in full, never a bare "A", since **transitions** are lettered too.
 _Avoid_: Jack, CV out, lane, channel
 
+**CV output name**:
+Text that the user gives a **CV output** so that it can be recognised, such as what it controls. It is shown above the CV output and its switch on the back panel and changed by double-clicking it. Like a **clip name**, it shows about 12 characters. It is never shown empty: clearing it gives the CV output its default name back, CV Out nA to CV Out nF for the outputs of track n, which is also what a new device shows. It is part of the **patch**, cannot be automated, and is not available to a control surface. It is always shown.
+_Avoid_: Output label, jack name
+
 **CV mode**:
 What a **CV output** emits, chosen with a three-way switch beside it on the back panel: **pattern**, **unipolar** or **bipolar**. It is part of the **patch**, cannot be automated, and can only be changed on the back panel, not from a control surface; a change takes effect at once, dropping any transition under way. A new device has output A in pattern mode and outputs B to F in unipolar mode.
 _Avoid_: Polarity, output mode, type
@@ -167,7 +171,7 @@ What a **launch button** is showing at the moment, in either mode: **unlit**, or
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Label**:
-The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, FILL-IN, MUTE, SOLO and STOP are not labels: SETUP is always white, FILL-IN belongs to the **fill-in button**, and MUTE, SOLO and STOP to the **function select buttons**. Nor are **track names**, **clip names** and **scene names**, which the user writes.
+The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, FILL-IN, MUTE, SOLO and STOP are not labels: SETUP is always white, FILL-IN belongs to the **fill-in button**, and MUTE, SOLO and STOP to the **function select buttons**. Nor are **track names**, **clip names**, **scene names** and **CV output names**, which the user writes.
 _Avoid_: Caption, legend, text, tag
 
 **Mode colour**:

@@ -321,17 +321,21 @@ back = {
 }
 
 -- Six CV outputs, A to F from the top, for each track, 300 pixels apart
--- across, which leaves room for the track names, and 200 down, each with the
--- switch for its CV mode to its left: the stock bypass switch, whose frames
--- from the bottom position up stand for bipolar, unipolar and pattern. Their
--- captions are in Labels_Back (see tools/make-cv-labels.py).
+-- across, which leaves room for the track names, and 240 down, which leaves
+-- room for the CV output names, each with the switch for its CV mode to its
+-- left: the stock bypass switch, whose frames from the bottom position up
+-- stand for bipolar, unipolar and pattern. Their captions are in Labels_Back
+-- (see tools/make-cv-labels.py).
 local JACK_LEFT = 840
-local JACK_TOP = 1265
+local JACK_TOP = 1065
 local JACK_PITCH = 300
+local OUTPUT_PITCH = 240
 for track = 1, TRACK_COUNT do
+	-- Names are centred over the switches and the jacks.
+	local column_centre = JACK_LEFT + JACK_PITCH * (track - 1) - 5
 	for output, letter in ipairs(OUTPUT_LETTERS) do
 		local left = JACK_LEFT + JACK_PITCH * (track - 1)
-		local top = JACK_TOP + 200 * (output - 1)
+		local top = JACK_TOP + OUTPUT_PITCH * (output - 1)
 		back["cv_out_track" .. track .. "_" .. letter] = {
 			offset = { left, top },
 			{ path = "SharedCVJack", frames = 3 },
@@ -340,11 +344,13 @@ for track = 1, TRACK_COUNT do
 			offset = { left - 90, top + 45 - 60 },
 			{ path = "CV_Mode_Switch_3frames", frames = 3 },
 		}
+		-- The CV output's name right above its switch, like a clip name above
+		-- its launch button.
+		add_name_areas(back, "track" .. track .. "_output_" .. letter .. "_name", column_centre - NAME_WIDTH / 2, top - 70, "Name_Area")
 	end
-	-- The track name above the column, centred over the switches and the
-	-- jacks, as wide as the columns are apart and as tall as on the front.
-	local column_centre = JACK_LEFT + JACK_PITCH * (track - 1) - 5
-	add_name_areas(back, "track" .. track .. "_name", column_centre - JACK_PITCH / 2, JACK_TOP - 97, "Name_Area_Back")
+	-- The track name above the name of output A, as wide as the columns are
+	-- apart and as tall as on the front.
+	add_name_areas(back, "track" .. track .. "_name", column_centre - JACK_PITCH / 2, JACK_TOP - 135, "Name_Area_Back")
 end
 
 folded_front = {

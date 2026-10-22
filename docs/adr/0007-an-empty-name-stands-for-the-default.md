@@ -1,6 +1,6 @@
 # An empty name stands for the default
 
-**Track names**, **clip names** and **scene names** are stored as text the user typed, and as empty text otherwise. Nothing ever stores a default name such as "Track 1", "Clip 3" or "Scene 8": while a name is empty, the panel shows its default in its place. Clearing a name and confirming with Return therefore gives it back its default.
+**Track names**, **clip names**, **scene names** and, since version 1.0.0d15, **CV output names** are stored as text the user typed, and as empty text otherwise. Nothing ever stores a default name such as "Track 1", "Clip 3", "Scene 8" or "CV Out 2B": while a name is empty, the panel shows its default in its place. Clearing a name and confirming with Return therefore gives it back its default.
 
 We chose this because the host leaves no way to repair a name after the user has typed it. Names are typed into the host's own text field, which stores whatever it is given, empty text included, and has no setting for a minimum or maximum length. Realtime code cannot write saved properties, and control surfaces have no access to names, so nothing inside the device could put "Track 1" back once an empty name had been stored.
 
