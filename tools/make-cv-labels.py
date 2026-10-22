@@ -18,7 +18,7 @@ CONTEXT.md):
   diagram to the right of the scene buttons: TRANSITION and the letters A to
   D, unlit, yellow or red.
 - GUI2D/Labels_Back.png holds every caption of the back panel, as large as
-  the panel: CV OUT, the track numbers, the letters of the CV outputs and,
+  the panel: CV OUT, the letters of the CV outputs and,
   left of the first track, the names of the CV modes with lines to the
   positions of the switch.
 
@@ -47,10 +47,10 @@ RED = "#ff5e5e"
 BACK_TEXT = "#e0e0e0"
 
 # The launch buttons, as in tools/make-label-strips.sh.
-TRACK_PITCH = 252
+TRACK_PITCH = 283
 BUTTON_WIDTH = 205
 LAUNCH_MARGIN = 25
-LAUNCH_WIDTH = 2020
+LAUNCH_WIDTH = 2240
 
 # One frame of the labels of a scene: the values on top, the pattern 32
 # pixels below them.
@@ -67,23 +67,23 @@ TRANSITIONS = ["OFF", "A", "B", "C", "D"]
 # its size, and where TRANSITION and the letters go on the panel. The diagram
 # itself is at DIAGRAM_LEFT, DIAGRAM_TOP, with the middle of its four boxes
 # DIAGRAM_ROWS pixels below its top.
-TRANSITION_LABELS_LEFT = 3170
-TRANSITION_LABELS_TOP = 1190
+TRANSITION_LABELS_LEFT = 3327
+TRANSITION_LABELS_TOP = 1233
 TRANSITION_LABELS_SIZE = (250, 300)
-DIAGRAM_TOP = 1250
+DIAGRAM_TOP = 1293
 DIAGRAM_ROWS = [28, 92, 156, 219]
-HEADING_LEFT = 3186
-HEADING_TOP = 1199
-LETTER_CENTRE = 3199
+HEADING_LEFT = 3343
+HEADING_TOP = 1242
+LETTER_CENTRE = 3356
 
-# The back panel: the jacks of track 1 start 1100 pixels from the left, 220
-# apart, the jacks of output A 1440 pixels from the top, 200 apart; a jack is
+# The back panel: the jacks of track 1 start 840 pixels from the left, 300
+# apart, the jacks of output A 1265 pixels from the top, 200 apart; a jack is
 # 80 pixels wide and 90 high. The switches stand 90 pixels left of their
 # jacks.
 PANEL_SIZE = (3770, 2760)
-JACK_LEFT = 1100
-JACK_TOP = 1440
-JACK_PITCH = 220
+JACK_LEFT = 840
+JACK_TOP = 1265
+JACK_PITCH = 300
 OUTPUT_PITCH = 200
 JACK_WIDTH = 80
 JACK_HEIGHT = 90
@@ -167,14 +167,12 @@ def make_back_labels():
 	jack_centre = lambda track: JACK_LEFT + JACK_WIDTH // 2 + JACK_PITCH * track
 	row_centre = lambda output: JACK_TOP + JACK_HEIGHT // 2 + OUTPUT_PITCH * output
 
-	# CV OUT centred over the jacks, the track numbers over their columns, as
-	# they were with one CV output per track.
+	# CV OUT centred over the jacks. The track names below it are text
+	# widgets (see GUI2D/device_2D.lua).
 	heading = font(REGULAR, 68)
 	numbers = font(REGULAR, 54)
 	middle = (jack_centre(0) + jack_centre(TRACK_COUNT - 1)) // 2
-	draw_text(draw, (middle, 1227 - heading.getbbox("C", anchor="la")[1]), "CV OUT", BACK_TEXT, heading, "ma")
-	for track in range(TRACK_COUNT):
-		draw_text(draw, (jack_centre(track), 1354 - numbers.getbbox("1", anchor="la")[1]), str(track + 1), BACK_TEXT, numbers, "ma")
+	draw_text(draw, (middle, JACK_TOP - 213 - heading.getbbox("C", anchor="la")[1]), "CV OUT", BACK_TEXT, heading, "ma")
 
 	# The letters of the CV outputs to the right of the last track.
 	letter_centre = jack_centre(TRACK_COUNT - 1) + 120

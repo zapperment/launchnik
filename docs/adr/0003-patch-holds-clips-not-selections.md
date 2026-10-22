@@ -20,3 +20,8 @@ Amended on 2026-10-12: a patch also holds the **length** of the switch interval,
 
 - Loading a patch may now change the timing of a running song: the switch points move to the grid of the patch's length, and with **immediate** whatever is queued takes effect at once. No selection changes, so nothing starts or stops that the user had not already chosen.
 - Patches saved before version 1.0.0d6 carry no length. The default, four bars, is what those versions always used, so such a patch is expected to load with four bars.
+
+Amended again on 2026-10-21 (version 1.0.0d14): a patch also holds the **track names**, **clip names** and **scene names**. Like the CV modes, they describe how the device is wired into a song rather than the grid alone, but they belong to a complete setup just the same, and a patch that left them out would carry the clips without saying what they are for.
+
+- Loading a patch renames the tracks, the clips and the scenes. A patch taken from another song, or one of the factory patches, replaces names chosen in this song, in the same single undo step.
+- Patches saved before version 1.0.0d14 carry no names, so they load with every name empty, which the panel shows as the default names (Track 1 to Track 8, Clip 1 to Clip 8, Scene 1 to Scene 8; see [0007](0007-an-empty-name-stands-for-the-default.md)). The factory patches carry no names either, and need no change.

@@ -42,16 +42,16 @@ YELLOW="#fafe07"
 RED="#ff5e5e"
 BLUE="#0598fe"
 
-# Launch buttons are 205 pixels wide, 252 apart, with 235 pixels from one
+# Launch buttons are 205 pixels wide, 283 apart, with 250 pixels from one
 # scene to the next. The strip starts 25 pixels left of the first track and
 # level with the top of the labels of scene 1, and covers scenes 1 and 2; one
 # label is 30 pixels high.
-TRACK_PITCH=252
-ROW_PITCH=235
+TRACK_PITCH=283
+ROW_PITCH=250
 BUTTON_WIDTH=205
 LAUNCH_MARGIN=25
-LAUNCH_WIDTH=2020
-LAUNCH_SIZE=${LAUNCH_WIDTH}x265
+LAUNCH_WIDTH=2240
+LAUNCH_SIZE=${LAUNCH_WIDTH}x280
 SCENE_SIZE=250x30
 
 WORK=$(mktemp -d)
@@ -149,8 +149,8 @@ draw_strip "$SCENE_SIZE" "$POINTSIZE" SOLO GUI2D/Caption_Solo_2frames.png "$WHIT
 draw_strip "$SCENE_SIZE" "$POINTSIZE" STOP GUI2D/Caption_Stop_2frames.png "$WHITE" "$RED"
 
 # The setup button is 70 by 75 pixels; SETUP is 118 by 26 pixels when trimmed.
-SETUP_LEFT=720
-FUNCTION_TOP=2338
+SETUP_LEFT=592
+FUNCTION_TOP=2440
 magick -size 300x80 xc:none -font "$FONT" -pointsize "$POINTSIZE" -fill "$WHITE" -annotate +10+50 SETUP -trim +repage "PNG32:$WORK/setup.png"
 magick -size 3770x2760 xc:none "$WORK/setup.png" -geometry "+$((SETUP_LEFT - 8 - 118))+$((FUNCTION_TOP + (75 - 26) / 2 - 2))" -composite "PNG32:GUI2D/Labels_Front.png"
 echo "Wrote GUI2D/Labels_Front.png"

@@ -2,15 +2,19 @@ format_version = "2.0"
 
 local TRACK_COUNT = 8
 
--- Layout of the button grid, in pixels. Everything below the header sits 50
--- pixels higher than the grid alone would, centred, to make room for the row
--- of function select buttons at the bottom.
-local LAUNCH_LEFT = 907
-local LAUNCH_TOP = 462
-local TRACK_PITCH = 252
-local ROW_PITCH = 235
-local FUNCTION_LEFT = 974
-local FUNCTION_TOP = 2338
+-- Layout of the button grid, in pixels. Each scene has a row of clip names
+-- above its launch buttons and a row of labels below them, and the first one
+-- the track names above as well; the back button and the set fill-in button
+-- sit right below the header, the function select buttons near the bottom.
+-- The grid is centred on the panel: the fill-in button on the left and the
+-- scene buttons on the right are 100 pixels from it, and 562 pixels from the
+-- edges of the panel (see SIDE_GAP below).
+local LAUNCH_LEFT = 792
+local LAUNCH_TOP = 460
+local TRACK_PITCH = 283
+local ROW_PITCH = 250
+local FUNCTION_LEFT = LAUNCH_LEFT + 67
+local FUNCTION_TOP = 2440
 local FUNCTION_WIDTH = 70
 local FUNCTION_HEIGHT = 75
 
@@ -74,7 +78,6 @@ front = {
 local ROW_COUNT = 8
 local BUTTON_WIDTH = 205
 local BUTTON_HEIGHT = 135
-local SETUP_LEFT = 720
 
 -- The launch buttons are lamps showing one frame of a film strip: unlit, then
 -- dim and vibrant for each of the fourteen colours. One transparent display
@@ -88,17 +91,20 @@ for track = 1, TRACK_COUNT do
 		}
 	end
 end
+local GRID_WIDTH = TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH + 4
+local GRID_HEIGHT = ROW_PITCH * (ROW_COUNT - 1) + BUTTON_HEIGHT
 front.click_grid = {
 	offset = { LAUNCH_LEFT, LAUNCH_TOP },
-	{ size = { 1970, 1780 } },
+	{ size = { GRID_WIDTH, GRID_HEIGHT } },
 }
 
--- The scene buttons stand one track further to the right, each centred in the
--- width of a launch button and level with its scene. They are lamps as well,
+-- The scene buttons stand 100 pixels to the right of the grid, each level with
+-- its scene. They are lamps as well,
 -- showing one of nine frames (unlit, then dim and vibrant for red, green,
 -- yellow and white), with one transparent display on top of all eight.
 local SCENE_WIDTH = 130
-local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * TRACK_COUNT + 35
+local SIDE_GAP = 100
+local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH + SIDE_GAP
 for scene = 1, ROW_COUNT do
 	front["lamp_scene" .. scene] = {
 		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
@@ -107,7 +113,7 @@ for scene = 1, ROW_COUNT do
 end
 front.click_scenes = {
 	offset = { SCENE_LEFT, LAUNCH_TOP },
-	{ size = { SCENE_WIDTH, 1780 } },
+	{ size = { SCENE_WIDTH, GRID_HEIGHT } },
 }
 
 -- The labels sit centred below their buttons, their tops 8 pixels above the
@@ -136,12 +142,13 @@ end
 -- The diagram of the transitions stands to the right of the scene buttons,
 -- level with scenes 4 and 5, in colour or grey, with its labels beside and
 -- above it, unlit, yellow or red (see tools/make-cv-labels.py).
+local SCENE4_TOP = LAUNCH_TOP + ROW_PITCH * 3
 front.transition_diagram = {
-	offset = { 3230, 1250 },
+	offset = { 3387, SCENE4_TOP + 83 },
 	{ path = "Transition_Diagram_2frames", frames = 2 },
 }
 front.label_transitions = {
-	offset = { 3170, 1190 },
+	offset = { 3327, SCENE4_TOP + 23 },
 	{ path = "Label_Transitions_3frames", frames = 3 },
 }
 for scene = 1, ROW_COUNT do
@@ -152,6 +159,37 @@ for scene = 1, ROW_COUNT do
 		},
 		{ path = "Label_Scene" .. scene .. "_3frames", frames = 3 },
 	}
+end
+
+-- The names the user types (see "Track name", "Clip name" and "Scene name" in
+-- CONTEXT.md) are drawn by the host into transparent areas as wide as a track,
+-- centred over their buttons. Each name has two areas on top of each other:
+-- one for the name, one for the default that stands in while it is empty.
+-- A clip name sits right above its launch button, in the space between the
+-- labels of the scene above and the button; a scene name likewise above its
+-- scene button, in a narrower area that keeps clear of the clip names of
+-- track 8. The track names sit above the clip names of scene 1, in a taller
+-- area for their larger font.
+local NAME_WIDTH = 280
+local SCENE_NAME_WIDTH = 250
+local NAME_HEIGHT = 50
+local TRACK_NAME_HEIGHT = 60
+local NAME_INSET = math.floor((BUTTON_WIDTH - NAME_WIDTH) / 2)
+local function add_name_areas(panel, name, left, top, path)
+	panel[name .. "_value"] = { offset = { left, top }, { path = path } }
+	panel[name .. "_default"] = { offset = { left, top }, { path = path } }
+end
+for track = 1, TRACK_COUNT do
+	local left = LAUNCH_LEFT + TRACK_PITCH * (track - 1) + NAME_INSET
+	add_name_areas(front, "track" .. track .. "_name", left, LAUNCH_TOP - NAME_HEIGHT - TRACK_NAME_HEIGHT, "Name_Area_Track")
+	for row = 1, ROW_COUNT do
+		local top = LAUNCH_TOP + ROW_PITCH * (row - 1) - NAME_HEIGHT
+		add_name_areas(front, "track" .. track .. "_clip" .. row .. "_name", left, top, "Name_Area")
+	end
+end
+for scene = 1, ROW_COUNT do
+	local top = LAUNCH_TOP + ROW_PITCH * (scene - 1) - NAME_HEIGHT
+	add_name_areas(front, "scene" .. scene .. "_name", SCENE_LEFT + (SCENE_WIDTH - SCENE_NAME_WIDTH) / 2, top, "Name_Area_Scene")
 end
 
 -- A function button is a lamp showing one of seven frames (unlit, then dim and
@@ -165,15 +203,16 @@ for track = 1, TRACK_COUNT do
 end
 front.click_functions = {
 	offset = { FUNCTION_LEFT, FUNCTION_TOP },
-	{ size = { 1835, FUNCTION_HEIGHT } },
+	{ size = { TRACK_PITCH * (TRACK_COUNT - 1) + FUNCTION_WIDTH + 4, FUNCTION_HEIGHT } },
 }
 
 -- The back button stands above the first track, centred in the width of a
--- launch button and as far above it as the launch buttons are apart, all as
--- drawn: 122 pixels. It is a lamp showing one of nine frames, with a
--- transparent display of the same size on top.
+-- launch button, 20 pixels below the header, which leaves room for the track
+-- names and the clip names of scene 1 between its label and the grid. It is a
+-- lamp showing one of nine frames, with a transparent display of the same
+-- size on top.
 local BACK_LEFT = LAUNCH_LEFT + 38
-local BACK_TOP = LAUNCH_TOP - 232
+local BACK_TOP = 180
 front.lamp_back = {
 	offset = { BACK_LEFT, BACK_TOP },
 	{ path = "Back_Button_9frames", frames = 9 },
@@ -251,7 +290,9 @@ for name, track in pairs(FUNCTION_SELECT_TRACKS) do
 	}
 end
 
--- The setup button is a lamp with a transparent display on top, like the grid.
+-- The setup button is a lamp with a transparent display on top, like the grid,
+-- centred below the fill-in button.
+local SETUP_LEFT = FILL_IN_LEFT + (SCENE_WIDTH - 70) / 2
 front.lamp_setup = {
 	offset = { SETUP_LEFT, FUNCTION_TOP },
 	{ path = "Button_21_green_2frames", frames = 2 },
@@ -279,15 +320,18 @@ back = {
 	},
 }
 
--- Six CV outputs, A to F from the top, for each track, 220 pixels apart
--- across and 200 down, each with the switch for its CV mode to its left: the
--- stock bypass switch, whose frames from the bottom position up stand for
--- bipolar, unipolar and pattern. Their captions are in Labels_Back (see
--- tools/make-cv-labels.py).
+-- Six CV outputs, A to F from the top, for each track, 300 pixels apart
+-- across, which leaves room for the track names, and 200 down, each with the
+-- switch for its CV mode to its left: the stock bypass switch, whose frames
+-- from the bottom position up stand for bipolar, unipolar and pattern. Their
+-- captions are in Labels_Back (see tools/make-cv-labels.py).
+local JACK_LEFT = 840
+local JACK_TOP = 1265
+local JACK_PITCH = 300
 for track = 1, TRACK_COUNT do
 	for output, letter in ipairs(OUTPUT_LETTERS) do
-		local left = 1100 + 220 * (track - 1)
-		local top = 1440 + 200 * (output - 1)
+		local left = JACK_LEFT + JACK_PITCH * (track - 1)
+		local top = JACK_TOP + 200 * (output - 1)
 		back["cv_out_track" .. track .. "_" .. letter] = {
 			offset = { left, top },
 			{ path = "SharedCVJack", frames = 3 },
@@ -297,6 +341,10 @@ for track = 1, TRACK_COUNT do
 			{ path = "CV_Mode_Switch_3frames", frames = 3 },
 		}
 	end
+	-- The track name above the column, centred over the switches and the
+	-- jacks, as wide as the columns are apart and as tall as on the front.
+	local column_centre = JACK_LEFT + JACK_PITCH * (track - 1) - 5
+	add_name_areas(back, "track" .. track .. "_name", column_centre - JACK_PITCH / 2, JACK_TOP - 97, "Name_Area_Back")
 end
 
 folded_front = {

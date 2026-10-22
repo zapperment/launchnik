@@ -12,6 +12,10 @@ _Avoid_: Clip button, pad, cell
 What a **launch button** holds: a **colour** and, for each of its track's six **CV outputs**, a **pattern**, a **unipolar value**, a **bipolar value** and a **transition**. Launching the clip makes each CV output emit whichever of the three its **CV mode** picks. A launch button keeps all of them while it is **empty**, so a clip comes back as it was; a new clip has, on every CV output, the pattern of its row, unipolar value 0, bipolar value 0 and transition off. Several clips on a track may use the same pattern. A clip may also hold a **fill-in**.
 _Avoid_: Slot, pattern (for the clip itself); a **scene** is a row of launch buttons, not a clip
 
+**Clip name**:
+Text that the user gives a **launch button** so that its **clip** can be recognised. It is shown above the launch button and changed by double-clicking it. A launch button keeps and shows its clip name while it is **empty**, like its clip's other settings, so the name comes back with the clip. Like a **track name**, it shows about 12 characters. It is never shown empty: clearing it gives the launch button its default name back, Clip 1 to Clip 8 by **scene**, which is also what a new device shows. A **fill-in** has no name of its own. It is part of the **patch**, cannot be automated, and is not available to a control surface. It is shown in **launch mode** and **clip picking**; in **clip editing** and **fill-in editing** only the clip name of the launch button being set up is shown.
+_Avoid_: Clip label, launch button name, title
+
 **Fill-in**:
 A second **colour** and, for each **CV output**, a second pattern, unipolar value, bipolar value and **transition** that a **clip** may hold, emitted instead of the clip's own while a fill-in is **playing** and the clip is **active**. It lies over the clip: underneath, the clip goes on as if there were no fill-in, its own transition included, and that is what the CV outputs emit again once the fill-in is cleared or over; at the **switch point** they jump, without a transition, to the clip's value or the queued clip's. A fill-in's transition is the exception to the rule that the active clip's transition counts: it moves from what is emitted at the press to the fill-in's value, landing on it at the switch point, like a riser; off jumps at the press. A launch button keeps its fill-in while it is **empty**, so that it comes back with the clip; an empty launch button has no fill-in to play. A new fill-in starts as a copy of its clip's patterns and values, with every transition off and the colour white, each time it is switched on. Fill-ins are part of the **patch**.
 _Avoid_: Fill, drum fill, fill-in mode (it is not a way of working like **launch mode** or **setup mode**)
@@ -36,7 +40,7 @@ One of fourteen hues that mark a **clip** so that it can be recognised: white, r
 _Avoid_: Tint, label
 
 **Patch**:
-What all 64 **launch buttons** hold, together with the **length** of the switch interval and the **CV mode** of every **CV output**, saved as a file that can be loaded into any Launchnik, in any song. It does not hold what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
+What all 64 **launch buttons** hold (their **clip names** included), together with the **length** of the switch interval, the **CV mode** of every **CV output**, the **track names** and the **scene names**, saved as a file that can be loaded into any Launchnik, in any song. It does not hold what the tracks are playing: loading a patch changes no **selection**. A new device has the patch in which every launch button is **empty**.
 _Avoid_: Template, preset, layout
 
 **Unlit**, **dim**, **vibrant**:
@@ -81,9 +85,17 @@ Said of a **track** that is not **soloed** while another track is. Its CV output
 One column of the front panel: eight **launch buttons**, one **function button** and the six **CV outputs** they drive.
 _Avoid_: Column, channel, lane
 
+**Track name**:
+Text that the user gives a **track** so that it can be recognised, such as the instrument it plays. It is shown above the track on the front panel and above its **CV outputs** on the back panel, the same on both, and changed by double-clicking either. The panel shows about 12 characters, centred; a longer name is kept in full but shown cut off at both ends. It is never shown empty: clearing it gives the track its default name back, Track 1 to Track 8, which is also what a new device shows. It is part of the **patch**, cannot be automated, and is not available to a control surface. On the front panel it is shown in **launch mode** and **clip picking**; in **clip editing** and **fill-in editing** only the track name of the launch button being set up is shown. On the back panel it is always shown.
+_Avoid_: Track label, track title, caption
+
 **Scene**:
 One row of the front panel: the eight **launch buttons** at the same height on the eight **tracks**. Scenes are numbered 1 to 8 from the top.
 _Avoid_: Row (in prose), line
+
+**Scene name**:
+Text that the user gives a **scene** so that it can be recognised. It is shown above the **scene button** and changed by double-clicking it; it renames no **clip** of the scene. Like a **track name**, it shows about 12 characters. It is never shown empty: clearing it gives the scene its default name back, Scene 1 to Scene 8, which is also what a new device shows. It is part of the **patch**, cannot be automated, and is not available to a control surface. It is shown only in **launch mode**, since in **clip picking** the scene buttons stand for **lengths**.
+_Avoid_: Scene label, row name
 
 **Scene button**:
 The button to the right of a **scene**. In **launch mode**, clicking it means clicking all eight **launch buttons** of its scene at once, so a track whose launch button in that scene is **empty** stops. In **clip picking** the eight scene buttons stand for the eight **lengths** instead, immediate at the bottom and sixteen bars at the top: clicking one chooses that length and returns to launch mode. In **clip editing** a click does nothing. It never shows which scene was last chosen; outside clip picking its **light** belongs to the **interval meter**.
@@ -155,7 +167,7 @@ What a **launch button** is showing at the moment, in either mode: **unlit**, or
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Label**:
-The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, FILL-IN, MUTE, SOLO and STOP are not labels: SETUP is always white, FILL-IN belongs to the **fill-in button**, and MUTE, SOLO and STOP to the **function select buttons**.
+The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, FILL-IN, MUTE, SOLO and STOP are not labels: SETUP is always white, FILL-IN belongs to the **fill-in button**, and MUTE, SOLO and STOP to the **function select buttons**. Nor are **track names**, **clip names** and **scene names**, which the user writes.
 _Avoid_: Caption, legend, text, tag
 
 **Mode colour**:

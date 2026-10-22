@@ -127,6 +127,10 @@ for track = 1, 8 do
 	texts[solo .. "_short"] = "T" .. track .. " Solo"
 	texts[solo .. "_shortest"] = "T" .. track .. "So"
 
+	texts["text_track" .. track .. "_name"] = "Track " .. track .. " Name"
+	-- What the panel shows while the name is empty (see docs/adr/0007).
+	texts["text_default_track_name" .. track] = "Track " .. track
+
 	local function_button = "text_track" .. track .. "_function"
 	texts[function_button] = "Track " .. track .. " Function Light"
 	texts[function_button .. "_light_short"] = "T" .. track .. " Func"
@@ -151,6 +155,8 @@ for track = 1, 8 do
 		texts[clip .. "_present"] = long .. " Present"
 		texts[clip .. "_present_short"] = short .. " On"
 		texts[clip .. "_present_shortest"] = "O" .. digits
+
+		texts[clip .. "_name"] = long .. " Name"
 
 		texts[clip .. "_colour"] = long .. " Colour"
 		texts[clip .. "_colour_short"] = short .. " Col"
@@ -193,6 +199,11 @@ for scene = 1, 8 do
 	texts[light .. "_short"] = "Sc" .. scene .. " Lgt"
 	texts[light .. "_shortest"] = "SL" .. scene
 	texts["text_scene" .. scene .. "_label"] = "Scene " .. scene .. " Label"
+	texts["text_scene" .. scene .. "_name"] = "Scene " .. scene .. " Name"
+	-- What the panel shows while the name is empty: a clip name's default
+	-- goes by its scene, whatever its track.
+	texts["text_default_scene_name" .. scene] = "Scene " .. scene
+	texts["text_default_clip_name" .. scene] = "Clip " .. scene
 end
 
 for number = 1, 8 do

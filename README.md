@@ -2,11 +2,11 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d13, a development build. Requires Reason 14 or later.
+Version 1.0.0d14, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. To the right of the scene buttons is the **transition diagram**. The back panel has six **CV outputs**, A to F, for each track, each with a switch for its **CV mode**.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. To the right of the scene buttons is the **transition diagram**. Above every track, launch button and scene button is its name, which you can change. The back panel has six **CV outputs**, A to F, for each track, each with a switch for its **CV mode**, and the track names above them.
 
 A launch button either holds a **clip** or is **empty**. A clip has one of fourteen colours and, for each of its track's six CV outputs, a pattern 1–8, a unipolar value, a bipolar value and a transition. A new device has only empty launch buttons.
 
@@ -55,6 +55,20 @@ Clicking a scene button has the same effect as clicking all eight launch buttons
 A scene button does not show which scene was launched; the launch buttons do that. Together, the eight scene buttons are the **interval meter**, which shows how far the song position is into the current switch interval. Each stands for one eighth of the interval, a **segment**: two beats in 4/4 with a switch interval of four bars. They light up from the bottom, the lower five in green, the next two in yellow and the top one in red, so a red button means that the switch point is less than a segment away. At the switch point the meter starts again with the bottom button.
 
 The meter follows the song position whether the song plays or not, and goes on running in clip editing. Before the start of the song, and while the length of the switch interval is "immediate", all scene buttons are unlit.
+
+## Naming tracks, clips and scenes
+
+Every track, launch button and scene has a name, so that you can tell at a glance what each is for: the instrument a track plays, the pattern a clip sends, the part of the song a scene belongs to. A **track name** stands above the track on the front panel and above the track's CV outputs on the back panel; a **clip name** stands above its launch button, and a **scene name** above its scene button. A new device names them Track 1 to Track 8, Clip 1 to Clip 8 (by scene, on every track) and Scene 1 to Scene 8.
+
+Double-click a name to change it: a text field opens with the name selected. Type the new name and press Return, or press Escape to leave it as it was. Clear the field and press Return to give the name back its default, such as "Track 3". Changing a track name on one panel changes it on the other.
+
+About twelve characters fit; a longer name is kept in full, but shown cut off at both ends. Names are not in capitals, unlike the labels.
+
+Track names and clip names are shown in launch mode and clip picking. In clip editing and fill-in editing, where the launch buttons stand for a clip's settings, only the name of the clip being set up and of its track stay visible, so you can see which one it is. Scene names are shown in launch mode only, since in clip picking the scene buttons stand for the lengths of the switch interval. On the back panel the track names are always shown.
+
+A launch button keeps its clip name while it is empty, like the rest of its clip, so the name comes back with the clip. Fill-ins have no names of their own.
+
+Names are saved with the song and in patches, and each change is a step in the undo history. They cannot be automated, and control surfaces can neither show nor change them.
 
 ## CV outputs
 
@@ -156,11 +170,11 @@ Clips are saved with the song, and each change is a step in the undo history. Se
 
 ## Patches
 
-A **patch** is what all 64 launch buttons hold, together with the length of the switch interval and the CV modes of the CV outputs, saved as a file, so that the same set of clips can be used in any song. The header of the panel, folded or not, shows the name of the patch and Reason's buttons for stepping through patches, browsing and saving.
+A **patch** is what all 64 launch buttons hold, their clip names included, together with the length of the switch interval, the CV modes of the CV outputs and the track and scene names, saved as a file, so that the same set of clips can be used in any song. The header of the panel, folded or not, shows the name of the patch and Reason's buttons for stepping through patches, browsing and saving.
 
 A patch does not hold what the tracks are playing. Loading one does not change what any track has selected, so it can be loaded while the song plays: a clip whose pattern changes switches at the next switch point, and a track whose selected launch button is now empty stops there. If the patch has another length, the switch points move as they do when the length is changed by hand.
 
-Launchnik comes with two patches: "Init Patch", in which every launch button is empty and which a new device starts with, and "All Patterns", in which every launch button holds a clip, with patterns 1–8 in rows 1–8 and each track in its own colour. Both have a switch interval of four bars.
+Launchnik comes with two patches: "Init Patch", in which every launch button is empty and which a new device starts with, and "All Patterns", in which every launch button holds a clip, with patterns 1–8 in rows 1–8 and each track in its own colour. Both have a switch interval of four bars and the default names. Patches saved with versions before 1.0.0d14 load with the default names too (see [0007](docs/adr/0007-an-empty-name-stands-for-the-default.md)).
 
 ## How launching works
 
@@ -180,7 +194,7 @@ The fill-in button can be automated as well, as "Fill-In": it records being pres
 
 Right-clicking a launch button or a function button offers automation and Remote Override for its track's selection, in any mode and function; alt-clicking opens the automation lane. The fill-in button does the same for "Fill-In". A scene launch is recorded in the selection lanes of the eight tracks; there is no lane of its own for scenes (see [0004](docs/adr/0004-a-scene-press-writes-eight-selections.md)).
 
-Clips, fill-ins, setup mode, the function and the length of the switch interval cannot be automated.
+Clips, fill-ins, setup mode, the function, the length of the switch interval and the names cannot be automated.
 
 For control surfaces, Launchnik provides these Remote items (N is the track, M the row, both 1–8):
 
@@ -221,11 +235,12 @@ Launchnik does not respond to MIDI CC messages.
 - At the lengths of one beat and half a bar the interval meter runs very fast.
 - Switch points are worked out from the current time signature. In a song whose time signature changes part-way through, they may not line up with the bar numbers in the sequencer.
 - Only playing through a switch point fires a queued button. Dragging the song position past one does not, and a loop that neither contains nor ends on a switch point keeps a button queued indefinitely.
-- Clip editing does not show which launch button is being edited.
 - A clip that was switched off while its track's selection still named it is queued again as soon as it is switched back on.
 - There is no stop-all button.
 - A scene launch is recorded as automation of each track's selection, not as one event.
 - Patches cannot be loaded or saved from a control surface.
+- Names cannot be shown or changed from a control surface.
+- Nothing stops a name from being longer than its space; it is then shown cut off at both ends.
 - Only one patch besides the empty one is included; the Shop expects more.
 
 ## Building
@@ -305,9 +320,9 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `JukeBoxExports.cpp` | Entry points the host calls. |
 | `motherboard_def.lua` | Properties, Remote items, automation and CV outputs. |
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
-| `GUI2D/` | Panel layout and the graphics it uses. |
+| `GUI2D/` | Panel layout and the graphics it uses; `gui_functions.lua`, written by `tools/make-gui-functions.py`, decides when the names are shown. |
 | `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
-| `tools/` | Scripts that build the film strips of the launch, scene, side and function buttons, of the labels and of the logo. |
+| `tools/` | Scripts that build the film strips of the launch, scene, side and function buttons, of the labels and of the logo, and `GUI2D/gui_functions.lua`. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |
