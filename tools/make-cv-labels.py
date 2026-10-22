@@ -174,16 +174,20 @@ def make_back_labels():
 
 	# Left of the first track, the names of the CV modes, each pointing with a
 	# line to its position of the switch. The lines' image has a margin of 16
-	# pixels; its lines end 95 pixels from its left edge, at the switch.
+	# pixels; its lines end 95 pixels from its left edge, at the switch, and
+	# start at different places. The names are aligned on the left, as far
+	# left as keeps each at least 8 pixels from the start of its line.
 	lines = Image.open(SOURCES / "Polarity_switch_lines.png").convert("RGBA")
 	modes = font(REGULAR, 33)
+	names = ("PATTERN", "UNIPOLAR", "BIPOLAR")
 	line_rows = [(17, 16), (62, 44), (105, 16)]
+	left = SWITCH_LEFT - 95
+	names_left = min(left + start - 8 - draw.textlength(name, font=modes) for name, (_, start) in zip(names, line_rows))
 	for output in range(len(OUTPUT_LETTERS)):
-		left = SWITCH_LEFT - 95
 		top = row_centre(output) - lines.height // 2
 		panel.alpha_composite(lines, (left, top))
-		for name, (row, start) in zip(("PATTERN", "UNIPOLAR", "BIPOLAR"), line_rows):
-			draw_text(draw, (left + start - 8, top + row), name, BACK_TEXT, modes, "rm")
+		for name, (row, _) in zip(names, line_rows):
+			draw_text(draw, (names_left, top + row), name, BACK_TEXT, modes, "lm")
 
 	target = GUI / "Labels_Back.png"
 	panel.save(target)
