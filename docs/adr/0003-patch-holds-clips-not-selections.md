@@ -25,3 +25,5 @@ Amended again on 2026-10-21 (version 1.0.0d14): a patch also holds the **track n
 
 - Loading a patch renames the tracks, the clips and the scenes. A patch taken from another song, or one of the factory patches, replaces names chosen in this song, in the same single undo step.
 - Patches saved before version 1.0.0d14 carry no names, so they load with every name empty, which the panel shows as the default names (Track 1 to Track 8, Clip 1 to Clip 8, Scene 1 to Scene 8; see [0007](0007-an-empty-name-stands-for-the-default.md)). The factory patches carry no names either, and need no change.
+
+Since version 1.0.0d15 a patch also holds the **CV output names**, on the same terms. Patches saved before then load with the default names.

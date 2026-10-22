@@ -282,11 +282,17 @@ for track = 1, TRACK_COUNT do
 	end
 end
 
--- The track names on the back panel are always shown.
+-- The track names and the CV output names on the back panel are always shown.
+local function add_back_name_widgets(name, text_style, default_key)
+	add_name_widgets(back_widgets, name, text_style, default_key,
+		{ "/custom_properties/" .. name }, "is_name_shown", "is_default_name_shown")
+end
 for track = 1, TRACK_COUNT do
-	add_name_widgets(back_widgets, "track" .. track .. "_name", TRACK_NAME_STYLE,
-		"text_default_track_name" .. track, { "/custom_properties/track" .. track .. "_name" },
-		"is_name_shown", "is_default_name_shown")
+	add_back_name_widgets("track" .. track .. "_name", TRACK_NAME_STYLE, "text_default_track_name" .. track)
+	for _, letter in ipairs(OUTPUT_LETTERS) do
+		add_back_name_widgets("track" .. track .. "_output_" .. letter .. "_name", NAME_STYLE,
+			"text_default_output_name" .. track .. "_" .. letter)
+	end
 end
 
 back = jbox.panel{

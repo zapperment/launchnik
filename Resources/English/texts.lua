@@ -144,6 +144,9 @@ for track = 1, 8 do
 		texts[copy] = "Track " .. track .. " Output " .. upper .. " CV Mode"
 		texts[copy .. "_short"] = "T" .. track .. " " .. upper .. "Mode"
 		texts[copy .. "_shortest"] = "M" .. track .. upper
+		texts["text_track" .. track .. "_output_" .. letter .. "_name"] = "Track " .. track .. " Output " .. upper .. " Name"
+		-- What the panel shows while the name is empty.
+		texts["text_default_output_name" .. track .. "_" .. letter] = "CV Out " .. track .. upper
 	end
 
 	for row = 1, 8 do
