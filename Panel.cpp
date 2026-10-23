@@ -439,10 +439,13 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	}
 	const bool pressedHoldsClip = HoldsClip(customProps, CLauncher::ButtonIndex(track, row));
 	const CPress::TEdited pickedClip = picked >= 0 ? LoadEdited(customProps, picked, setup) : CPress::Edited(false);
-	// In launch mode the press holds the track's relaunch press down as well;
-	// the undo history names it after the selection.
-	Apply(CPress::RelaunchButton(setup, track, true), customProps, iArgs);
+	// In launch mode the press holds the track's relaunch press down as well,
+	// after the selection, which the realtime code compares it with; the undo
+	// history names it after the selection.
 	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedClip), customProps, iArgs);
+	const char* gestureNameKey = iArgs.fGestureNameKey;
+	Apply(CPress::RelaunchButton(setup, track, true), customProps, iArgs);
+	iArgs.fGestureNameKey = gestureNameKey;
 }
 
 void SetUpPanelDisplay(const TJBox_DisplayArgs& iArgs) {
