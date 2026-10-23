@@ -164,6 +164,10 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		fLauncher.SetSoloPressed(static_cast<int>(iTag - SoloTag(0)), JBox_GetBoolean(iValue));
 		return;
 	}
+	if (iTag >= RelaunchTag(0) && iTag <= RelaunchTag(CLauncher::kTrackCount - 1)) {
+		fLauncher.SetRelaunchPressed(static_cast<int>(iTag - RelaunchTag(0)), JBox_GetBoolean(iValue));
+		return;
+	}
 	if (iTag >= SelectionTag(0) && iTag <= SelectionTag(CLauncher::kTrackCount - 1)) {
 		const int track = static_cast<int>(iTag - SelectionTag(0));
 		fLauncher.SetSelection(track, static_cast<int>(JBox_GetNumber(iValue)));

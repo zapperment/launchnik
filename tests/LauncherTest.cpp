@@ -2604,6 +2604,113 @@ void TestFillInOneBarPatternPlaysInTheLastBar() {
 	CHECK(short_.GetCVValue(0, 0) == 6.0 / 8);
 }
 
+// Launches row iRow on track 1, as a press of its launch button does.
+void Launch(CLauncher& iLauncher, int iRow) {
+	iLauncher.SetSelection(0, iRow);
+	iLauncher.SetRelaunchPressed(0, true);
+	iLauncher.SetRelaunchPressed(0, false);
+}
+
+void TestRelaunchedClipLandsAtTheNextSwitchPoint() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Launch(launcher, 2);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsRelaunched(0));
+	// It flashes in the landing's colour, and plays on as before.
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kFlashing, 7));
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	PlayThrough(launcher, kBar + kBatch, kInterval);
+	CHECK(!launcher.PlaysLanding(0));
+	launcher.Advance(Playing(kInterval));
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(!launcher.IsRelaunched(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 7));
+}
+
+void TestRelaunchCancelsWhatIsQueued() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Launch(launcher, 1);
+	launcher.Advance(Playing(kBar));
+	CHECK(!launcher.IsRelaunched(0));
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kQueued);
+	// Launching the active clip again takes the queued one back, and lands.
+	Launch(launcher, 2);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.IsRelaunched(0));
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kOff);
+	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+}
+
+void TestQueueingTakesARelaunchBack() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Launch(launcher, 2);
+	launcher.Advance(Playing(kBar));
+	Launch(launcher, CLauncher::kSelectionStop);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(!launcher.IsRelaunched(0));
+	// Choosing the clip again by its selection alone, as automation of the
+	// selection might, does not relaunch it.
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + kBatch);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(!launcher.PlaysLanding(0));
+}
+
+void TestNoRelaunchWithoutALandingOrSwitchPoint() {
+	// A clip without a landing does not flash, and does not land.
+	CLauncher plain;
+	FillGrid(plain);
+	OpenWith(plain, 0, 2);
+	PlayThrough(plain, 0.0, kBar);
+	Launch(plain, 2);
+	plain.Advance(Playing(kBar));
+	CHECK(IsLight(plain.GetLight(0, 2), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
+	PlayThrough(plain, kBar + kBatch, kInterval + kBatch);
+	CHECK(!plain.PlaysLanding(0));
+
+	// With the length immediate.
+	CLauncher immediate;
+	SetUpLanding(immediate, CLauncher::kTransitionOff);
+	immediate.SetLength(CLauncher::kLengthImmediate);
+	OpenWith(immediate, 0, 2);
+	Launch(immediate, 2);
+	immediate.Advance(Playing(kBar));
+	CHECK(!immediate.IsRelaunched(0));
+
+	// A clip that becomes active while the transport is stopped has not been
+	// relaunched.
+	CLauncher stopped;
+	SetUpLanding(stopped, CLauncher::kTransitionOff);
+	Launch(stopped, 2);
+	stopped.Advance(Stopped(kBar));
+	CHECK(stopped.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(!stopped.IsRelaunched(0));
+}
+
+void TestHoldingTheRelaunchPressRelaunchesOnlyOnce() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetRelaunchPressed(0, true);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+	PlayThrough(launcher, kInterval + kBatch, 2 * kInterval + kBatch);
+	CHECK(!launcher.IsRelaunched(0));
+	CHECK(!launcher.PlaysLanding(0));
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -2743,6 +2850,11 @@ int main() {
 	TestOneBarPatternMakesNoDifferenceWithOneBarOrLess();
 	TestOneBarPatternSwitchInLandingEditing();
 	TestFillInOneBarPatternPlaysInTheLastBar();
+	TestRelaunchedClipLandsAtTheNextSwitchPoint();
+	TestRelaunchCancelsWhatIsQueued();
+	TestQueueingTakesARelaunchBack();
+	TestNoRelaunchWithoutALandingOrSwitchPoint();
+	TestHoldingTheRelaunchPressRelaunchesOnlyOnce();
 	TestNoLandingAfterAFillInWhenSomethingIsQueued();
 	TestClipWithoutAFillInDoesNotLandAfterThePress();
 

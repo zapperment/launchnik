@@ -28,7 +28,7 @@ sample_rate_setup = {
 
 -- The realtime code hears about every change of the setup state, of the length
 -- of the switch interval, of the fill-in button, of the function, of a track's
--- selection, mute and solo buttons and CV modes, and of what a launch button
+-- selection, mute, solo and relaunch presses and CV modes, and of what a launch button
 -- holds, whether it comes from a click, automation or a control surface.
 local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
 local OUTPUT_SETTINGS = { "pattern", "unipolar", "bipolar", "transition" }
@@ -37,6 +37,7 @@ for track = 1, 8 do
 	table.insert(notify, "/custom_properties/track" .. track .. "_selection")
 	table.insert(notify, "/custom_properties/track" .. track .. "_mute")
 	table.insert(notify, "/custom_properties/track" .. track .. "_solo")
+	table.insert(notify, "/custom_properties/track" .. track .. "_relaunch")
 	for _, letter in ipairs(OUTPUT_LETTERS) do
 		table.insert(notify, "/custom_properties/track" .. track .. "_cv_mode_" .. letter)
 	end

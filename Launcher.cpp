@@ -77,6 +77,9 @@ CLauncher::CLauncher()
 	fHasPreviousTransport(false)
 {
 	for (int track = 0; track < kTrackCount; ++track) {
+		fRelaunchPressed[track] = false;
+		fRelaunchTriggered[track] = false;
+		fRelaunched[track] = false;
 		fMutePressed[track] = false;
 		fSoloPressed[track] = false;
 		fMuteTriggered[track] = false;
@@ -350,6 +353,20 @@ bool CLauncher::IsFillInPlaying() const {
 	return fFillInPlaying;
 }
 
+void CLauncher::SetRelaunchPressed(int iTrack, bool iPressed) {
+	if (iTrack < 0 || iTrack >= kTrackCount) {
+		return;
+	}
+	if (iPressed && !fRelaunchPressed[iTrack]) {
+		fRelaunchTriggered[iTrack] = true;
+	}
+	fRelaunchPressed[iTrack] = iPressed;
+}
+
+bool CLauncher::IsRelaunched(int iTrack) const {
+	return fRelaunched[iTrack];
+}
+
 void CLauncher::SetSetup(int iSetup) {
 	if (iSetup >= 0 && iSetup < kSetupCount) {
 		fSetup = iSetup;
@@ -546,6 +563,17 @@ void CLauncher::Advance(const TTransport& iTransport) {
 	// The interval meter follows the song position whether it moves or not.
 	fReachedSegments = CountReachedSegments(iTransport);
 
+	// A launch of the active clip relaunches it, before any selection takes
+	// effect: a clip that becomes active at once, while the transport is
+	// stopped, has not been relaunched. With the length immediate nothing
+	// waits for a switch point, so nothing lands.
+	for (int track = 0; track < kTrackCount; ++track) {
+		if (fRelaunchTriggered[track] && fLength != kLengthImmediate && fActive[track] != kSelectionStop && Target(track) == fActive[track]) {
+			fRelaunched[track] = true;
+		}
+		fRelaunchTriggered[track] = false;
+	}
+
 	// A landing ends at the switch point, like a fill-in, and when the song
 	// position jumps; with the length immediate there are none.
 	for (int track = 0; track < kTrackCount; ++track) {
@@ -563,23 +591,34 @@ void CLauncher::Advance(const TTransport& iTransport) {
 		}
 		Switch();
 		// A clip that becomes active at a switch point, while the song plays,
-		// lands, and so does one that goes on there after its fill-in; one
-		// that becomes active any other way does not, and a track that
-		// changes otherwise stops landing.
+		// lands, and so does one that goes on there after its fill-in or
+		// after it was relaunched; one that becomes active any other way does
+		// not, and a track that changes otherwise stops landing.
 		const bool atSwitchPoint = iTransport.fPlaying && (switchPointInBatch || switchPointInPreviousBatch) && fLength != kLengthImmediate;
 		for (int track = 0; track < kTrackCount; ++track) {
 			if (fActive[track] == previous[track]) {
-				if (atSwitchPoint && fillInEnds[track] && fActive[track] != kSelectionStop) {
+				if (atSwitchPoint && (fillInEnds[track] || fRelaunched[track]) && fActive[track] != kSelectionStop) {
 					fLandingRows[track] = fActive[track];
 					fLandingStarts[track] = LastSwitchPoint(iTransport, switchPointInBatch);
+				}
+				if (atSwitchPoint) {
+					fRelaunched[track] = false;
 				}
 				continue;
 			}
 			fLandingRows[track] = kSelectionStop;
+			fRelaunched[track] = false;
 			if (atSwitchPoint && fActive[track] != kSelectionStop) {
 				fLandingRows[track] = fActive[track];
 				fLandingStarts[track] = LastSwitchPoint(iTransport, switchPointInBatch);
 			}
+		}
+	}
+	// Queueing another clip or stop takes a relaunch back, and so does the
+	// length immediate.
+	for (int track = 0; track < kTrackCount; ++track) {
+		if (Target(track) != fActive[track] || fLength == kLengthImmediate) {
+			fRelaunched[track] = false;
 		}
 	}
 	UpdateValues(iTransport);
@@ -945,10 +984,14 @@ CLauncher::TLight CLauncher::GetLaunchModeLight(int iTrack, int iRow) const {
 		// until its track has switched.
 		// It flashes while a change of its pattern waits for the switch point.
 		// While it plays its fill-in, it flashes in the fill-in's colour, and
-		// while it lands it shows the landing's colour.
+		// while it lands it shows the landing's colour. Relaunched, it flashes
+		// in the landing's colour until the switch point.
 		case kActive:
 			if (PlaysFillIn(iTrack)) {
 				return MakeLight(kFlashing, clip.fFillIn.fColour);
+			}
+			if (fRelaunched[iTrack] && clip.fPresent && clip.fLanding.fPresent) {
+				return MakeLight(kFlashing, clip.fLanding.fColour);
 			}
 			return MakeLight(HasPendingPattern(iTrack) ? kFlashing : kVibrant, PlaysLanding(iTrack) ? clip.fLanding.fColour : clip.fColour);
 		case kQueued:

@@ -167,6 +167,13 @@ CPress::TChanges CPress::LandingEditingLaunchButton(int iSetup, int iTrack, int 
 	return EditOverlay(kLandingProperties, iSetup, iTrack, iRow, iLanding, iClip);
 }
 
+CPress::TChange CPress::RelaunchButton(int iSetup, int iTrack, bool iPressed) {
+	if (iTrack < 0 || iTrack >= CLauncher::kTrackCount || (iPressed && iSetup != CLauncher::kSetupLaunchMode)) {
+		return kNoChange;
+	}
+	return MakeChange(kRelaunch, iTrack, iPressed ? 1 : 0);
+}
+
 CPress::TChange CPress::StopButton(int iTrack) {
 	return MakeChange(kSelection, iTrack, CLauncher::kSelectionStop);
 }
@@ -207,6 +214,9 @@ CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsCl
 	}
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		changes.fChanges[changes.fCount++] = LaunchButton(iSetup, track, iScene, iHoldsClip[track], Edited(false));
+	}
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		changes.fChanges[changes.fCount++] = RelaunchButton(iSetup, track, true);
 	}
 	return changes;
 }

@@ -46,7 +46,10 @@ class CPress {
 		// fIndex is the track, fValue 1 while its mute or solo button is held
 		// down, 0 once it is let go.
 		kMute,
-		kSolo
+		kSolo,
+		// fIndex is the track, fValue 1 while a launch on it is held down, 0
+		// once it is let go.
+		kRelaunch
 	};
 
 	// One property and its new value. A press of a launch button outside
@@ -60,11 +63,13 @@ class CPress {
 		int fValue;
 	};
 
-	// What a press of a scene button changes: the selection of every track,
-	// the length and the setup state, or nothing at all (see docs/adr/0004).
+	// What a press of a scene button changes: the selection and the relaunch
+	// press of every track, the length and the setup state, or nothing at all
+	// (see docs/adr/0004).
 	// What a press of a launch button in fill-in editing or landing editing
 	// changes: up to every setting of the fill-in or the landing.
 	public: static const int kMaxChangeCount = 3 + 4 * CLauncher::kOutputCount;
+	static_assert(kMaxChangeCount >= 2 * CLauncher::kTrackCount, "a scene press changes two properties of every track");
 	public: struct TChanges {
 		int fCount;
 		TChange fChanges[kMaxChangeCount];
@@ -107,6 +112,13 @@ class CPress {
 	// The same in landing editing, for the landing.
 	public: static TChanges LandingEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iLanding, const TClipValues& iClip);
 
+	// Holding down a launch button and letting it go, or a scene button for
+	// each track: in launch mode a press holds the track's relaunch press down
+	// as well as choosing the selection (see LaunchButton()); whether it
+	// relaunches is up to the realtime code. Elsewhere a press changes nothing
+	// here. Letting go is always passed on.
+	public: static TChange RelaunchButton(int iSetup, int iTrack, bool iPressed);
+
 	public: static TChange StopButton(int iTrack);
 
 	// Holding down a function button and letting it go. In stop function a
@@ -137,7 +149,8 @@ class CPress {
 	public: static TChange FillInButton(bool iPressed);
 
 	// In launch mode, a scene button means what the eight launch buttons of
-	// its scene mean, track by track. In clip picking it chooses the length it
+	// its scene mean, track by track: the selections, then the relaunch
+	// presses. In clip picking it chooses the length it
 	// stands for and returns to launch mode. In clip editing it does nothing.
 	// iHoldsClip says of each track whether its launch button in the scene
 	// holds a clip.

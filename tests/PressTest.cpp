@@ -129,19 +129,30 @@ void TestClipEditingWithoutClipHasNoColourOrCVControls() {
 	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 4, false, MixedModes(false))));
 }
 
+void TestLaunchHoldsTheRelaunchPressInLaunchModeOnly() {
+	CHECK(IsChange(CPress::RelaunchButton(kLaunchMode, 2, true), CPress::kRelaunch, 2, 1));
+	CHECK(IsNoChange(CPress::RelaunchButton(kClipPicking, 2, true)));
+	CHECK(IsNoChange(CPress::RelaunchButton(CLauncher::SetupForClipEditing(3, 6), 2, true)));
+	// Letting go is passed on in every mode.
+	CHECK(IsChange(CPress::RelaunchButton(kClipPicking, 2, false), CPress::kRelaunch, 2, 0));
+	CHECK(IsNoChange(CPress::RelaunchButton(kLaunchMode, 8, true)));
+}
+
 void TestSceneButtonSelectsItsRowOnEveryTrack() {
 	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
 	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 3, holdsClip);
-	CHECK(changes.fCount == 8);
+	CHECK(changes.fCount == 16);
 	for (int track = 0; track < 8; ++track) {
 		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, 3));
+		// Each track's relaunch press is held down as well.
+		CHECK(IsChange(changes.fChanges[8 + track], CPress::kRelaunch, track, 1));
 	}
 }
 
 void TestSceneButtonStopsTracksWithAnEmptyLaunchButton() {
 	const bool holdsClip[8] = { true, false, false, true, false, false, false, true };
 	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 8, holdsClip);
-	CHECK(changes.fCount == 8);
+	CHECK(changes.fCount == 16);
 	for (int track = 0; track < 8; ++track) {
 		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, holdsClip[track] ? 8 : CLauncher::kSelectionStop));
 	}
@@ -150,7 +161,7 @@ void TestSceneButtonStopsTracksWithAnEmptyLaunchButton() {
 void TestSceneButtonOfAnEmptySceneStopsEveryTrack() {
 	const bool holdsClip[8] = { false, false, false, false, false, false, false, false };
 	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 1, holdsClip);
-	CHECK(changes.fCount == 8);
+	CHECK(changes.fCount == 16);
 	for (int track = 0; track < 8; ++track) {
 		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, CLauncher::kSelectionStop));
 	}
@@ -390,6 +401,7 @@ int main() {
 	TestClipEditingTransitionButtonGoesRound();
 	TestClipEditingUnusedLaunchButtonsDoNothing();
 	TestClipEditingWithoutClipHasNoColourOrCVControls();
+	TestLaunchHoldsTheRelaunchPressInLaunchModeOnly();
 	TestSceneButtonSelectsItsRowOnEveryTrack();
 	TestSceneButtonStopsTracksWithAnEmptyLaunchButton();
 	TestSceneButtonOfAnEmptySceneStopsEveryTrack();

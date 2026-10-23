@@ -262,6 +262,10 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, SoloTag(iChange.fIndex), JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_solo";
 			break;
+		case CPress::kRelaunch:
+			JBox_StoreMOMPropertyByTag(iCustomProps, RelaunchTag(iChange.fIndex), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_relaunch";
+			break;
 		case CPress::kNothing:
 			break;
 	}
@@ -311,6 +315,20 @@ void HandleFunctionButtonsGesture(TJBox_GestureArgs& iArgs) {
 	}
 }
 
+// Lets go of every relaunch press that a launch button or a scene button
+// holds down, once the mouse button is let go, but not after a context menu.
+void ReleaseRelaunches(TJBox_GestureArgs& iArgs) {
+	if (iArgs.fCall != kJBox_OnRelease && iArgs.fCall != kJBox_OnCancel) {
+		return;
+	}
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		if (JBox_GetBoolean(JBox_LoadMOMPropertyByTag(customProps, RelaunchTag(track)))) {
+			Apply(CPress::RelaunchButton(CLauncher::kSetupLaunchMode, track, false), customProps, iArgs);
+		}
+	}
+}
+
 TJBox_PropertyBox MakeBox(TJBox_PropertyRef iProperty, TJBox_Coord iLeft, TJBox_Coord iTop, TJBox_Coord iWidth, TJBox_Coord iHeight) {
 	TJBox_PropertyBox box;
 	box.fPropertyIndex = 0;
@@ -333,6 +351,9 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	if (iArgs.fDisplayInfo.fID == kDisplayID_FunctionButtons) {
 		HandleFunctionButtonsGesture(iArgs);
 		return;
+	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_Grid || iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
+		ReleaseRelaunches(iArgs);
 	}
 	if (iArgs.fCall != kJBox_OnTap || iArgs.fTap != kJBox_TapRegular) {
 		return;
@@ -376,7 +397,9 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		}
 		const CPress::TChanges changes = CPress::SceneButton(setup, scene, holdsClip);
 		for (int i = 0; i < changes.fCount; ++i) {
-			Apply(changes.fChanges[i], customProps, iArgs);
+			if (changes.fChanges[i].fProperty != CPress::kNothing) {
+				Apply(changes.fChanges[i], customProps, iArgs);
+			}
 		}
 		// All the changes of a press are one step of the undo history, named
 		// after what the press was for.
@@ -416,6 +439,9 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	}
 	const bool pressedHoldsClip = HoldsClip(customProps, CLauncher::ButtonIndex(track, row));
 	const CPress::TEdited pickedClip = picked >= 0 ? LoadEdited(customProps, picked, setup) : CPress::Edited(false);
+	// In launch mode the press holds the track's relaunch press down as well;
+	// the undo history names it after the selection.
+	Apply(CPress::RelaunchButton(setup, track, true), customProps, iArgs);
 	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedClip), customProps, iArgs);
 }
 

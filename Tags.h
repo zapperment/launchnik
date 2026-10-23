@@ -63,6 +63,10 @@ inline TJBox_Tag SoloTag(int iTrack) {
 	return 120 + (iTrack + 1);
 }
 
+inline TJBox_Tag RelaunchTag(int iTrack) {
+	return 130 + (iTrack + 1);
+}
+
 inline TJBox_Tag FunctionLightTag(int iTrack) {
 	return 1000 + 10 * (iTrack + 1);
 }

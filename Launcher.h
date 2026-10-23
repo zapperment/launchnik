@@ -8,7 +8,7 @@
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
 // active, light, label, mode colour, switch interval, switch point, length,
 // immediate, clip picking, clip editing, fill-in, fill-in editing, landing,
-// landing editing, one-bar pattern, forward button, scene,
+// landing editing, one-bar pattern, relaunch, forward button, scene,
 // segment, interval meter, function, function button, function select button,
 // stop, muted, soloed, solo-muted, CV output, CV mode, pattern, unipolar value,
 // bipolar value, transition.
@@ -277,6 +277,17 @@ class CLauncher {
 	// batch.
 	public: void SetFillInPressed(bool iPressed);
 	public: bool IsFillInPlaying() const;
+
+	// Whether a track's relaunch press is held down: every launch in launch
+	// mode holds it, from a launch button or a scene button. Launching the
+	// clip that is already active relaunches it, so that it lands at the next
+	// switch point, if it holds a landing; any other launch is a selection
+	// alone. Call before Advance() for changes that arrived in the same
+	// batch, after the selection.
+	public: void SetRelaunchPressed(int iTrack, bool iPressed);
+	// Whether a track's active clip has been relaunched and waits for the
+	// next switch point; queueing another clip or stop takes it back.
+	public: bool IsRelaunched(int iTrack) const;
 
 	// Makes every track emit its selection at once, with nothing queued. Used
 	// when a song is opened.
@@ -591,6 +602,10 @@ class CLauncher {
 	private: bool fFillInTriggered;
 	private: bool fFillInPlaying;
 	private: int fFunction;
+	private: bool fRelaunchPressed[kTrackCount];
+	// Set by a relaunch press, until the next call of Advance().
+	private: bool fRelaunchTriggered[kTrackCount];
+	private: bool fRelaunched[kTrackCount];
 	private: bool fMutePressed[kTrackCount];
 	private: bool fSoloPressed[kTrackCount];
 	// Set by a press of a mute or solo button, until the next call of

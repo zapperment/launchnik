@@ -32,6 +32,7 @@ format_version = "3.0"
 --   the same, for control surfaces:     300 + 10 * t + o
 --   mute button of track t, held down or not: 110 + t
 --   solo button of track t, held down or not: 120 + t
+--   relaunch press of track t, held down or not: 130 + t
 --   light of the function button:   1000 + 10 * t
 --   light of a launch button:       1000 + 10 * t + r
 --   light of the scene button of row r:      1090 + r
@@ -177,12 +178,14 @@ end
 -- Reason only offers automation for properties that have a number in the MIDI
 -- CC chart. Numbers from 256 upwards enable automation without responding to
 -- any MIDI CC, so nothing a Launchpad sends can reach a selection by accident.
--- Only the selections, the fill-in button and the mute and solo buttons are
--- automatable; clips, CV modes, the setup state and the function are not.
+-- Only the selections, the fill-in button, the mute and solo buttons and the
+-- relaunch presses are automatable; clips, CV modes, the setup state and the
+-- function are not.
 local FIRST_SELECTION_MIDI_CC = 256
 local FILL_IN_MIDI_CC = FIRST_SELECTION_MIDI_CC + TRACK_COUNT
 local FIRST_MUTE_MIDI_CC = FILL_IN_MIDI_CC + 1
 local FIRST_SOLO_MIDI_CC = FIRST_MUTE_MIDI_CC + TRACK_COUNT
+local FIRST_RELAUNCH_MIDI_CC = FIRST_SOLO_MIDI_CC + TRACK_COUNT
 local midi_cc_chart = {}
 
 -- 0 = launch mode, 1 = clip picking, 2..65 = clip editing, 66..129 = fill-in
@@ -477,6 +480,21 @@ for track = 1, TRACK_COUNT do
 		midi_cc_chart[first_midi_cc + track - 1] = "/custom_properties/" .. press
 		add_remote_item(press, "Track " .. track .. " " .. (name == "mute" and "Mute" or "Solo"))
 	end
+
+	-- 1 while a launch on the track is held down: every launch in launch mode
+	-- holds it, and the realtime code relaunches the active clip when it is
+	-- the one launched, so that it lands at the next switch point. Recorded
+	-- and played back by automation like the mute and solo presses; not saved.
+	local relaunch = "track" .. track .. "_relaunch"
+	document_properties[relaunch] = jbox.boolean{
+		property_tag = 130 + track,
+		default = false,
+		persistence = "none",
+		ui_name = jbox.ui_text("text_" .. relaunch),
+		ui_type = jbox.ui_selector{ jbox.ui_text("text_released"), jbox.ui_text("text_pressed") },
+	}
+	midi_cc_chart[FIRST_RELAUNCH_MIDI_CC + track - 1] = "/custom_properties/" .. relaunch
+	add_remote_item(relaunch, "Track " .. track .. " Relaunch")
 
 	-- What the function button shows, for control surfaces, in the colour of
 	-- the function: 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing. In stop

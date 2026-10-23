@@ -150,7 +150,7 @@ On unipolar and bipolar outputs a fill-in's transition works differently from a 
 
 ## Landings
 
-A landing is what a clip plays for its first switch interval, instead of its own patterns and values, such as a crash cymbal at the start of a drum pattern. It plays when the clip becomes active at a switch point, whether the track was stopped or playing another clip, and each track of a launched scene lands on its own. A clip that has played its fill-in lands again at the switch point where the fill-in ends, unless another clip or stop was queued meanwhile. The launch button shows the landing's colour meanwhile. At the next switch point the clip goes on with its own settings. A clip chosen again while it plays, a song that is opened, a clip chosen while the transport is stopped and the switch interval "immediate" never land; moving the song position ends a landing.
+A landing is what a clip plays for its first switch interval, instead of its own patterns and values, such as a crash cymbal at the start of a drum pattern. It plays when the clip becomes active at a switch point, whether the track was stopped or playing another clip, and each track of a launched scene lands on its own. A clip that has played its fill-in lands again at the switch point where the fill-in ends, unless another clip or stop was queued meanwhile. The launch button shows the landing's colour meanwhile. At the next switch point the clip goes on with its own settings. Launching a clip that is already playing **relaunches** it: whatever was queued on the track is taken back, the launch button flashes in the landing's colour, and the clip lands at the next switch point. Queueing another clip or stop takes the relaunch back. A song that is opened, a clip chosen while the transport is stopped and the switch interval "immediate" never land; moving the song position ends a landing.
 
 On unipolar and bipolar outputs a landing's transition works the other way round from a clip's: it starts at the landing's value at the switch point and moves towards the clip's value, so that the clip's value is reached by the end.
 
@@ -213,7 +213,7 @@ Launchnik comes with two patches: "Init Patch", in which every launch button is 
 
 Each track has one automatable parameter, "Track N Selection", with nine values: Stop and Clip 1–8, the clip being the one in that row. Automated changes behave like clicks. A change that falls exactly on a switch point takes effect there, not one switch interval later. A selection that names an empty launch button counts as Stop.
 
-The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed. So can each track's mute and solo button, as "Track N Mute" and "Track N Solo": a recorded session plays back with the same mutes and solos, whichever function is chosen during playback (see [0005](docs/adr/0005-mute-and-solo-are-presses.md)).
+The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed. So can each track's mute and solo button, as "Track N Mute" and "Track N Solo": a recorded session plays back with the same mutes and solos, whichever function is chosen during playback (see [0005](docs/adr/0005-mute-and-solo-are-presses.md)). Every launch also records a press of "Track N Relaunch", so that relaunches play back too; a selection alone never relaunches.
 
 Right-clicking a launch button or a function button offers automation and Remote Override for its track's selection, in any mode and function; alt-clicking opens the automation lane. The fill-in button does the same for "Fill-In". A scene launch is recorded in the selection lanes of the eight tracks; there is no lane of its own for scenes (see [0004](docs/adr/0004-a-scene-press-writes-eight-selections.md)).
 
@@ -227,6 +227,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Function Light` (8 items) | Output only | 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing, in the colour of the function |
 | `Track N Mute` (8 items) | Input and output | 1 while the track's mute button is held down, 0 otherwise |
 | `Track N Solo` (8 items) | Input and output | 1 while the track's solo button is held down, 0 otherwise |
+| `Track N Relaunch` (8 items) | Input and output | 1 while a launch on the track is held down, 0 otherwise; a codec holds it down with every launch in launch mode, from a pad or a scene button |
 | `Function` | Input and output | 0 = stop, 1 = mute, 2 = solo |
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
 | `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green, and in clip picking 3 = flashing white, 18 = flashing green |

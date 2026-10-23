@@ -99,6 +99,7 @@ texts = {
 	["gesture_function"] = "Change function",
 	["gesture_mute"] = "Mute or unmute track",
 	["gesture_solo"] = "Solo or unsolo track",
+	["gesture_relaunch"] = "Relaunch clip",
 
 	["text_cv_mode_bipolar"] = "Bipolar",
 	["text_cv_mode_unipolar"] = "Unipolar",
@@ -132,6 +133,11 @@ for track = 1, 8 do
 	texts[solo] = "Track " .. track .. " Solo"
 	texts[solo .. "_short"] = "T" .. track .. " Solo"
 	texts[solo .. "_shortest"] = "T" .. track .. "So"
+
+	local relaunch = "text_track" .. track .. "_relaunch"
+	texts[relaunch] = "Track " .. track .. " Relaunch"
+	texts[relaunch .. "_short"] = "T" .. track .. " Rel"
+	texts[relaunch .. "_shortest"] = "T" .. track .. "Rl"
 
 	texts["text_track" .. track .. "_name"] = "Track " .. track .. " Name"
 	-- What the panel shows while the name is empty (see docs/adr/0007).
