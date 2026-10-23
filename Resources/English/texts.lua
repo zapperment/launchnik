@@ -95,7 +95,7 @@ texts = {
 	["gesture_landing_bipolar"] = "Change landing bipolar value",
 	["gesture_landing_transition"] = "Change landing transition",
 	["gesture_landing_colour"] = "Change landing colour",
-	["gesture_landing_one_bar_pattern"] = "Switch one-bar pattern on or off",
+	["gesture_one_bar_pattern"] = "Switch one-bar pattern on or off",
 	["gesture_function"] = "Change function",
 	["gesture_mute"] = "Mute or unmute track",
 	["gesture_solo"] = "Solo or unsolo track",
@@ -178,6 +178,10 @@ for track = 1, 8 do
 		texts[clip .. "_fill_in_colour"] = long .. " Fill-In Colour"
 		texts[clip .. "_fill_in_colour_short"] = short .. " FCl"
 		texts[clip .. "_fill_in_colour_shortest"] = "FC" .. digits
+
+		texts[clip .. "_fill_in_one_bar_pattern"] = long .. " Fill-In One-Bar Pattern"
+		texts[clip .. "_fill_in_one_bar_pattern_short"] = short .. " F1Bar"
+		texts[clip .. "_fill_in_one_bar_pattern_shortest"] = "FB" .. digits
 
 		texts[clip .. "_landing_present"] = long .. " Landing Present"
 		texts[clip .. "_landing_present_short"] = short .. " LOn"

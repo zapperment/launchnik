@@ -31,6 +31,7 @@ class CPress {
 		kFillInUnipolar,
 		kFillInBipolar,
 		kFillInTransition,
+		kFillInOneBarPattern,
 		kLandingPresent,
 		kLandingColour,
 		kLandingPattern,
@@ -74,7 +75,8 @@ class CPress {
 	// launch button holds a clip, or in fill-in editing a fill-in, or in
 	// landing editing a landing), the CV modes of the picked launch button's
 	// track, and the transitions, which a press moves on to the next; of a
-	// landing also whether one-bar pattern is on, which a press switches.
+	// fill-in or a landing also whether one-bar pattern is on, which a press
+	// switches.
 	public: struct TEdited {
 		bool fPresent;
 		int fCVModes[CLauncher::kOutputCount];
@@ -99,11 +101,10 @@ class CPress {
 	public: static TChange LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, const TEdited& iPicked);
 	// A press of a launch button in fill-in editing. iFillIn describes the
 	// fill-in being edited, iClip the values of its clip, which a new fill-in
-	// starts as a copy of, with every transition off, in white. Outside
-	// fill-in editing a press changes nothing here.
+	// starts as a copy of, with every transition off and one-bar pattern
+	// off, in white. Outside fill-in editing a press changes nothing here.
 	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip);
-	// The same in landing editing, for the landing, which also has the
-	// one-bar pattern switch; a new landing has it off.
+	// The same in landing editing, for the landing.
 	public: static TChanges LandingEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iLanding, const TClipValues& iClip);
 
 	public: static TChange StopButton(int iTrack);

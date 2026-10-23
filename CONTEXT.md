@@ -32,7 +32,7 @@ A further **colour** and, for each **CV output**, a further pattern, unipolar va
 _Avoid_: Intro, opener, landing mode (it is not a way of working like **launch mode** or **setup mode**)
 
 **One-bar pattern**:
-A switch that a **landing** holds: while it is on, the CV outputs in pattern mode emit the landing's patterns only for the first bar of the landing, and the clip's patterns from then on, so that a one-bar pattern such as a crash cymbal sounds once. The rest of the landing is unchanged: its unipolar and bipolar values go on with their transitions, and the launch button shows the landing's colour, until the **switch point**. With a **length** of one bar or less it makes no difference. It is off whenever a landing is switched on. In **landing editing** it is the launch button in row 2, column 8, captioned 1 BAR PATT.
+A switch that a **fill-in** and a **landing** each hold: while it is on, the CV outputs in pattern mode emit the landing's patterns only for the first bar of the landing, or the fill-in's only in the last bar before the **switch point** (from the press, if that comes later), and the clip's patterns otherwise, so that a one-bar pattern such as a crash cymbal or a drum fill sounds once. The rest of the fill-in or landing is unchanged: its unipolar and bipolar values go on with their transitions, and the launch button shows its colour, until the switch point. With a **length** of one bar or less it makes no difference. It is off whenever a fill-in or landing is switched on. In **fill-in editing** and **landing editing** it is the launch button in row 2, column 8, captioned 1 BAR PATT.
 _Avoid_: Short landing, one-bar landing, pattern length
 
 **Forward button**:

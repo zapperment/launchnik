@@ -36,7 +36,7 @@ const TSettingsProperties kClipProperties = {
 const TSettingsProperties kFillInProperties = {
 	CPress::kFillInPresent, CPress::kFillInColour, CPress::kFillInPattern,
 	CPress::kFillInUnipolar, CPress::kFillInBipolar, CPress::kFillInTransition,
-	CPress::kNothing,
+	CPress::kFillInOneBarPattern,
 };
 const TSettingsProperties kLandingProperties = {
 	CPress::kLandingPresent, CPress::kLandingColour, CPress::kLandingPattern,
@@ -88,7 +88,7 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 			return changes;
 		}
 		// A new fill-in or landing starts as a copy of its clip's values, with
-		// every transition off, in white; a landing with one-bar pattern off.
+		// every transition off and one-bar pattern off, in white.
 		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fPresent, picked, 1);
 		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fColour, picked, CLauncher::kColourWhite);
 		for (int output = 0; output < CLauncher::kOutputCount; ++output) {

@@ -45,6 +45,7 @@ format_version = "3.0"
 --   colour of the fill-in:             8000 + 10 * t + r
 --   colour of the landing:             9000 + 10 * t + r
 --   one-bar pattern of the landing:    22000 + 10 * t + r
+--   one-bar pattern of the fill-in:    23000 + 10 * t + r
 --   and for CV output o, from 1 for A to 6 for F, of the clip, of the
 --   fill-in and of the landing, each + 100 * t + 10 * r + o:
 --     pattern, unipolar value, bipolar value, transition of the clip:
@@ -551,6 +552,16 @@ for track = 1, TRACK_COUNT do
 			ui_type = jbox.ui_selector(colour_texts),
 		}
 		add_remote_item(clip .. "_fill_in_colour", remote_name .. " Fill-In Colour")
+
+		-- While on, the fill-in's patterns play in the last bar before the
+		-- switch point only.
+		document_properties[clip .. "_fill_in_one_bar_pattern"] = jbox.boolean{
+			property_tag = 23000 + 10 * track + row,
+			default = false,
+			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_one_bar_pattern"),
+			ui_type = plain_number(1),
+		}
+		add_remote_item(clip .. "_fill_in_one_bar_pattern", remote_name .. " Fill-In One-Bar Pattern")
 
 		-- The clip's landing, set up like its fill-in.
 		document_properties[clip .. "_landing_present"] = jbox.boolean{

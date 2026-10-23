@@ -311,6 +311,13 @@ void CLauncher::SetLandingTransition(int iTrack, int iRow, int iOutput, int iTra
 	}
 }
 
+void CLauncher::SetFillInOneBarPattern(int iTrack, int iRow, bool iOn) {
+	TSettings* settings = EditableSettings(iTrack, iRow, kFillInSettings);
+	if (settings) {
+		settings->fOneBarPattern = iOn;
+	}
+}
+
 void CLauncher::SetLandingOneBarPattern(int iTrack, int iRow, bool iOn) {
 	TSettings* settings = EditableSettings(iTrack, iRow, kLandingSettings);
 	if (settings) {
@@ -823,6 +830,17 @@ bool CLauncher::PlaysLandingPatterns(int iTrack) const {
 	return fPreviousTransport.fPlayPos < fLandingStarts[iTrack] + BarLength(fPreviousTransport);
 }
 
+bool CLauncher::PlaysFillInPatterns(int iTrack) const {
+	if (!PlaysFillIn(iTrack)) {
+		return false;
+	}
+	if (!Clip(iTrack, fActive[iTrack]).fFillIn.fOneBarPattern) {
+		return true;
+	}
+	const double position = fPreviousTransport.fPlayPos;
+	return position >= NextSwitchPoint(position, fPreviousTransport) - BarLength(fPreviousTransport);
+}
+
 bool CLauncher::PlaysFillIn(int iTrack) const {
 	const int active = fActive[iTrack];
 	if (!fFillInPlaying || active == kSelectionStop) {
@@ -980,7 +998,8 @@ CLauncher::TLight CLauncher::GetEditingLight(int iTrack, int iRow, const TSettin
 		return MakeLight(colour == iSettings.fColour ? kVibrant : kDim, colour);
 	}
 	// The one-bar pattern switch is lit like SET/CLEAR.
-	if (IsLandingEditing(fSetup) && iTrack == kEditingOneBarPatternTrack && iRow == kEditingOneBarPatternRow) {
+	const bool overlay = IsFillInEditing(fSetup) || IsLandingEditing(fSetup);
+	if (overlay && iTrack == kEditingOneBarPatternTrack && iRow == kEditingOneBarPatternRow) {
 		return iSettings.fOneBarPattern ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
 	}
 	if (iRow < kEditingFirstOutputRow) {
@@ -1247,7 +1266,7 @@ double CLauncher::GetCVValue(int iTrack, int iOutput) const {
 		return 0.0;
 	}
 	int emitted = fEmitted[iTrack][iOutput];
-	if (PlaysFillIn(iTrack)) {
+	if (PlaysFillInPatterns(iTrack)) {
 		emitted = Clip(iTrack, fActive[iTrack]).fFillIn.fPatterns[iOutput] + 1;
 	}
 	else if (PlaysLandingPatterns(iTrack)) {

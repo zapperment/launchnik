@@ -228,7 +228,8 @@ void TestFillInEditingToggleSetsUpANewFillIn() {
 	// A new fill-in is a copy of its clip's values, with every transition
 	// off, in white.
 	const CPress::TChanges set = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(set, 2 + 4 * CLauncher::kOutputCount));
+	CHECK(IsChanges(set, 3 + 4 * CLauncher::kOutputCount));
+	CHECK(IsChange(set.fChanges[2 + 4 * CLauncher::kOutputCount], CPress::kFillInOneBarPattern, picked, 0));
 	CHECK(IsChange(set.fChanges[0], CPress::kFillInPresent, picked, 1));
 	CHECK(IsChange(set.fChanges[1], CPress::kFillInColour, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
@@ -263,7 +264,9 @@ void TestFillInEditingColourAndCVRows() {
 	}
 	const CPress::TChanges transition = CPress::FillInEditingLaunchButton(editing, 7, 5, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(transition, 1) && IsOutputChange(transition.fChanges[0], CPress::kFillInTransition, picked, 2, CLauncher::kTransitionC));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(editing, 7, 2, MixedModes(true), SomeClipValues()), 0));
+	// The last track of the second colour row is the one-bar pattern switch.
+	const CPress::TChanges oneBar = CPress::FillInEditingLaunchButton(editing, 7, 2, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(oneBar, 1) && IsChange(oneBar.fChanges[0], CPress::kFillInOneBarPattern, picked, 1));
 }
 
 void TestFillInEditingWithoutFillInHasNoColourOrCVControls() {
@@ -330,9 +333,13 @@ void TestOneBarPatternSwitchGoesOnAndOff() {
 	landing.fOneBarPattern = true;
 	const CPress::TChanges off = CPress::LandingEditingLaunchButton(editing, 7, 2, landing, SomeClipValues());
 	CHECK(IsChanges(off, 1) && IsChange(off.fChanges[0], CPress::kLandingOneBarPattern, picked, 0));
-	// Not there without a landing, nor in fill-in editing.
+	// Not there without a landing.
 	CHECK(IsChanges(CPress::LandingEditingLaunchButton(editing, 7, 2, MixedModes(false), SomeClipValues()), 0));
-	CHECK(IsChanges(CPress::FillInEditingLaunchButton(CLauncher::SetupForFillInEditing(3, 6), 7, 2, MixedModes(true), SomeClipValues()), 0));
+	// In fill-in editing it is the fill-in's.
+	const int fillInEditing = CLauncher::SetupForFillInEditing(3, 6);
+	const CPress::TChanges fillIn = CPress::FillInEditingLaunchButton(fillInEditing, 7, 2, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(fillIn, 1) && IsChange(fillIn.fChanges[0], CPress::kFillInOneBarPattern, picked, 1));
+	CHECK(IsChanges(CPress::FillInEditingLaunchButton(fillInEditing, 7, 2, MixedModes(false), SomeClipValues()), 0));
 }
 
 void TestSceneButtonDoesNothingInFillInEditing() {

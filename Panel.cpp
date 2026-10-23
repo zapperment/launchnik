@@ -117,6 +117,7 @@ CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, int i
 	if (CLauncher::IsFillInEditing(iSetup)) {
 		transitionBase = kFillInTransitionBase;
 		edited.fPresent = HoldsFillIn(iCustomProps, iButtonIndex);
+		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row)));
 	}
 	else if (CLauncher::IsLandingEditing(iSetup)) {
 		transitionBase = kLandingTransitionBase;
@@ -233,9 +234,13 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			StoreNumber(iCustomProps, OutputSettingTag(kLandingTransitionBase, track, row, iChange.fOutput), iChange.fValue);
 			iArgs.fGestureNameKey = "gesture_landing_transition";
 			break;
+		case CPress::kFillInOneBarPattern:
+			JBox_StoreMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_one_bar_pattern";
+			break;
 		case CPress::kLandingOneBarPattern:
 			JBox_StoreMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
-			iArgs.fGestureNameKey = "gesture_landing_one_bar_pattern";
+			iArgs.fGestureNameKey = "gesture_one_bar_pattern";
 			break;
 		case CPress::kLandingColour:
 			JBox_StoreMOMPropertyByTag(iCustomProps, LandingColourTag(track, row), JBox_MakeNumber(iChange.fValue));

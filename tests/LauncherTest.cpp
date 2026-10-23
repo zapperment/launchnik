@@ -2545,11 +2545,15 @@ void TestOneBarPatternMakesNoDifferenceWithOneBarOrLess() {
 void TestOneBarPatternSwitchInLandingEditing() {
 	CLauncher launcher;
 	launcher.SetClipPresent(3, 6, true);
-	// Not there in clip editing and fill-in editing.
+	// Not there in clip editing; in fill-in editing it is the fill-in's.
 	launcher.SetFillInPresent(3, 6, true);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 6));
 	CHECK(IsUnlit(launcher.GetLight(7, 2)));
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kDim, CLauncher::kColourRed));
+	launcher.SetFillInOneBarPattern(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kVibrant, CLauncher::kColourGreen));
+	launcher.SetFillInPresent(3, 6, false);
 	CHECK(IsUnlit(launcher.GetLight(7, 2)));
 
 	// In landing editing only while there is a landing, lit like SET/CLEAR.
@@ -2560,6 +2564,44 @@ void TestOneBarPatternSwitchInLandingEditing() {
 	launcher.SetLandingOneBarPattern(3, 6, true);
 	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kVibrant, CLauncher::kColourGreen));
 	CHECK(launcher.GetLaunchLabelsFrame() == 6);
+}
+
+void TestFillInOneBarPatternPlaysInTheLastBar() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetFillInOneBarPattern(0, 1, true);
+	PlayThrough(launcher, 0.0, kBar);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	// The fill-in plays, but its patterns wait for the last bar.
+	CHECK(launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kFlashing, 7));
+	launcher.Advance(Playing(kBar * 3 - kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+
+	// Pressed within the last bar, from the press.
+	CLauncher late;
+	SetUpFillIns(late);
+	late.SetFillInOneBarPattern(0, 1, true);
+	PlayThrough(late, 0.0, kBar * 3.5);
+	Press(late);
+	late.Advance(Playing(kBar * 3.5));
+	CHECK(late.GetCVValue(0, 0) == 6.0 / 8);
+
+	// With one bar or less it makes no difference.
+	CLauncher short_;
+	SetUpFillIns(short_);
+	short_.SetFillInOneBarPattern(0, 1, true);
+	short_.SetLength(CLauncher::kLengthFirstBars);
+	short_.Advance(Playing(kBar / 4));
+	Press(short_);
+	short_.Advance(Playing(kBar / 4 + kBatch));
+	CHECK(short_.GetCVValue(0, 0) == 6.0 / 8);
 }
 
 int main() {
@@ -2700,6 +2742,7 @@ int main() {
 	TestOneBarPatternPlaysTheLandingsPatternsForOneBar();
 	TestOneBarPatternMakesNoDifferenceWithOneBarOrLess();
 	TestOneBarPatternSwitchInLandingEditing();
+	TestFillInOneBarPatternPlaysInTheLastBar();
 	TestNoLandingAfterAFillInWhenSomethingIsQueued();
 	TestClipWithoutAFillInDoesNotLandAfterThePress();
 

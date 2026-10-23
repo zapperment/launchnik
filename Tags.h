@@ -118,6 +118,10 @@ inline TJBox_Tag LandingOneBarPatternTag(int iTrack, int iRow) {
 	return 22000 + 10 * (iTrack + 1) + iRow;
 }
 
+inline TJBox_Tag FillInOneBarPatternTag(int iTrack, int iRow) {
+	return 23000 + 10 * (iTrack + 1) + iRow;
+}
+
 // The settings of a clip's CV outputs, and of its fill-in's and its
 // landing's: a base of its
 // own for each kind of setting, plus 100 for each track, 10 for each row and

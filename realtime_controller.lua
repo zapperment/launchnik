@@ -46,6 +46,7 @@ for track = 1, 8 do
 		table.insert(notify, clip .. "_colour")
 		table.insert(notify, clip .. "_fill_in_present")
 		table.insert(notify, clip .. "_fill_in_colour")
+		table.insert(notify, clip .. "_fill_in_one_bar_pattern")
 		table.insert(notify, clip .. "_landing_present")
 		table.insert(notify, clip .. "_landing_colour")
 		table.insert(notify, clip .. "_landing_one_bar_pattern")

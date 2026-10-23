@@ -91,8 +91,8 @@ class CLauncher {
 	public: static const int kEditingColoursPerRow = 7;
 	public: static const int kEditingFirstOutputRow = 3;
 	public: static const int kEditingTransitionTrack = 7;
-	// In landing editing only, the one-bar pattern switch sits in the last
-	// track of the second colour row.
+	// In fill-in editing and landing editing only, the one-bar pattern switch
+	// sits in the last track of the second colour row.
 	public: static const int kEditingOneBarPatternTrack = 7;
 	public: static const int kEditingOneBarPatternRow = 2;
 
@@ -216,6 +216,7 @@ class CLauncher {
 	public: void SetFillInUnipolar(int iTrack, int iRow, int iOutput, int iValue);
 	public: void SetFillInBipolar(int iTrack, int iRow, int iOutput, int iValue);
 	public: void SetFillInTransition(int iTrack, int iRow, int iOutput, int iTransition);
+	public: void SetFillInOneBarPattern(int iTrack, int iRow, bool iOn);
 
 	// Record the landing a launch button holds, which it keeps while it is
 	// empty, like its clip's settings.
@@ -365,7 +366,8 @@ class CLauncher {
 	// blue (5, 6). They are lit only in clip editing, in yellow, in fill-in
 	// editing, in red, and in landing editing, in blue; the labels of colours
 	// only while there is something to set up: the picked launch button's
-	// clip, fill-in or landing. 1 BAR PATT is lit only in the last frame.
+	// clip, fill-in or landing. 1 BAR PATT is lit only in the frames with all
+	// lit in red and in blue.
 	public: static const int kLaunchLabelsFrameCount = 7;
 	public: int GetLaunchLabelsFrame() const;
 
@@ -439,7 +441,7 @@ class CLauncher {
 		int fUnipolar[kOutputCount];
 		int fBipolar[kOutputCount];
 		int fTransitions[kOutputCount];
-		// Only a landing's means anything.
+		// Only a fill-in's and a landing's mean anything.
 		bool fOneBarPattern;
 	};
 
@@ -529,6 +531,10 @@ class CLauncher {
 	private: int PickedTrack() const;
 	// Whether a track is playing the fill-in of its active clip.
 	private: bool PlaysFillIn(int iTrack) const;
+	// Whether a track's CV outputs in pattern mode emit its fill-in's
+	// patterns: while it plays the fill-in, but with one-bar pattern only in
+	// the last bar before the switch point.
+	private: bool PlaysFillInPatterns(int iTrack) const;
 	// Whether a track's CV outputs in pattern mode emit its landing's
 	// patterns: while it plays the landing, but with one-bar pattern only for
 	// the landing's first bar.
