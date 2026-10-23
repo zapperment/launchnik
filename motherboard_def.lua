@@ -44,6 +44,7 @@ format_version = "3.0"
 --   whether the clip holds a landing:  7000 + 10 * t + r
 --   colour of the fill-in:             8000 + 10 * t + r
 --   colour of the landing:             9000 + 10 * t + r
+--   one-bar pattern of the landing:    22000 + 10 * t + r
 --   and for CV output o, from 1 for A to 6 for F, of the clip, of the
 --   fill-in and of the landing, each + 100 * t + 10 * r + o:
 --     pattern, unipolar value, bipolar value, transition of the clip:
@@ -568,6 +569,15 @@ for track = 1, TRACK_COUNT do
 			ui_type = jbox.ui_selector(colour_texts),
 		}
 		add_remote_item(clip .. "_landing_colour", remote_name .. " Landing Colour")
+
+		-- While on, the landing's patterns play for its first bar only.
+		document_properties[clip .. "_landing_one_bar_pattern"] = jbox.boolean{
+			property_tag = 22000 + 10 * track + row,
+			default = false,
+			ui_name = jbox.ui_text("text_" .. clip .. "_landing_one_bar_pattern"),
+			ui_type = plain_number(1),
+		}
+		add_remote_item(clip .. "_landing_one_bar_pattern", remote_name .. " Landing One-Bar Pattern")
 
 		-- For each CV output, a pattern, a unipolar value, a bipolar value and
 		-- a transition, of the clip, of its fill-in and of its landing (see

@@ -8,7 +8,7 @@
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
 // active, light, label, mode colour, switch interval, switch point, length,
 // immediate, clip picking, clip editing, fill-in, fill-in editing, landing,
-// landing editing, forward button, scene,
+// landing editing, one-bar pattern, forward button, scene,
 // segment, interval meter, function, function button, function select button,
 // stop, muted, soloed, solo-muted, CV output, CV mode, pattern, unipolar value,
 // bipolar value, transition.
@@ -91,6 +91,10 @@ class CLauncher {
 	public: static const int kEditingColoursPerRow = 7;
 	public: static const int kEditingFirstOutputRow = 3;
 	public: static const int kEditingTransitionTrack = 7;
+	// In landing editing only, the one-bar pattern switch sits in the last
+	// track of the second colour row.
+	public: static const int kEditingOneBarPatternTrack = 7;
+	public: static const int kEditingOneBarPatternRow = 2;
 
 	// The length of the switch interval is one of eight settings: immediate,
 	// one beat, half a bar, then 1, 2, 4, 8 and 16 bars. In clip picking the
@@ -221,6 +225,7 @@ class CLauncher {
 	public: void SetLandingUnipolar(int iTrack, int iRow, int iOutput, int iValue);
 	public: void SetLandingBipolar(int iTrack, int iRow, int iOutput, int iValue);
 	public: void SetLandingTransition(int iTrack, int iRow, int iOutput, int iTransition);
+	public: void SetLandingOneBarPattern(int iTrack, int iRow, bool iOn);
 	// Whether a track is playing the landing of its active clip: during the
 	// switch interval that began when the clip became active at a switch
 	// point, or went on there after playing its fill-in, unless the length is
@@ -360,7 +365,7 @@ class CLauncher {
 	// blue (5, 6). They are lit only in clip editing, in yellow, in fill-in
 	// editing, in red, and in landing editing, in blue; the labels of colours
 	// only while there is something to set up: the picked launch button's
-	// clip, fill-in or landing.
+	// clip, fill-in or landing. 1 BAR PATT is lit only in the last frame.
 	public: static const int kLaunchLabelsFrameCount = 7;
 	public: int GetLaunchLabelsFrame() const;
 
@@ -434,6 +439,8 @@ class CLauncher {
 		int fUnipolar[kOutputCount];
 		int fBipolar[kOutputCount];
 		int fTransitions[kOutputCount];
+		// Only a landing's means anything.
+		bool fOneBarPattern;
 	};
 
 	private: struct TClip : TSettings {
@@ -522,6 +529,10 @@ class CLauncher {
 	private: int PickedTrack() const;
 	// Whether a track is playing the fill-in of its active clip.
 	private: bool PlaysFillIn(int iTrack) const;
+	// Whether a track's CV outputs in pattern mode emit its landing's
+	// patterns: while it plays the landing, but with one-bar pattern only for
+	// the landing's first bar.
+	private: bool PlaysLandingPatterns(int iTrack) const;
 	// The frame of a film strip laid out like the scene buttons': unlit, then
 	// dim and vibrant for red, green, yellow, white and blue.
 	private: int SceneStripFrame(const TLight& iLight) const;

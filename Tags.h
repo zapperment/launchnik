@@ -113,6 +113,11 @@ inline TJBox_Tag LandingColourTag(int iTrack, int iRow) {
 	return 9000 + 10 * (iTrack + 1) + iRow;
 }
 
+// After the settings of the CV outputs below, whose tags end at 21999.
+inline TJBox_Tag LandingOneBarPatternTag(int iTrack, int iRow) {
+	return 22000 + 10 * (iTrack + 1) + iRow;
+}
+
 // The settings of a clip's CV outputs, and of its fill-in's and its
 // landing's: a base of its
 // own for each kind of setting, plus 100 for each track, 10 for each row and

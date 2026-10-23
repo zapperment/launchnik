@@ -37,6 +37,7 @@ class CPress {
 		kLandingUnipolar,
 		kLandingBipolar,
 		kLandingTransition,
+		kLandingOneBarPattern,
 		// fValue is 1 while the fill-in button is held down, 0 once it is let go.
 		kFillIn,
 		// fValue is the function.
@@ -62,7 +63,7 @@ class CPress {
 	// the length and the setup state, or nothing at all (see docs/adr/0004).
 	// What a press of a launch button in fill-in editing or landing editing
 	// changes: up to every setting of the fill-in or the landing.
-	public: static const int kMaxChangeCount = 2 + 4 * CLauncher::kOutputCount;
+	public: static const int kMaxChangeCount = 3 + 4 * CLauncher::kOutputCount;
 	public: struct TChanges {
 		int fCount;
 		TChange fChanges[kMaxChangeCount];
@@ -72,13 +73,16 @@ class CPress {
 	// to know of the settings being edited: whether there are any (the picked
 	// launch button holds a clip, or in fill-in editing a fill-in, or in
 	// landing editing a landing), the CV modes of the picked launch button's
-	// track, and the transitions, which a press moves on to the next.
+	// track, and the transitions, which a press moves on to the next; of a
+	// landing also whether one-bar pattern is on, which a press switches.
 	public: struct TEdited {
 		bool fPresent;
 		int fCVModes[CLauncher::kOutputCount];
 		int fTransitions[CLauncher::kOutputCount];
+		bool fOneBarPattern;
 	};
-	// Settings with a new device's CV modes and every transition off.
+	// Settings with a new device's CV modes, every transition off and
+	// one-bar pattern off.
 	public: static TEdited Edited(bool iPresent);
 
 	// A clip's values, which a new fill-in or landing starts as a copy of.
@@ -98,7 +102,8 @@ class CPress {
 	// starts as a copy of, with every transition off, in white. Outside
 	// fill-in editing a press changes nothing here.
 	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip);
-	// The same in landing editing, for the landing.
+	// The same in landing editing, for the landing, which also has the
+	// one-bar pattern switch; a new landing has it off.
 	public: static TChanges LandingEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iLanding, const TClipValues& iClip);
 
 	public: static TChange StopButton(int iTrack);

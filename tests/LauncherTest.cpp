@@ -2507,6 +2507,61 @@ void TestClipWithoutAFillInDoesNotLandAfterThePress() {
 	CHECK(!launcher.PlaysLanding(0));
 }
 
+void TestOneBarPatternPlaysTheLandingsPatternsForOneBar() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionA);
+	launcher.SetLandingOneBarPattern(0, 2, true);
+	LandOnRow2(launcher);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	PlayOnTo(launcher, kInterval, kInterval + kBar - kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+
+	// From the second bar the clip's pattern; the rest of the landing goes on.
+	PlayOnTo(launcher, kInterval + kBar - kBatch, kInterval + kBar);
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 7));
+
+	// Switched off, the landing's pattern is back until the switch point.
+	launcher.SetLandingOneBarPattern(0, 2, false);
+	launcher.Advance(Playing(kInterval + kBar + kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+}
+
+void TestOneBarPatternMakesNoDifferenceWithOneBarOrLess() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetLandingOneBarPattern(0, 2, true);
+	launcher.SetLength(CLauncher::kLengthFirstBars);
+	PlayThrough(launcher, 0.0, kBar / 4);
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kBar / 4, kBar + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+	PlayOnTo(launcher, kBar, 2 * kBar - kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+}
+
+void TestOneBarPatternSwitchInLandingEditing() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	// Not there in clip editing and fill-in editing.
+	launcher.SetFillInPresent(3, 6, true);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 6));
+	CHECK(IsUnlit(launcher.GetLight(7, 2)));
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
+	CHECK(IsUnlit(launcher.GetLight(7, 2)));
+
+	// In landing editing only while there is a landing, lit like SET/CLEAR.
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 6));
+	CHECK(IsUnlit(launcher.GetLight(7, 2)));
+	launcher.SetLandingPresent(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kDim, CLauncher::kColourRed));
+	launcher.SetLandingOneBarPattern(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kVibrant, CLauncher::kColourGreen));
+	CHECK(launcher.GetLaunchLabelsFrame() == 6);
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -2642,6 +2697,9 @@ int main() {
 	TestMutedTrackPlaysNoLandingPattern();
 	TestLandingEditingShowsTheLanding();
 	TestClipLandsAgainAfterItsFillIn();
+	TestOneBarPatternPlaysTheLandingsPatternsForOneBar();
+	TestOneBarPatternMakesNoDifferenceWithOneBarOrLess();
+	TestOneBarPatternSwitchInLandingEditing();
 	TestNoLandingAfterAFillInWhenSomethingIsQueued();
 	TestClipWithoutAFillInDoesNotLandAfterThePress();
 

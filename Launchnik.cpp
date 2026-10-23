@@ -113,6 +113,7 @@ void CLaunchnik::LoadEverything() {
 				ClipPresentTag(track, row), ClipColourTag(track, row),
 				FillInPresentTag(track, row), FillInColourTag(track, row),
 				LandingPresentTag(track, row), LandingColourTag(track, row),
+				LandingOneBarPatternTag(track, row),
 			};
 			for (TJBox_Tag tag : tags) {
 				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
@@ -172,6 +173,11 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		const int track = static_cast<int>((iTag - CVModeTag(0, 0)) / 10);
 		const int output = static_cast<int>((iTag - CVModeTag(0, 0)) % 10);
 		fLauncher.SetCVMode(track, output, static_cast<int>(JBox_GetNumber(iValue)));
+		return;
+	}
+	if (iTag >= LandingOneBarPatternTag(0, 1) && iTag <= LandingOneBarPatternTag(CLauncher::kTrackCount - 1, CLauncher::kRowCount)) {
+		const int offset = static_cast<int>(iTag - LandingOneBarPatternTag(0, 0));
+		fLauncher.SetLandingOneBarPattern(offset / 10, offset % 10, JBox_GetBoolean(iValue));
 		return;
 	}
 	if (iTag >= kClipPatternBase && iTag < kLandingTransitionBase + kOutputSettingTagSpan) {

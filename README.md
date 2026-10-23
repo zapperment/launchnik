@@ -132,7 +132,7 @@ Clicking the transition button goes round from off through A, B, C and D. It is 
 The colour and CV rows only show while the launch button holds a clip. A new clip has the colour of its track (red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8) and, on every CV output, the pattern of its row, unipolar and bipolar value 0 and transition off. A clip that is switched off and on again comes back with all its settings. Changing a unipolar or bipolar value of the playing clip takes effect at once.
 
 3. **Fill-in editing.** While the launch button holds a clip, the **forward button** beside the back button lights up in red, with SET FILL-IN to its right. Click it to set up the clip's **fill-in**; the logo turns red. The grid is laid out and lit as in clip editing: SET/CLEAR switches the fill-in on and off, and the colour and CV rows only show while there is one. A new fill-in is a copy of its clip's patterns and values, with every transition off, in white. The labels are red instead of yellow.
-4. **Landing editing.** In fill-in editing the forward button lights up in blue, with SET LANDING, whether or not the clip holds a fill-in. Click it to set up the clip's **landing**; the logo turns blue. The grid is laid out and lit as before, with SET/CLEAR for the landing, and a new landing is likewise a copy of its clip's patterns and values, with every transition off, in white. The labels are blue.
+4. **Landing editing.** In fill-in editing the forward button lights up in blue, with SET LANDING, whether or not the clip holds a fill-in. Click it to set up the clip's **landing**; the logo turns blue. The grid is laid out and lit as before, with SET/CLEAR for the landing, and a new landing is likewise a copy of its clip's patterns and values, with every transition off, in white. The labels are blue. Row 2, column 8, labelled 1 BAR PATT, switches **one-bar pattern** on and off: vibrant green when on, dim red when off, like SET/CLEAR.
 
 Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to, with that step lit to its left: vibrant red in landing editing, it returns to fill-in editing (SET FILL-IN); vibrant yellow in fill-in editing, it returns to clip editing (EDIT CLIP); vibrant green in clip editing, it returns to clip picking (PICK CLIP); vibrant white in clip picking, it returns to launch mode (LAUNCH). In launch mode it is dark and does nothing.
 
@@ -160,7 +160,11 @@ On unipolar and bipolar outputs a landing's transition works the other way round
 | C | In a straight line | Within the first bar; the clip's value after that |
 | D | Along an exponential curve, quickly at first | Within the first bar; the clip's value after that |
 
-With a switch interval of one bar or less, C and D behave like A and B. While a clip that holds a landing is queued, the playing clip's transition moves towards the landing's value. If another clip is queued while a landing plays, the landing's movement stops and the playing clip's own transition moves on from where the output is. A fill-in lies over a landing as it does over a clip. Changing a playing landing takes effect at once. A launch button keeps its landing while it is empty; landings are part of a patch.
+With a switch interval of one bar or less, C and D behave like A and B.
+
+With **one-bar pattern** on, the outputs in pattern mode play the landing's patterns for the first bar only, then the clip's, so that a one-bar pattern such as a crash cymbal sounds once even with a longer switch interval. The unipolar and bipolar outputs and the launch button's colour go on with the landing until the switch point. A new landing has it off.
+
+While a clip that holds a landing is queued, the playing clip's transition moves towards the landing's value. If another clip is queued while a landing plays, the landing's movement stops and the playing clip's own transition moves on from where the output is. A fill-in lies over a landing as it does over a clip. Changing a playing landing takes effect at once. A launch button keeps its landing while it is empty; landings are part of a patch.
 
 ## Setting the length of the switch interval
 
@@ -235,6 +239,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Clip M Fill-In Output X Pattern`, `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
 | `Track N Clip M Landing Present` (64 items) | Input and output | 0 = no landing, 1 = holds one |
 | `Track N Clip M Landing Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Track N Clip M Landing One-Bar Pattern` (64 items) | Input and output | 0 = off, 1 = the landing's patterns play for one bar only |
 | `Track N Clip M Landing Output X Pattern`, `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
 | `Track N Output X CV Mode` (48 items) | Output only | 0 = bipolar, 1 = unipolar, 2 = pattern; a copy of the switch on the back panel, which only the mouse can change |
 | `Fill-In` | Input and output | 1 while the fill-in button is held down, 0 otherwise |

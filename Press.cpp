@@ -24,19 +24,24 @@ struct TSettingsProperties {
 	CPress::EProperty fUnipolar;
 	CPress::EProperty fBipolar;
 	CPress::EProperty fTransition;
+	// kNothing for settings without a one-bar pattern switch.
+	CPress::EProperty fOneBarPattern;
 };
 
 const TSettingsProperties kClipProperties = {
 	CPress::kClipPresent, CPress::kClipColour, CPress::kClipPattern,
 	CPress::kClipUnipolar, CPress::kClipBipolar, CPress::kClipTransition,
+	CPress::kNothing,
 };
 const TSettingsProperties kFillInProperties = {
 	CPress::kFillInPresent, CPress::kFillInColour, CPress::kFillInPattern,
 	CPress::kFillInUnipolar, CPress::kFillInBipolar, CPress::kFillInTransition,
+	CPress::kNothing,
 };
 const TSettingsProperties kLandingProperties = {
 	CPress::kLandingPresent, CPress::kLandingColour, CPress::kLandingPattern,
 	CPress::kLandingUnipolar, CPress::kLandingBipolar, CPress::kLandingTransition,
+	CPress::kLandingOneBarPattern,
 };
 
 // What a press changes among the colours and the CV outputs of the settings
@@ -47,6 +52,9 @@ CPress::TChange EditSetting(const TSettingsProperties& iProperties, int iPicked,
 	if (isColourRow && iTrack < CLauncher::kEditingColoursPerRow) {
 		const int colour = (iRow - CLauncher::kEditingFirstColourRow) * CLauncher::kEditingColoursPerRow + iTrack;
 		return MakeChange(iProperties.fColour, iPicked, colour);
+	}
+	if (iProperties.fOneBarPattern != CPress::kNothing && iTrack == CLauncher::kEditingOneBarPatternTrack && iRow == CLauncher::kEditingOneBarPatternRow) {
+		return MakeChange(iProperties.fOneBarPattern, iPicked, iEdited.fOneBarPattern ? 0 : 1);
 	}
 	const int output = iRow - CLauncher::kEditingFirstOutputRow;
 	if (output < 0 || output >= CLauncher::kOutputCount || iTrack < 0 || iTrack >= CLauncher::kTrackCount) {
@@ -80,7 +88,7 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 			return changes;
 		}
 		// A new fill-in or landing starts as a copy of its clip's values, with
-		// every transition off, in white.
+		// every transition off, in white; a landing with one-bar pattern off.
 		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fPresent, picked, 1);
 		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fColour, picked, CLauncher::kColourWhite);
 		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
@@ -88,6 +96,9 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fUnipolar, picked, iClip.fUnipolar[output], output);
 			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fBipolar, picked, iClip.fBipolar[output], output);
 			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fTransition, picked, CLauncher::kTransitionOff, output);
+		}
+		if (iProperties.fOneBarPattern != CPress::kNothing) {
+			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fOneBarPattern, picked, 0);
 		}
 		return changes;
 	}
@@ -111,6 +122,7 @@ CPress::TEdited CPress::Edited(bool iPresent) {
 		edited.fCVModes[output] = CLauncher::DefaultCVMode(output);
 		edited.fTransitions[output] = CLauncher::kTransitionOff;
 	}
+	edited.fOneBarPattern = false;
 	return edited;
 }
 

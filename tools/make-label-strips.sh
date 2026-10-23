@@ -6,7 +6,8 @@
 # - GUI2D/Labels_Launch_7frames.png holds the labels of the launch buttons in
 #   scenes 1 and 2, placed as on the panel: all unlit, then SET/CLEAR lit and
 #   all lit, in yellow, in red and in blue. Yellow is for clip editing, red
-#   for fill-in editing, blue for landing editing. The labels of colours stay
+#   for fill-in editing, blue for landing editing; 1 BAR PATT, the one-bar
+#   pattern switch of a landing, is lit only in the last frame. The labels of colours stay
 #   unlit while there is no clip, fill-in or landing to set up. The labels of
 #   the CV outputs in scenes 3 to 8 are made by tools/make-cv-labels.py.
 # - GUI2D/Label_Scene<n>_3frames.png holds the label of scene button n:
@@ -71,9 +72,10 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 # Each label of the launch buttons: whether it is a control, which is lit in
-# every launch button's clip editing, or a setting, which is lit only while the
-# launch button holds a clip; its track and scene, both from 1; and its text,
-# with "|" for a space.
+# every launch button's clip editing, a setting, which is lit only while the
+# launch button holds a clip, or a landing setting, which is lit only in
+# landing editing of a landing; its track and scene, both from 1; and its
+# text, with "|" for a space.
 LAUNCH_LABELS="
 control 8 1 SET/CLEAR
 setting 1 1 WHITE
@@ -90,20 +92,24 @@ setting 4 2 DARK|BLUE
 setting 5 2 PURPLE
 setting 6 2 FUCHSIA
 setting 7 2 PINK
+landing 8 2 1|BAR|PATT
 "
 
-# Draws every label of the launch buttons, the controls in one colour and the
-# settings in another. With north gravity the x offset of a text counts from
-# the middle of the strip.
+# Draws every label of the launch buttons, the controls in one colour, the
+# settings in another and the landing settings in a third. With north gravity
+# the x offset of a text counts from the middle of the strip.
 draw_launch_labels() {
 	control_colour=$1
 	setting_colour=$2
-	target=$3
+	landing_colour=$3
+	target=$4
 	set -- -size "$LAUNCH_SIZE" xc:none -font "$FONT" -pointsize "$POINTSIZE" -gravity north
 	while read -r kind track scene text; do
 		[ -n "$kind" ] || continue
 		if [ "$kind" = control ]; then
 			colour=$control_colour
+		elif [ "$kind" = landing ]; then
+			colour=$landing_colour
 		else
 			colour=$setting_colour
 		fi
@@ -116,13 +122,13 @@ LABELS
 	magick "$@" "PNG32:$target"
 }
 
-draw_launch_labels "$UNLIT" "$UNLIT" "$WORK/launch0.png"
-draw_launch_labels "$YELLOW" "$UNLIT" "$WORK/launch1.png"
-draw_launch_labels "$YELLOW" "$YELLOW" "$WORK/launch2.png"
-draw_launch_labels "$RED" "$UNLIT" "$WORK/launch3.png"
-draw_launch_labels "$RED" "$RED" "$WORK/launch4.png"
-draw_launch_labels "$BLUE" "$UNLIT" "$WORK/launch5.png"
-draw_launch_labels "$BLUE" "$BLUE" "$WORK/launch6.png"
+draw_launch_labels "$UNLIT" "$UNLIT" "$UNLIT" "$WORK/launch0.png"
+draw_launch_labels "$YELLOW" "$UNLIT" "$UNLIT" "$WORK/launch1.png"
+draw_launch_labels "$YELLOW" "$YELLOW" "$UNLIT" "$WORK/launch2.png"
+draw_launch_labels "$RED" "$UNLIT" "$UNLIT" "$WORK/launch3.png"
+draw_launch_labels "$RED" "$RED" "$UNLIT" "$WORK/launch4.png"
+draw_launch_labels "$BLUE" "$UNLIT" "$UNLIT" "$WORK/launch5.png"
+draw_launch_labels "$BLUE" "$BLUE" "$BLUE" "$WORK/launch6.png"
 magick "$WORK"/launch[0-6].png -background none -append +repage "PNG32:GUI2D/Labels_Launch_7frames.png"
 echo "Wrote GUI2D/Labels_Launch_7frames.png"
 

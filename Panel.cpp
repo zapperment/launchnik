@@ -111,7 +111,7 @@ int LoadNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag) {
 CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, int iSetup) {
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
-	CPress::TEdited edited;
+	CPress::TEdited edited = CPress::Edited(false);
 	TJBox_Tag transitionBase = kClipTransitionBase;
 	edited.fPresent = HoldsClip(iCustomProps, iButtonIndex);
 	if (CLauncher::IsFillInEditing(iSetup)) {
@@ -121,6 +121,7 @@ CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, int i
 	else if (CLauncher::IsLandingEditing(iSetup)) {
 		transitionBase = kLandingTransitionBase;
 		edited.fPresent = HoldsLanding(iCustomProps, iButtonIndex);
+		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row)));
 	}
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		edited.fCVModes[output] = LoadNumber(iCustomProps, CVModeTag(track, output));
@@ -231,6 +232,10 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 		case CPress::kLandingTransition:
 			StoreNumber(iCustomProps, OutputSettingTag(kLandingTransitionBase, track, row, iChange.fOutput), iChange.fValue);
 			iArgs.fGestureNameKey = "gesture_landing_transition";
+			break;
+		case CPress::kLandingOneBarPattern:
+			JBox_StoreMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_landing_one_bar_pattern";
 			break;
 		case CPress::kLandingColour:
 			JBox_StoreMOMPropertyByTag(iCustomProps, LandingColourTag(track, row), JBox_MakeNumber(iChange.fValue));

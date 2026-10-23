@@ -95,6 +95,7 @@ texts = {
 	["gesture_landing_bipolar"] = "Change landing bipolar value",
 	["gesture_landing_transition"] = "Change landing transition",
 	["gesture_landing_colour"] = "Change landing colour",
+	["gesture_landing_one_bar_pattern"] = "Switch one-bar pattern on or off",
 	["gesture_function"] = "Change function",
 	["gesture_mute"] = "Mute or unmute track",
 	["gesture_solo"] = "Solo or unsolo track",
@@ -185,6 +186,10 @@ for track = 1, 8 do
 		texts[clip .. "_landing_colour"] = long .. " Landing Colour"
 		texts[clip .. "_landing_colour_short"] = short .. " LCl"
 		texts[clip .. "_landing_colour_shortest"] = "LC" .. digits
+
+		texts[clip .. "_landing_one_bar_pattern"] = long .. " Landing One-Bar Pattern"
+		texts[clip .. "_landing_one_bar_pattern_short"] = short .. " L1Bar"
+		texts[clip .. "_landing_one_bar_pattern_shortest"] = "LB" .. digits
 
 		-- The settings of the CV outputs, for example "T1C1 APt" and "11AP"
 		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in, "T1C1LAPt" and

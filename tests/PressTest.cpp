@@ -287,7 +287,8 @@ void TestLandingEditingToggleSetsUpANewLanding() {
 	// A new landing is a copy of its clip's values, with every transition
 	// off, in white, like a new fill-in.
 	const CPress::TChanges set = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(set, 2 + 4 * CLauncher::kOutputCount));
+	CHECK(IsChanges(set, 3 + 4 * CLauncher::kOutputCount));
+	CHECK(IsChange(set.fChanges[2 + 4 * CLauncher::kOutputCount], CPress::kLandingOneBarPattern, picked, 0));
 	CHECK(IsChange(set.fChanges[0], CPress::kLandingPresent, picked, 1));
 	CHECK(IsChange(set.fChanges[1], CPress::kLandingColour, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
@@ -318,6 +319,20 @@ void TestLandingEditingColourAndCVRows() {
 	CHECK(IsChanges(transition, 1) && IsOutputChange(transition.fChanges[0], CPress::kLandingTransition, picked, 3, CLauncher::kTransitionOff));
 	// Without a landing there is nothing but the toggle.
 	CHECK(IsChanges(CPress::LandingEditingLaunchButton(editing, 2, 2, MixedModes(false), SomeClipValues()), 0));
+}
+
+void TestOneBarPatternSwitchGoesOnAndOff() {
+	const int editing = CLauncher::SetupForLandingEditing(3, 6);
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	CPress::TEdited landing = MixedModes(true);
+	const CPress::TChanges on = CPress::LandingEditingLaunchButton(editing, 7, 2, landing, SomeClipValues());
+	CHECK(IsChanges(on, 1) && IsChange(on.fChanges[0], CPress::kLandingOneBarPattern, picked, 1));
+	landing.fOneBarPattern = true;
+	const CPress::TChanges off = CPress::LandingEditingLaunchButton(editing, 7, 2, landing, SomeClipValues());
+	CHECK(IsChanges(off, 1) && IsChange(off.fChanges[0], CPress::kLandingOneBarPattern, picked, 0));
+	// Not there without a landing, nor in fill-in editing.
+	CHECK(IsChanges(CPress::LandingEditingLaunchButton(editing, 7, 2, MixedModes(false), SomeClipValues()), 0));
+	CHECK(IsChanges(CPress::FillInEditingLaunchButton(CLauncher::SetupForFillInEditing(3, 6), 7, 2, MixedModes(true), SomeClipValues()), 0));
 }
 
 void TestSceneButtonDoesNothingInFillInEditing() {
@@ -386,6 +401,7 @@ int main() {
 	TestLandingEditingDoesNothingElsewhere();
 	TestLandingEditingToggleSetsUpANewLanding();
 	TestLandingEditingColourAndCVRows();
+	TestOneBarPatternSwitchGoesOnAndOff();
 
 	TestFunctionButtonInStopFunctionSelectsStop();
 	TestFunctionButtonIsHeldDownAsMuteOrSoloButton();

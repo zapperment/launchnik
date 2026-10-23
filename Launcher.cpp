@@ -107,6 +107,7 @@ CLauncher::CLauncher()
 				clip.fBipolar[output] = kBipolarZero;
 				clip.fTransitions[output] = kTransitionOff;
 			}
+			clip.fOneBarPattern = false;
 			// A fill-in and a landing are set up as copies of their clip, in
 			// white.
 			clip.fFillIn = clip;
@@ -307,6 +308,13 @@ void CLauncher::SetLandingTransition(int iTrack, int iRow, int iOutput, int iTra
 	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, kLandingSettings);
 	if (settings && IsValidTransition(iTransition)) {
 		settings->fTransitions[iOutput] = iTransition;
+	}
+}
+
+void CLauncher::SetLandingOneBarPattern(int iTrack, int iRow, bool iOn) {
+	TSettings* settings = EditableSettings(iTrack, iRow, kLandingSettings);
+	if (settings) {
+		settings->fOneBarPattern = iOn;
 	}
 }
 
@@ -805,6 +813,16 @@ bool CLauncher::PlaysLanding(int iTrack) const {
 	return clip.fPresent && clip.fLanding.fPresent;
 }
 
+bool CLauncher::PlaysLandingPatterns(int iTrack) const {
+	if (!PlaysLanding(iTrack)) {
+		return false;
+	}
+	if (!Clip(iTrack, fActive[iTrack]).fLanding.fOneBarPattern) {
+		return true;
+	}
+	return fPreviousTransport.fPlayPos < fLandingStarts[iTrack] + BarLength(fPreviousTransport);
+}
+
 bool CLauncher::PlaysFillIn(int iTrack) const {
 	const int active = fActive[iTrack];
 	if (!fFillInPlaying || active == kSelectionStop) {
@@ -960,6 +978,10 @@ CLauncher::TLight CLauncher::GetEditingLight(int iTrack, int iRow, const TSettin
 	if (isColourRow && iTrack < kEditingColoursPerRow) {
 		const int colour = (iRow - kEditingFirstColourRow) * kEditingColoursPerRow + iTrack;
 		return MakeLight(colour == iSettings.fColour ? kVibrant : kDim, colour);
+	}
+	// The one-bar pattern switch is lit like SET/CLEAR.
+	if (IsLandingEditing(fSetup) && iTrack == kEditingOneBarPatternTrack && iRow == kEditingOneBarPatternRow) {
+		return iSettings.fOneBarPattern ? MakeLight(kVibrant, kColourGreen) : MakeLight(kDim, kColourRed);
 	}
 	if (iRow < kEditingFirstOutputRow) {
 		return kUnlitLight;
@@ -1228,7 +1250,7 @@ double CLauncher::GetCVValue(int iTrack, int iOutput) const {
 	if (PlaysFillIn(iTrack)) {
 		emitted = Clip(iTrack, fActive[iTrack]).fFillIn.fPatterns[iOutput] + 1;
 	}
-	else if (PlaysLanding(iTrack)) {
+	else if (PlaysLandingPatterns(iTrack)) {
 		emitted = Clip(iTrack, fActive[iTrack]).fLanding.fPatterns[iOutput] + 1;
 	}
 	return static_cast<double>(emitted) / kPatternCount;
