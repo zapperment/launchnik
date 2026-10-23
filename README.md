@@ -148,7 +148,7 @@ On unipolar and bipolar outputs a fill-in's transition works differently from a 
 
 ## Landings
 
-A landing is what a clip plays for its first switch interval, instead of its own patterns and values, such as a crash cymbal at the start of a drum pattern. It plays when the clip becomes active at a switch point, whether the track was stopped or playing another clip, and each track of a launched scene lands on its own. The launch button shows the landing's colour meanwhile. At the next switch point the clip goes on with its own settings. A clip chosen again while it plays, a song that is opened, a clip chosen while the transport is stopped and the switch interval "immediate" never land; moving the song position ends a landing.
+A landing is what a clip plays for its first switch interval, instead of its own patterns and values, such as a crash cymbal at the start of a drum pattern. It plays when the clip becomes active at a switch point, whether the track was stopped or playing another clip, and each track of a launched scene lands on its own. A clip that has played its fill-in lands again at the switch point where the fill-in ends, unless another clip or stop was queued meanwhile. The launch button shows the landing's colour meanwhile. At the next switch point the clip goes on with its own settings. A clip chosen again while it plays, a song that is opened, a clip chosen while the transport is stopped and the switch interval "immediate" never land; moving the song position ends a landing.
 
 On unipolar and bipolar outputs a landing's transition works the other way round from a clip's: it starts at the landing's value at the switch point and moves towards the clip's value, so that the clip's value is reached by the end.
 

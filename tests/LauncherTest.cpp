@@ -2448,6 +2448,65 @@ void TestLandingEditingShowsTheLanding() {
 	CHECK(IsLight(launcher.GetLight(4, 3), CLauncher::kDim, CLauncher::kColourOrange));
 }
 
+void TestClipLandsAgainAfterItsFillIn() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetFillInPresent(0, 2, true);
+	launcher.SetFillInPattern(0, 2, 0, 4);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(!launcher.PlaysLanding(0));
+	Press(launcher);
+	PlayThrough(launcher, kBar, kInterval);
+	CHECK(launcher.GetCVValue(0, 0) == 5.0 / 8);
+
+	// Nothing is queued: at the switch point the clip goes on, and lands.
+	launcher.Advance(Playing(kInterval));
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	PlayThrough(launcher, kInterval + kBatch, 2 * kInterval + kBatch);
+	CHECK(!launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestNoLandingAfterAFillInWhenSomethingIsQueued() {
+	// Row 1, queued during the fill-in, has no landing.
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetFillInPresent(0, 2, true);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Press(launcher);
+	launcher.SetSelection(0, 1);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+	CHECK(!launcher.PlaysLanding(0));
+
+	// Stop queued during the fill-in.
+	CLauncher stopping;
+	SetUpLanding(stopping, CLauncher::kTransitionOff);
+	stopping.SetFillInPresent(0, 2, true);
+	OpenWith(stopping, 0, 2);
+	PlayThrough(stopping, 0.0, kBar);
+	Press(stopping);
+	stopping.SetSelection(0, CLauncher::kSelectionStop);
+	PlayThrough(stopping, kBar, kInterval + kBatch);
+	CHECK(!stopping.PlaysLanding(0));
+	CHECK(stopping.GetCVValue(0, 0) == 0.0);
+}
+
+void TestClipWithoutAFillInDoesNotLandAfterThePress() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Press(launcher);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+	CHECK(!launcher.PlaysLanding(0));
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -2582,6 +2641,9 @@ int main() {
 	TestChangesToTheLandingTakeEffectAtOnce();
 	TestMutedTrackPlaysNoLandingPattern();
 	TestLandingEditingShowsTheLanding();
+	TestClipLandsAgainAfterItsFillIn();
+	TestNoLandingAfterAFillInWhenSomethingIsQueued();
+	TestClipWithoutAFillInDoesNotLandAfterThePress();
 
 	return ReportChecks("Launcher");
 }

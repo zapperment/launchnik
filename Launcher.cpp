@@ -483,6 +483,13 @@ void CLauncher::Advance(const TTransport& iTransport) {
 	}
 	fSwitchPointInPreviousBatch = switchPointInBatch;
 
+	// A clip whose fill-in ends at a switch point lands, unless another clip
+	// takes over there.
+	bool fillInEnds[kTrackCount];
+	for (int track = 0; track < kTrackCount; ++track) {
+		fillInEnds[track] = switchPointInBatch && PlaysFillIn(track);
+	}
+
 	// A fill-in ends at the switch point itself, not one batch later, and only
 	// while the song plays through it; with the length immediate there is none
 	// to end at, so nothing fills in.
@@ -541,11 +548,16 @@ void CLauncher::Advance(const TTransport& iTransport) {
 		}
 		Switch();
 		// A clip that becomes active at a switch point, while the song plays,
-		// lands; one that becomes active any other way does not, and a track
-		// that changes otherwise stops landing.
+		// lands, and so does one that goes on there after its fill-in; one
+		// that becomes active any other way does not, and a track that
+		// changes otherwise stops landing.
 		const bool atSwitchPoint = iTransport.fPlaying && (switchPointInBatch || switchPointInPreviousBatch) && fLength != kLengthImmediate;
 		for (int track = 0; track < kTrackCount; ++track) {
 			if (fActive[track] == previous[track]) {
+				if (atSwitchPoint && fillInEnds[track] && fActive[track] != kSelectionStop) {
+					fLandingRows[track] = fActive[track];
+					fLandingStarts[track] = LastSwitchPoint(iTransport, switchPointInBatch);
+				}
 				continue;
 			}
 			fLandingRows[track] = kSelectionStop;

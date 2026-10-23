@@ -223,7 +223,8 @@ class CLauncher {
 	public: void SetLandingTransition(int iTrack, int iRow, int iOutput, int iTransition);
 	// Whether a track is playing the landing of its active clip: during the
 	// switch interval that began when the clip became active at a switch
-	// point, unless the length is immediate.
+	// point, or went on there after playing its fill-in, unless the length is
+	// immediate.
 	public: bool PlaysLanding(int iTrack) const;
 
 	// The CV mode of a track's CV output. A change takes effect at once and
