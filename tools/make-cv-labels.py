@@ -6,22 +6,26 @@
 """Builds the labels of the CV outputs (see "Label" and "CV output" in
 CONTEXT.md):
 
-- GUI2D/Labels_Output_23frames.png holds the labels below the launch buttons
+- GUI2D/Labels_Output_34frames.png holds the labels below the launch buttons
   of one scene from 3 to 8, each of which stands for a CV output in clip
-  editing and fill-in editing. Every launch button has two lines: on top the
-  unipolar value on the left and the bipolar value on the right, or in the
-  last track the transitions OFF A B C D; below it the pattern. The frames
-  are: all unlit, then in yellow and in red each the patterns lit, the
-  unipolar values lit with each of the five transitions, and the bipolar
-  values lit with each of the five transitions. The six scenes share it.
-- GUI2D/Label_Transitions_3frames.png holds the labels of the transition
-  diagram to the right of the scene buttons: TRANSITION and the letters A to
-  D, unlit, yellow or red.
+  editing, fill-in editing and landing editing. Every launch button has two
+  lines: on top the unipolar value on the left and the bipolar value on the
+  right, or in the last track the transitions OFF A B C D; below it the
+  pattern. The frames are: all unlit, then in yellow, in red and in blue each
+  the patterns lit, the unipolar values lit with each of the five
+  transitions, and the bipolar values lit with each of the five transitions.
+  The six scenes share it.
+- GUI2D/Transition_Diagrams_4frames.png holds the three sets of transition
+  diagrams to the right of the scene buttons, one above the other:
+  TRANSITION, FILL-IN and LANDING, each with its letters A to D and its four
+  diagrams. In the first frame all are grey; in the others one set is lit,
+  TRANSITION in yellow, FILL-IN in red or LANDING in blue, with its diagrams
+  in colour.
 - GUI2D/Labels_Back.png holds every caption of the back panel, as large as
   the panel: CV OUT and, left of the first track, the names of the CV modes with lines to the
   positions of the switch.
 
-It also copies the transition diagram and the CV mode switch into GUI2D.
+It also copies the CV mode switch into GUI2D.
 Front labels are set in Arial Bold like those of tools/make-label-strips.sh,
 back ones in Arial. The layout numbers must match GUI2D/device_2D.lua.
 
@@ -43,6 +47,7 @@ REGULAR = "/System/Library/Fonts/Supplemental/Arial.ttf"
 UNLIT = "#4d4d4d"
 YELLOW = "#fafe07"
 RED = "#ff5e5e"
+BLUE = "#0598fe"
 BACK_TEXT = "#e0e0e0"
 
 # The launch buttons, as in tools/make-label-strips.sh.
@@ -62,18 +67,26 @@ UNIPOLAR = ["0", "16.6", "33.3", "50", "66.6", "83.3", "100"]
 BIPOLAR = ["-100", "-66.6", "-33.3", "0", "+33.3", "+66.6", "+100"]
 TRANSITIONS = ["OFF", "A", "B", "C", "D"]
 
-# The transition diagram's labels: where the strip sits on the front panel,
-# its size, and where TRANSITION and the letters go on the panel. The diagram
-# itself is at DIAGRAM_LEFT, DIAGRAM_TOP, with the middle of its four boxes
-# DIAGRAM_ROWS pixels below its top.
-TRANSITION_LABELS_LEFT = 3327
-TRANSITION_LABELS_TOP = 1233
-TRANSITION_LABELS_SIZE = (250, 300)
-DIAGRAM_TOP = 1293
+# The sets of transition diagrams, within a frame of their film strip: the
+# frame's size, and for each set, SET_PITCH pixels apart, where its heading
+# and the middle of its letters go, and where its diagram is, with the middle
+# of its four boxes DIAGRAM_ROWS pixels below its top. The frame sits at
+# 3327, 900 on the front panel (see GUI2D/device_2D.lua).
+DIAGRAMS_SIZE = (250, 1000)
+SET_PITCH = 345
+HEADING_LEFT = 16
+HEADING_TOP = 9
+LETTER_CENTRE = 29
+DIAGRAM_LEFT = 60
+DIAGRAM_TOP = 60
 DIAGRAM_ROWS = [28, 92, 156, 219]
-HEADING_LEFT = 3343
-HEADING_TOP = 1242
-LETTER_CENTRE = 3356
+# Each set: its heading, the colour it is lit in, and its diagrams lit and
+# grey.
+DIAGRAM_SETS = [
+	("TRANSITION", YELLOW, "fill-in"),
+	("FILL-IN", RED, "fill-in"),
+	("LANDING", BLUE, "landing"),
+]
 
 # The back panel: the jacks of track 1 start 840 pixels from the left, 300
 # apart, the jacks of output A 1065 pixels from the top, 240 apart; a jack is
@@ -128,7 +141,7 @@ def output_frame(top_colour, bottom_colour, lit):
 
 def make_output_labels():
 	frames = [output_frame(UNLIT, UNLIT, None)]
-	for colour in (YELLOW, RED):
+	for colour in (YELLOW, RED, BLUE):
 		frames.append(output_frame(colour, colour, "patterns"))
 		for kind in ("unipolar", "bipolar"):
 			for transition in range(len(TRANSITIONS)):
@@ -141,21 +154,27 @@ def make_output_labels():
 	print(f"Wrote {target.relative_to(ROOT)}")
 
 
-def make_transition_labels():
+def make_transition_diagrams():
 	typeface = font(BOLD, PATTERN_SIZE)
-	width, height = TRANSITION_LABELS_SIZE
-	# HEADING_TOP is where the capitals of the heading begin.
+	width, height = DIAGRAMS_SIZE
+	# HEADING_TOP is where the capitals of a heading begin.
 	cap_top = typeface.getbbox("T", anchor="ls")[1]
-	strip = Image.new("RGBA", (width, height * 3))
+	diagrams = {
+		(kind, active): Image.open(SOURCES / f"Launchnik_transition_diagrams_{kind}_{'active' if active else 'inactive'}.png").convert("RGBA")
+		for kind in ("fill-in", "landing") for active in (False, True)
+	}
+	strip = Image.new("RGBA", (width, height * (1 + len(DIAGRAM_SETS))))
 	draw = ImageDraw.Draw(strip)
-	for index, colour in enumerate((UNLIT, YELLOW, RED)):
-		top = height * index
-		baseline = top + HEADING_TOP - TRANSITION_LABELS_TOP - cap_top
-		draw_text(draw, (HEADING_LEFT - TRANSITION_LABELS_LEFT, baseline), "TRANSITION", colour, typeface, "ls")
-		for letter, row in zip("ABCD", DIAGRAM_ROWS):
-			centre = (LETTER_CENTRE - TRANSITION_LABELS_LEFT, top + DIAGRAM_TOP + row - TRANSITION_LABELS_TOP)
-			draw_text(draw, centre, letter, colour, typeface, "mm")
-	target = GUI / "Label_Transitions_3frames.png"
+	for frame in range(1 + len(DIAGRAM_SETS)):
+		for index, (heading, colour, kind) in enumerate(DIAGRAM_SETS):
+			lit = frame == index + 1
+			top = height * frame + SET_PITCH * index
+			colour = colour if lit else UNLIT
+			draw_text(draw, (HEADING_LEFT, top + HEADING_TOP - cap_top), heading, colour, typeface, "ls")
+			for letter, row in zip("ABCD", DIAGRAM_ROWS):
+				draw_text(draw, (LETTER_CENTRE, top + DIAGRAM_TOP + row), letter, colour, typeface, "mm")
+			strip.alpha_composite(diagrams[(kind, lit)], (DIAGRAM_LEFT, top + DIAGRAM_TOP))
+	target = GUI / f"Transition_Diagrams_{1 + len(DIAGRAM_SETS)}frames.png"
 	strip.save(target)
 	print(f"Wrote {target.relative_to(ROOT)}")
 
@@ -195,13 +214,12 @@ def make_back_labels():
 
 
 def copy_graphics():
-	shutil.copy(SOURCES / "Transition_diagram_2frames.png", GUI / "Transition_Diagram_2frames.png")
 	shutil.copy(STOCK / "Special" / "Fader_Bypass_3frames.png", GUI / "CV_Mode_Switch_3frames.png")
-	print("Copied GUI2D/Transition_Diagram_2frames.png and GUI2D/CV_Mode_Switch_3frames.png")
+	print("Copied GUI2D/CV_Mode_Switch_3frames.png")
 
 
 if __name__ == "__main__":
 	make_output_labels()
-	make_transition_labels()
+	make_transition_diagrams()
 	make_back_labels()
 	copy_graphics()

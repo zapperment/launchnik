@@ -86,6 +86,12 @@ bool HoldsFillIn(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
 	return JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInPresentTag(track, row)));
 }
 
+bool HoldsLanding(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
+	const int track = iButtonIndex / CLauncher::kRowCount;
+	const int row = iButtonIndex % CLauncher::kRowCount + 1;
+	return JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, LandingPresentTag(track, row)));
+}
+
 bool TrackHoldsClips(TJBox_ObjectRef iCustomProps, int iTrack) {
 	for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 		if (HoldsClip(iCustomProps, CLauncher::ButtonIndex(iTrack, row))) {
@@ -99,14 +105,25 @@ int LoadNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag) {
 	return static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(iCustomProps, iTag)));
 }
 
-// What a press in clip editing or fill-in editing needs to know of the
-// settings being edited, the clip's or its fill-in's.
-CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, bool iFillIn) {
+// What a press in clip editing, fill-in editing or landing editing needs to
+// know of the settings being edited, the clip's, its fill-in's or its
+// landing's.
+CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, int iSetup) {
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
-	CPress::TEdited edited;
-	edited.fPresent = iFillIn ? HoldsFillIn(iCustomProps, iButtonIndex) : HoldsClip(iCustomProps, iButtonIndex);
-	const TJBox_Tag transitionBase = iFillIn ? kFillInTransitionBase : kClipTransitionBase;
+	CPress::TEdited edited = CPress::Edited(false);
+	TJBox_Tag transitionBase = kClipTransitionBase;
+	edited.fPresent = HoldsClip(iCustomProps, iButtonIndex);
+	if (CLauncher::IsFillInEditing(iSetup)) {
+		transitionBase = kFillInTransitionBase;
+		edited.fPresent = HoldsFillIn(iCustomProps, iButtonIndex);
+		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row)));
+	}
+	else if (CLauncher::IsLandingEditing(iSetup)) {
+		transitionBase = kLandingTransitionBase;
+		edited.fPresent = HoldsLanding(iCustomProps, iButtonIndex);
+		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row)));
+	}
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		edited.fCVModes[output] = LoadNumber(iCustomProps, CVModeTag(track, output));
 		edited.fTransitions[output] = LoadNumber(iCustomProps, OutputSettingTag(transitionBase, track, row, output));
@@ -197,6 +214,38 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, FillInColourTag(track, row), JBox_MakeNumber(iChange.fValue));
 			iArgs.fGestureNameKey = "gesture_fill_in_colour";
 			break;
+		case CPress::kLandingPresent:
+			JBox_StoreMOMPropertyByTag(iCustomProps, LandingPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_landing_present";
+			break;
+		case CPress::kLandingPattern:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingPatternBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_pattern";
+			break;
+		case CPress::kLandingUnipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_unipolar";
+			break;
+		case CPress::kLandingBipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingBipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_bipolar";
+			break;
+		case CPress::kLandingTransition:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingTransitionBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_transition";
+			break;
+		case CPress::kFillInOneBarPattern:
+			JBox_StoreMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_one_bar_pattern";
+			break;
+		case CPress::kLandingOneBarPattern:
+			JBox_StoreMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_one_bar_pattern";
+			break;
+		case CPress::kLandingColour:
+			JBox_StoreMOMPropertyByTag(iCustomProps, LandingColourTag(track, row), JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_landing_colour";
+			break;
 		case CPress::kFillIn:
 			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_FillIn, JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_fill_in";
@@ -212,6 +261,10 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 		case CPress::kSolo:
 			JBox_StoreMOMPropertyByTag(iCustomProps, SoloTag(iChange.fIndex), JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_solo";
+			break;
+		case CPress::kRelaunch:
+			JBox_StoreMOMPropertyByTag(iCustomProps, RelaunchTag(iChange.fIndex), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_relaunch";
 			break;
 		case CPress::kNothing:
 			break;
@@ -262,6 +315,20 @@ void HandleFunctionButtonsGesture(TJBox_GestureArgs& iArgs) {
 	}
 }
 
+// Lets go of every relaunch press that a launch button or a scene button
+// holds down, once the mouse button is let go, but not after a context menu.
+void ReleaseRelaunches(TJBox_GestureArgs& iArgs) {
+	if (iArgs.fCall != kJBox_OnRelease && iArgs.fCall != kJBox_OnCancel) {
+		return;
+	}
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		if (JBox_GetBoolean(JBox_LoadMOMPropertyByTag(customProps, RelaunchTag(track)))) {
+			Apply(CPress::RelaunchButton(CLauncher::kSetupLaunchMode, track, false), customProps, iArgs);
+		}
+	}
+}
+
 TJBox_PropertyBox MakeBox(TJBox_PropertyRef iProperty, TJBox_Coord iLeft, TJBox_Coord iTop, TJBox_Coord iWidth, TJBox_Coord iHeight) {
 	TJBox_PropertyBox box;
 	box.fPropertyIndex = 0;
@@ -285,6 +352,9 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		HandleFunctionButtonsGesture(iArgs);
 		return;
 	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_Grid || iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
+		ReleaseRelaunches(iArgs);
+	}
 	if (iArgs.fCall != kJBox_OnTap || iArgs.fTap != kJBox_TapRegular) {
 		return;
 	}
@@ -307,11 +377,11 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		Apply(CPress::BackButton(setup), customProps, iArgs);
 		return;
 	}
-	if (iArgs.fDisplayInfo.fID == kDisplayID_SetFillInButton) {
+	if (iArgs.fDisplayInfo.fID == kDisplayID_ForwardButton) {
 		iArgs.fConsumeFlag = true;
 		const int picked = CLauncher::PickedButton(setup);
 		const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
-		Apply(CPress::SetFillInButton(setup, pickedHoldsClip), customProps, iArgs);
+		Apply(CPress::ForwardButton(setup, pickedHoldsClip), customProps, iArgs);
 		return;
 	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
@@ -327,7 +397,9 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		}
 		const CPress::TChanges changes = CPress::SceneButton(setup, scene, holdsClip);
 		for (int i = 0; i < changes.fCount; ++i) {
-			Apply(changes.fChanges[i], customProps, iArgs);
+			if (changes.fChanges[i].fProperty != CPress::kNothing) {
+				Apply(changes.fChanges[i], customProps, iArgs);
+			}
 		}
 		// All the changes of a press are one step of the undo history, named
 		// after what the press was for.
@@ -348,21 +420,32 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	iArgs.fConsumeFlag = true;
 
 	const int picked = CLauncher::PickedButton(setup);
-	if (CLauncher::IsFillInEditing(setup)) {
-		const CPress::TChanges changes = CPress::FillInEditingLaunchButton(setup, track, row, LoadEdited(customProps, picked, true), LoadClipValues(customProps, picked));
+	const bool fillInEditing = CLauncher::IsFillInEditing(setup);
+	if (fillInEditing || CLauncher::IsLandingEditing(setup)) {
+		const CPress::TEdited edited = LoadEdited(customProps, picked, setup);
+		const CPress::TClipValues clip = LoadClipValues(customProps, picked);
+		const CPress::TChanges changes = fillInEditing
+			? CPress::FillInEditingLaunchButton(setup, track, row, edited, clip)
+			: CPress::LandingEditingLaunchButton(setup, track, row, edited, clip);
 		for (int i = 0; i < changes.fCount; ++i) {
 			Apply(changes.fChanges[i], customProps, iArgs);
 		}
-		// Setting up a new fill-in is one step of the undo history, named after
-		// switching it on.
+		// Setting up a new fill-in or landing is one step of the undo history,
+		// named after switching it on.
 		if (changes.fCount > 1) {
-			iArgs.fGestureNameKey = "gesture_fill_in_present";
+			iArgs.fGestureNameKey = fillInEditing ? "gesture_fill_in_present" : "gesture_landing_present";
 		}
 		return;
 	}
 	const bool pressedHoldsClip = HoldsClip(customProps, CLauncher::ButtonIndex(track, row));
-	const CPress::TEdited pickedClip = picked >= 0 ? LoadEdited(customProps, picked, false) : CPress::Edited(false);
+	const CPress::TEdited pickedClip = picked >= 0 ? LoadEdited(customProps, picked, setup) : CPress::Edited(false);
+	// In launch mode the press holds the track's relaunch press down as well,
+	// after the selection, which the realtime code compares it with; the undo
+	// history names it after the selection.
 	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedClip), customProps, iArgs);
+	const char* gestureNameKey = iArgs.fGestureNameKey;
+	Apply(CPress::RelaunchButton(setup, track, true), customProps, iArgs);
+	iArgs.fGestureNameKey = gestureNameKey;
 }
 
 void SetUpPanelDisplay(const TJBox_DisplayArgs& iArgs) {

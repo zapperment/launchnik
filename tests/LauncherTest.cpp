@@ -673,7 +673,9 @@ void TestButtonIndexAndSetupNumbering() {
 	CHECK(CLauncher::SetupForClipEditing(0, 1) == 2);
 	CHECK(CLauncher::SetupForClipEditing(7, 8) == 65);
 	CHECK(CLauncher::SetupForFillInEditing(0, 1) == 66);
-	CHECK(CLauncher::SetupForFillInEditing(7, 8) == CLauncher::kSetupCount - 1);
+	CHECK(CLauncher::SetupForFillInEditing(7, 8) == 129);
+	CHECK(CLauncher::SetupForLandingEditing(0, 1) == 130);
+	CHECK(CLauncher::SetupForLandingEditing(7, 8) == CLauncher::kSetupCount - 1);
 
 	CHECK(!CLauncher::IsClipEditing(CLauncher::kSetupClipPicking));
 	CHECK(CLauncher::IsClipEditing(2));
@@ -683,11 +685,16 @@ void TestButtonIndexAndSetupNumbering() {
 	CHECK(CLauncher::IsFillInEditing(66));
 	CHECK(CLauncher::IsFillInEditing(129));
 	CHECK(!CLauncher::IsFillInEditing(130));
+	CHECK(!CLauncher::IsLandingEditing(129));
+	CHECK(CLauncher::IsLandingEditing(130));
+	CHECK(CLauncher::IsLandingEditing(193));
+	CHECK(!CLauncher::IsLandingEditing(194));
 
 	CHECK(CLauncher::PickedButton(CLauncher::kSetupLaunchMode) == -1);
 	CHECK(CLauncher::PickedButton(CLauncher::kSetupClipPicking) == -1);
 	CHECK(CLauncher::PickedButton(CLauncher::SetupForClipEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
 	CHECK(CLauncher::PickedButton(CLauncher::SetupForFillInEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
+	CHECK(CLauncher::PickedButton(CLauncher::SetupForLandingEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
 }
 
 void TestOutOfRangeClipSettingsAreIgnored() {
@@ -1014,6 +1021,8 @@ void TestModeColourFollowsTheSetupStep() {
 	CHECK(launcher.GetModeColour() == CLauncher::kModeYellow);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 5));
 	CHECK(launcher.GetModeColour() == CLauncher::kModeRed);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 5));
+	CHECK(launcher.GetModeColour() == CLauncher::kModeBlue);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetModeColour() == CLauncher::kModeWhite);
 }
@@ -1042,6 +1051,12 @@ void TestLaunchLabelsAreLitOnlyInClipEditing() {
 	CHECK(launcher.GetLaunchLabelsFrame() == 3);
 	launcher.SetFillInPresent(2, 4, true);
 	CHECK(launcher.GetLaunchLabelsFrame() == 4);
+
+	// In landing editing they are blue, likewise.
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
+	CHECK(launcher.GetLaunchLabelsFrame() == 5);
+	launcher.SetLandingPresent(2, 4, true);
+	CHECK(launcher.GetLaunchLabelsFrame() == 6);
 }
 
 void TestBackButtonShowsTheStepItGoesBackFrom() {
@@ -1053,11 +1068,14 @@ void TestBackButtonShowsTheStepItGoesBackFrom() {
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantGreen);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantYellow);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantRed);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
 }
 
-// Frames of the back label's film strip: unlit, white, green.
+// Frames of the back labels' film strip: all unlit, then LAUNCH, PICK CLIP,
+// EDIT CLIP or SET FILL-IN lit.
 void TestBackLabelHasTheColourOfTheBackButton() {
 	CLauncher launcher;
 	CHECK(launcher.GetBackLabelFrame() == 0);
@@ -1067,6 +1085,8 @@ void TestBackLabelHasTheColourOfTheBackButton() {
 	CHECK(launcher.GetBackLabelFrame() == 2);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
 	CHECK(launcher.GetBackLabelFrame() == 3);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
+	CHECK(launcher.GetBackLabelFrame() == 4);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetBackLabelFrame() == 0);
 }
@@ -1318,27 +1338,38 @@ void TestFillInLights() {
 	CHECK(launcher.GetFillInLabelFrame() == 0);
 }
 
-void TestSetFillInButtonIsLitInClipEditingOfAClip() {
+void TestForwardButtonIsLitWhileItLeadsSomewhere() {
 	CLauncher launcher;
 	launcher.SetClipPresent(2, 4, true);
-	CHECK(IsUnlit(launcher.GetSetFillInLight()));
-	CHECK(launcher.GetSetFillInLightValue() == 0);
-	CHECK(launcher.GetSetFillInLightFrame() == 0);
-	CHECK(launcher.GetSetFillInLabelFrame() == 0);
+	CHECK(IsUnlit(launcher.GetForwardLight()));
+	CHECK(launcher.GetForwardLightValue() == 0);
+	CHECK(launcher.GetForwardLightFrame() == 0);
+	CHECK(launcher.GetForwardLabelFrame() == 0);
 	launcher.SetSetup(CLauncher::kSetupClipPicking);
-	CHECK(IsUnlit(launcher.GetSetFillInLight()));
+	CHECK(IsUnlit(launcher.GetForwardLight()));
 	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
-	CHECK(IsUnlit(launcher.GetSetFillInLight()));
+	CHECK(IsUnlit(launcher.GetForwardLight()));
 
+	// Red towards fill-in editing.
 	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
-	CHECK(IsLight(launcher.GetSetFillInLight(), CLauncher::kVibrant, CLauncher::kColourRed));
-	CHECK(launcher.GetSetFillInLightValue() == 5);
-	CHECK(launcher.GetSetFillInLightFrame() == 2);
-	CHECK(launcher.GetSetFillInLabelFrame() == 1);
+	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(launcher.GetForwardLightValue() == 5);
+	CHECK(launcher.GetForwardLightFrame() == 2);
+	CHECK(launcher.GetForwardLabelFrame() == 1);
 
+	// Blue towards landing editing, whether or not there is a fill-in.
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
-	CHECK(IsUnlit(launcher.GetSetFillInLight()));
-	CHECK(launcher.GetSetFillInLabelFrame() == 0);
+	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourBlue));
+	CHECK(launcher.GetForwardLightValue() == 29);
+	CHECK(launcher.GetForwardLightFrame() == 10);
+	CHECK(launcher.GetForwardLabelFrame() == 2);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(0, 1));
+	CHECK(IsUnlit(launcher.GetForwardLight()));
+
+	// Landing editing is the last step.
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
+	CHECK(IsUnlit(launcher.GetForwardLight()));
+	CHECK(launcher.GetForwardLabelFrame() == 0);
 }
 
 void TestFillInEditingWithoutFillInShowsOnlyToggle() {
@@ -2076,8 +2107,7 @@ void TestOutputLabelsFollowTheCVModeAndTransition() {
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		CHECK(launcher.GetOutputLabelsFrame(output) == 0);
 	}
-	CHECK(launcher.GetTransitionLabelsFrame() == 0);
-	CHECK(launcher.GetTransitionDiagramFrame() == 1);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 0);
 
 	// Patterns, then unipolar values with each transition, then bipolar ones.
 	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
@@ -2085,23 +2115,600 @@ void TestOutputLabelsFollowTheCVModeAndTransition() {
 	CHECK(launcher.GetOutputLabelsFrame(kOutputB) == 2 + CLauncher::kTransitionC);
 	CHECK(launcher.GetOutputLabelsFrame(2) == 7 + CLauncher::kTransitionA);
 	CHECK(launcher.GetOutputLabelsFrame(3) == 2);
-	CHECK(launcher.GetTransitionLabelsFrame() == 1);
-	CHECK(launcher.GetTransitionDiagramFrame() == 0);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 1);
 
 	// In fill-in editing in red, and only while there is a fill-in.
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(0, 1));
 	CHECK(launcher.GetOutputLabelsFrame(0) == 0);
-	CHECK(launcher.GetTransitionDiagramFrame() == 1);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 0);
 	launcher.SetFillInPresent(0, 1, true);
 	CHECK(launcher.GetOutputLabelsFrame(0) == 12);
 	CHECK(launcher.GetOutputLabelsFrame(2) == 18);
 	CHECK(launcher.GetOutputLabelsFrame(5) == 13);
-	CHECK(launcher.GetTransitionLabelsFrame() == 2);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 2);
+
+	// In landing editing in blue, and only while there is a landing.
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(0, 1));
+	CHECK(launcher.GetOutputLabelsFrame(0) == 0);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 0);
+	launcher.SetLandingPresent(0, 1, true);
+	launcher.SetLandingTransition(0, 1, kOutputB, CLauncher::kTransitionD);
+	CHECK(launcher.GetOutputLabelsFrame(0) == 23);
+	CHECK(launcher.GetOutputLabelsFrame(kOutputB) == 24 + CLauncher::kTransitionD);
+	CHECK(launcher.GetOutputLabelsFrame(2) == 29);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 3);
+	CHECK(CLauncher::kOutputLabelsFrameCount == 34);
 
 	// Without a clip they are unlit.
 	launcher.SetSetup(CLauncher::SetupForClipEditing(1, 1));
 	CHECK(launcher.GetOutputLabelsFrame(0) == 0);
-	CHECK(launcher.GetTransitionLabelsFrame() == 0);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 0);
+}
+
+// Tests of landings. Track 1 plays the clip in row 1 at unipolar 0 on output
+// B; the clip in row 2 is at 6 and holds a landing at 0 with transition
+// iTransition, pattern 8 on output A and colour 7.
+void SetUpLanding(CLauncher& iLauncher, int iTransition) {
+	SetUpTransition(iLauncher, 0, CLauncher::kTransitionOff);
+	iLauncher.SetLandingPresent(0, 2, true);
+	iLauncher.SetLandingUnipolar(0, 2, kOutputB, 0);
+	iLauncher.SetLandingTransition(0, 2, kOutputB, iTransition);
+	iLauncher.SetLandingPattern(0, 2, 0, 7);
+	iLauncher.SetLandingColour(0, 2, 7);
+}
+
+// Queues row 2 in the first bar and plays on up to the switch point, at which
+// it becomes active; a landing starts there.
+void LandOnRow2(CLauncher& iLauncher) {
+	PlayThrough(iLauncher, 0.0, kBar);
+	iLauncher.SetSelection(0, 2);
+	PlayThrough(iLauncher, kBar, kInterval + kBatch);
+}
+
+// Plays on from the batch after iFrom up to iTo, which is the last batch.
+void PlayOnTo(CLauncher& iLauncher, double iFrom, double iTo) {
+	PlayThrough(iLauncher, iFrom + kBatch, iTo);
+	iLauncher.Advance(Playing(iTo));
+}
+
+void TestNewLandingHasThePatternOfItsClipInWhite() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 6));
+	launcher.SetLandingPresent(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(5, 3), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::kColourWhite));
+}
+
+void TestLandingPlaysForTheFirstSwitchIntervalOnly() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kBar, kInterval);
+	CHECK(!launcher.PlaysLanding(0));
+
+	// At the switch point the landing's pattern, value and colour take over.
+	launcher.Advance(Playing(kInterval));
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 7));
+
+	// Without a transition it holds the landing's value to the next switch
+	// point, then jumps to the clip's.
+	PlayThrough(launcher, kInterval + kBatch, 2 * kInterval);
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	launcher.Advance(Playing(2 * kInterval));
+	CHECK(!launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
+}
+
+void TestLandingPlaysAfterStop() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, CLauncher::kSelectionStop);
+	LandOnRow2(launcher);
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+}
+
+void TestEveryTrackOfASceneLandsOnItsOwn() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	PlayThrough(launcher, 0.0, kBar);
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		launcher.SetSelection(track, 2);
+	}
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(!launcher.PlaysLanding(1));
+	CHECK(launcher.GetButtonState(1, 2) == CLauncher::kActive);
+}
+
+void TestNoLandingWithoutASwitchPoint() {
+	// Opening a song.
+	CLauncher opened;
+	SetUpLanding(opened, CLauncher::kTransitionOff);
+	OpenWith(opened, 0, 2);
+	opened.Advance(Playing(0.0));
+	CHECK(!opened.PlaysLanding(0));
+
+	// Choosing while the transport is stopped, even if it starts again.
+	CLauncher stopped;
+	SetUpLanding(stopped, CLauncher::kTransitionOff);
+	stopped.SetSelection(0, 2);
+	stopped.Advance(Stopped(kBar));
+	CHECK(stopped.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(!stopped.PlaysLanding(0));
+	PlayOnTo(stopped, kBar, kBar * 2);
+	CHECK(!stopped.PlaysLanding(0));
+
+	// With the length immediate.
+	CLauncher immediate;
+	SetUpLanding(immediate, CLauncher::kTransitionOff);
+	immediate.SetLength(CLauncher::kLengthImmediate);
+	immediate.Advance(Playing(kBar));
+	immediate.SetSelection(0, 2);
+	immediate.Advance(Playing(kBar + kBatch));
+	CHECK(immediate.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(!immediate.PlaysLanding(0));
+	CHECK(immediate.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestChoosingTheActiveClipAgainDoesNotLand() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	LandOnRow2(launcher);
+	PlayThrough(launcher, kInterval + kBatch, kInterval + kBar);
+	// Another clip queued and the active one chosen again before the switch
+	// point: the clip never stops, so it does not land again.
+	launcher.SetSelection(0, 1);
+	PlayThrough(launcher, kInterval + kBar, kInterval + 2 * kBar);
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kInterval + 2 * kBar, 2 * kInterval + kBatch);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(!launcher.PlaysLanding(0));
+}
+
+void TestJumpingEndsALanding() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	LandOnRow2(launcher);
+	launcher.Advance(Playing(kInterval + 2 * kBar));
+	CHECK(!launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestLandingTransitionAMovesInAStraightLine() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionA);
+	LandOnRow2(launcher);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.0));
+	// From the start of the switch interval to its end.
+	PlayOnTo(launcher, kInterval, kInterval + kBar);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+	PlayOnTo(launcher, kInterval + kBar, kInterval + 2 * kBar);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestLandingTransitionBSettlesSlowly() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionB);
+	LandOnRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + 2 * kBar);
+	// A clip's curve mirrored in time: quick at first, slow at the end.
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 1.0 - (std::exp(2.0) - 1.0) / (std::exp(4.0) - 1.0)));
+	CHECK(CLauncher::LandingCurve(CLauncher::kTransitionB, 0.5) > 0.5);
+	CHECK(Near(CLauncher::LandingCurve(CLauncher::kTransitionD, 0.0), 0.0));
+	CHECK(Near(CLauncher::LandingCurve(CLauncher::kTransitionD, 1.0), 1.0));
+	CHECK(Near(CLauncher::LandingCurve(CLauncher::kTransitionA, 0.25), 0.25));
+}
+
+void TestLandingTransitionsCAndDMoveOnlyInTheFirstBar() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionC);
+	LandOnRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kBar / 2);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	// For the rest of the interval, the clip's value.
+	PlayOnTo(launcher, kInterval + kBar / 2, kInterval + 2 * kBar);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+	CHECK(launcher.PlaysLanding(0));
+
+	CLauncher curved;
+	SetUpLanding(curved, CLauncher::kTransitionD);
+	LandOnRow2(curved);
+	PlayOnTo(curved, kInterval, kInterval + kBar / 2);
+	CHECK(Near(curved.GetCVValue(0, kOutputB), CLauncher::LandingCurve(CLauncher::kTransitionD, 0.5)));
+}
+
+void TestLandingTransitionCWithLessThanTwoBarsIsLikeA() {
+	// With half a bar, C moves across the whole interval.
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionC);
+	launcher.SetLength(CLauncher::kLengthHalfBar);
+	PlayThrough(launcher, 0.0, kBar / 8);
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kBar / 8, kBar / 2 + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+	PlayOnTo(launcher, kBar / 2, kBar / 2 + kBar / 4);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestTransitionMovesTowardsTheQueuedClipsLanding() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetClipUnipolar(0, 1, kOutputB, 3);
+	launcher.SetClipTransition(0, 1, kOutputB, CLauncher::kTransitionA);
+	launcher.Advance(Playing(kBar));
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kBar));
+	// From 0.5 towards the landing's 0 rather than the clip's 1.
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+	// Without the landing it starts over towards the clip.
+	launcher.SetLandingPresent(0, 2, false);
+	launcher.Advance(Playing(kBar * 2.5));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+	launcher.Advance(Playing(kBar * 3.25));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.625));
+}
+
+void TestQueueingDuringALandingStartsOverFromWhatIsEmitted() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionA);
+	launcher.SetClipTransition(0, 2, kOutputB, CLauncher::kTransitionA);
+	LandOnRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kBar - kBatch);
+	const double emitted = launcher.GetCVValue(0, kOutputB);
+	CHECK(Near(emitted, 0.25 - kBatch / kInterval));
+
+	// The landing's movement is dropped; the clip's own transition moves from
+	// there towards row 3, at 0, over the remaining three bars.
+	launcher.SetSelection(0, 3);
+	PlayOnTo(launcher, kInterval + kBar - kBatch, kInterval + 2 * kBar);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), emitted * 2.0 / 3.0));
+	CHECK(launcher.PlaysLanding(0));
+
+	// Choosing the active clip again leaves nothing to move towards: back to
+	// where the landing has got to.
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kInterval + 2 * kBar + kBatch));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5 + kBatch / kInterval));
+}
+
+void TestFillInLiesOverALanding() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetFillInPresent(0, 2, true);
+	launcher.SetFillInUnipolar(0, 2, kOutputB, 3);
+	launcher.SetFillInPattern(0, 2, 0, 4);
+	launcher.SetFillInColour(0, 2, 12);
+	LandOnRow2(launcher);
+	Press(launcher);
+	launcher.Advance(Playing(kInterval + kBatch * 2));
+	CHECK(launcher.GetCVValue(0, 0) == 5.0 / 8);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kFlashing, 12));
+	// Underneath, the landing goes on.
+	launcher.SetFillInPresent(0, 2, false);
+	launcher.Advance(Playing(kInterval + kBatch * 3));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+}
+
+void TestChangesToTheLandingTakeEffectAtOnce() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	LandOnRow2(launcher);
+	launcher.SetLandingPattern(0, 2, 0, 3);
+	launcher.SetLandingUnipolar(0, 2, kOutputB, 3);
+	launcher.SetLandingColour(0, 2, 9);
+	launcher.Advance(Playing(kInterval + kBatch * 2));
+	CHECK(launcher.GetCVValue(0, 0) == 4.0 / 8);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 9));
+
+	launcher.SetLandingPresent(0, 2, false);
+	launcher.Advance(Playing(kInterval + kBatch * 3));
+	CHECK(!launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestMutedTrackPlaysNoLandingPattern() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	LandOnRow2(launcher);
+	launcher.SetMutePressed(0, true);
+	launcher.Advance(Playing(kInterval + kBatch * 2));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+}
+
+void TestLandingEditingShowsTheLanding() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	launcher.SetClipPattern(3, 6, 0, 4);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 6));
+	// Only the toggle without a landing.
+	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kDim, CLauncher::kColourRed));
+	CHECK(IsUnlit(launcher.GetLight(4, 3)));
+
+	launcher.SetLandingPresent(3, 6, true);
+	launcher.SetLandingColour(3, 6, 9);
+	launcher.SetLandingPattern(3, 6, 0, 2);
+	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourGreen));
+	CHECK(IsLight(launcher.GetLight(2, 2), CLauncher::kVibrant, 9));
+	CHECK(IsLight(launcher.GetLight(2, 3), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(IsLight(launcher.GetLight(4, 3), CLauncher::kDim, CLauncher::kColourOrange));
+}
+
+void TestClipLandsAgainAfterItsFillIn() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetFillInPresent(0, 2, true);
+	launcher.SetFillInPattern(0, 2, 0, 4);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(!launcher.PlaysLanding(0));
+	Press(launcher);
+	PlayThrough(launcher, kBar, kInterval);
+	CHECK(launcher.GetCVValue(0, 0) == 5.0 / 8);
+
+	// Nothing is queued: at the switch point the clip goes on, and lands.
+	launcher.Advance(Playing(kInterval));
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	PlayThrough(launcher, kInterval + kBatch, 2 * kInterval + kBatch);
+	CHECK(!launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestNoLandingAfterAFillInWhenSomethingIsQueued() {
+	// Row 1, queued during the fill-in, has no landing.
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetFillInPresent(0, 2, true);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Press(launcher);
+	launcher.SetSelection(0, 1);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
+	CHECK(!launcher.PlaysLanding(0));
+
+	// Stop queued during the fill-in.
+	CLauncher stopping;
+	SetUpLanding(stopping, CLauncher::kTransitionOff);
+	stopping.SetFillInPresent(0, 2, true);
+	OpenWith(stopping, 0, 2);
+	PlayThrough(stopping, 0.0, kBar);
+	Press(stopping);
+	stopping.SetSelection(0, CLauncher::kSelectionStop);
+	PlayThrough(stopping, kBar, kInterval + kBatch);
+	CHECK(!stopping.PlaysLanding(0));
+	CHECK(stopping.GetCVValue(0, 0) == 0.0);
+}
+
+void TestClipWithoutAFillInDoesNotLandAfterThePress() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Press(launcher);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+	CHECK(!launcher.PlaysLanding(0));
+}
+
+void TestOneBarPatternPlaysTheLandingsPatternsForOneBar() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionA);
+	launcher.SetLandingOneBarPattern(0, 2, true);
+	LandOnRow2(launcher);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	PlayOnTo(launcher, kInterval, kInterval + kBar - kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+
+	// From the second bar the clip's pattern; the rest of the landing goes on.
+	PlayOnTo(launcher, kInterval + kBar - kBatch, kInterval + kBar);
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 7));
+
+	// Switched off, the landing's pattern is back until the switch point.
+	launcher.SetLandingOneBarPattern(0, 2, false);
+	launcher.Advance(Playing(kInterval + kBar + kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+}
+
+void TestOneBarPatternMakesNoDifferenceWithOneBarOrLess() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	launcher.SetLandingOneBarPattern(0, 2, true);
+	launcher.SetLength(CLauncher::kLengthFirstBars);
+	PlayThrough(launcher, 0.0, kBar / 4);
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kBar / 4, kBar + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+	PlayOnTo(launcher, kBar, 2 * kBar - kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+}
+
+void TestOneBarPatternSwitchInLandingEditing() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	// Not there in clip editing; in fill-in editing it is the fill-in's.
+	launcher.SetFillInPresent(3, 6, true);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 6));
+	CHECK(IsUnlit(launcher.GetLight(7, 2)));
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kDim, CLauncher::kColourRed));
+	launcher.SetFillInOneBarPattern(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kVibrant, CLauncher::kColourGreen));
+	launcher.SetFillInPresent(3, 6, false);
+	CHECK(IsUnlit(launcher.GetLight(7, 2)));
+
+	// In landing editing only while there is a landing, lit like SET/CLEAR.
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 6));
+	CHECK(IsUnlit(launcher.GetLight(7, 2)));
+	launcher.SetLandingPresent(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kDim, CLauncher::kColourRed));
+	launcher.SetLandingOneBarPattern(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kVibrant, CLauncher::kColourGreen));
+	CHECK(launcher.GetLaunchLabelsFrame() == 6);
+}
+
+void TestFillInOneBarPatternPlaysInTheLastBar() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetFillInOneBarPattern(0, 1, true);
+	PlayThrough(launcher, 0.0, kBar);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	// The fill-in plays, but its patterns wait for the last bar.
+	CHECK(launcher.IsFillInPlaying());
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kFlashing, 7));
+	launcher.Advance(Playing(kBar * 3 - kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
+	launcher.Advance(Playing(kInterval - kBatch / 2));
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+
+	// Pressed within the last bar, from the press.
+	CLauncher late;
+	SetUpFillIns(late);
+	late.SetFillInOneBarPattern(0, 1, true);
+	PlayThrough(late, 0.0, kBar * 3.5);
+	Press(late);
+	late.Advance(Playing(kBar * 3.5));
+	CHECK(late.GetCVValue(0, 0) == 6.0 / 8);
+
+	// With one bar or less it makes no difference.
+	CLauncher short_;
+	SetUpFillIns(short_);
+	short_.SetFillInOneBarPattern(0, 1, true);
+	short_.SetLength(CLauncher::kLengthFirstBars);
+	short_.Advance(Playing(kBar / 4));
+	Press(short_);
+	short_.Advance(Playing(kBar / 4 + kBatch));
+	CHECK(short_.GetCVValue(0, 0) == 6.0 / 8);
+}
+
+// Launches row iRow on track 1, as a press of its launch button does.
+void Launch(CLauncher& iLauncher, int iRow) {
+	iLauncher.SetSelection(0, iRow);
+	iLauncher.SetRelaunchPressed(0, true);
+	iLauncher.SetRelaunchPressed(0, false);
+}
+
+void TestRelaunchedClipLandsAtTheNextSwitchPoint() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Launch(launcher, 2);
+	launcher.Advance(Playing(kBar));
+	CHECK(launcher.IsRelaunched(0));
+	// It flashes in the landing's colour, and plays on as before.
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kFlashing, 7));
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	PlayThrough(launcher, kBar + kBatch, kInterval);
+	CHECK(!launcher.PlaysLanding(0));
+	launcher.Advance(Playing(kInterval));
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(!launcher.IsRelaunched(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 7));
+}
+
+void TestRelaunchCancelsWhatIsQueued() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Launch(launcher, 1);
+	launcher.Advance(Playing(kBar));
+	CHECK(!launcher.IsRelaunched(0));
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kQueued);
+	// Launching the active clip again takes the queued one back, and lands.
+	Launch(launcher, 2);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.IsRelaunched(0));
+	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kOff);
+	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+}
+
+void TestQueueingTakesARelaunchBack() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	Launch(launcher, 2);
+	launcher.Advance(Playing(kBar));
+	Launch(launcher, CLauncher::kSelectionStop);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(!launcher.IsRelaunched(0));
+	// Choosing the clip again by its selection alone, as automation of the
+	// selection might, does not relaunch it.
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + kBatch);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(!launcher.PlaysLanding(0));
+}
+
+void TestNoRelaunchWithoutALandingOrSwitchPoint() {
+	// A clip without a landing does not flash, and does not land.
+	CLauncher plain;
+	FillGrid(plain);
+	OpenWith(plain, 0, 2);
+	PlayThrough(plain, 0.0, kBar);
+	Launch(plain, 2);
+	plain.Advance(Playing(kBar));
+	CHECK(IsLight(plain.GetLight(0, 2), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
+	PlayThrough(plain, kBar + kBatch, kInterval + kBatch);
+	CHECK(!plain.PlaysLanding(0));
+
+	// With the length immediate.
+	CLauncher immediate;
+	SetUpLanding(immediate, CLauncher::kTransitionOff);
+	immediate.SetLength(CLauncher::kLengthImmediate);
+	OpenWith(immediate, 0, 2);
+	Launch(immediate, 2);
+	immediate.Advance(Playing(kBar));
+	CHECK(!immediate.IsRelaunched(0));
+
+	// A clip that becomes active while the transport is stopped has not been
+	// relaunched.
+	CLauncher stopped;
+	SetUpLanding(stopped, CLauncher::kTransitionOff);
+	Launch(stopped, 2);
+	stopped.Advance(Stopped(kBar));
+	CHECK(stopped.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(!stopped.IsRelaunched(0));
+}
+
+void TestHoldingTheRelaunchPressRelaunchesOnlyOnce() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 2);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetRelaunchPressed(0, true);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+	PlayThrough(launcher, kInterval + kBatch, 2 * kInterval + kBatch);
+	CHECK(!launcher.IsRelaunched(0));
+	CHECK(!launcher.PlaysLanding(0));
 }
 
 int main() {
@@ -2175,7 +2782,7 @@ int main() {
 	TestChangesToTheFillInTakeEffectAtOnce();
 	TestEmptyLaunchButtonHasNoFillInToPlay();
 	TestFillInLights();
-	TestSetFillInButtonIsLitInClipEditingOfAClip();
+	TestForwardButtonIsLitWhileItLeadsSomewhere();
 	TestFillInEditingWithoutFillInShowsOnlyToggle();
 	TestFillInEditingShowsColoursAndPatterns();
 	TestIntervalMeterRunsInFillInEditing();
@@ -2220,6 +2827,36 @@ int main() {
 	TestFillInStartsFromWhatIsEmitted();
 	TestChangedPatternOnAnyOutputFlashes();
 	TestOutputLabelsFollowTheCVModeAndTransition();
+
+	TestNewLandingHasThePatternOfItsClipInWhite();
+	TestLandingPlaysForTheFirstSwitchIntervalOnly();
+	TestLandingPlaysAfterStop();
+	TestEveryTrackOfASceneLandsOnItsOwn();
+	TestNoLandingWithoutASwitchPoint();
+	TestChoosingTheActiveClipAgainDoesNotLand();
+	TestJumpingEndsALanding();
+	TestLandingTransitionAMovesInAStraightLine();
+	TestLandingTransitionBSettlesSlowly();
+	TestLandingTransitionsCAndDMoveOnlyInTheFirstBar();
+	TestLandingTransitionCWithLessThanTwoBarsIsLikeA();
+	TestTransitionMovesTowardsTheQueuedClipsLanding();
+	TestQueueingDuringALandingStartsOverFromWhatIsEmitted();
+	TestFillInLiesOverALanding();
+	TestChangesToTheLandingTakeEffectAtOnce();
+	TestMutedTrackPlaysNoLandingPattern();
+	TestLandingEditingShowsTheLanding();
+	TestClipLandsAgainAfterItsFillIn();
+	TestOneBarPatternPlaysTheLandingsPatternsForOneBar();
+	TestOneBarPatternMakesNoDifferenceWithOneBarOrLess();
+	TestOneBarPatternSwitchInLandingEditing();
+	TestFillInOneBarPatternPlaysInTheLastBar();
+	TestRelaunchedClipLandsAtTheNextSwitchPoint();
+	TestRelaunchCancelsWhatIsQueued();
+	TestQueueingTakesARelaunchBack();
+	TestNoRelaunchWithoutALandingOrSwitchPoint();
+	TestHoldingTheRelaunchPressRelaunchesOnlyOnce();
+	TestNoLandingAfterAFillInWhenSomethingIsQueued();
+	TestClipWithoutAFillInDoesNotLandAfterThePress();
 
 	return ReportChecks("Launcher");
 }

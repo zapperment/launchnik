@@ -2,11 +2,11 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d15, a development build. Requires Reason 14 or later.
+Version 1.0.0d16, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **set fill-in button**. To the right of the scene buttons is the **transition diagram**. Above every track, launch button and scene button is its name, which you can change. The back panel has six **CV outputs**, A to F from the top, for each track, each with a switch for its **CV mode** and a name, which you can change, and the track names above them.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **forward button**, with the steps of setup mode they lead to beside them. To the right of the scene buttons are the **transition diagrams**, one set for clips, one for fill-ins and one for landings. Above every track, launch button and scene button is its name, which you can change. The back panel has six **CV outputs**, A to F from the top, for each track, each with a switch for its **CV mode** and a name, which you can change, and the track names above them.
 
 A launch button either holds a **clip** or is **empty**. A clip has one of fourteen colours and, for each of its track's six CV outputs, a pattern 1–8, a unipolar value, a bipolar value and a transition. A new device has only empty launch buttons.
 
@@ -64,9 +64,9 @@ Double-click a name to change it: a text field opens with the name selected. Typ
 
 About twelve characters fit; a longer name is kept in full, but shown cut off at both ends. Names are not in capitals, unlike the labels.
 
-Track names and clip names are shown in launch mode and clip picking. In clip editing and fill-in editing, where the launch buttons stand for a clip's settings, only the name of the clip being set up and of its track stay visible, so you can see which one it is. Scene names are shown in launch mode only, since in clip picking the scene buttons stand for the lengths of the switch interval. On the back panel the track names and CV output names are always shown.
+Track names and clip names are shown in launch mode and clip picking. In clip editing, fill-in editing and landing editing, where the launch buttons stand for a clip's settings, only the name of the clip being set up and of its track stay visible, so you can see which one it is. Scene names are shown in launch mode only, since in clip picking the scene buttons stand for the lengths of the switch interval. On the back panel the track names and CV output names are always shown.
 
-A launch button keeps its clip name while it is empty, like the rest of its clip, so the name comes back with the clip. Fill-ins have no names of their own.
+A launch button keeps its clip name while it is empty, like the rest of its clip, so the name comes back with the clip. Fill-ins and landings have no names of their own.
 
 Names are saved with the song and in patches, and each change is a step in the undo history. They cannot be automated, and control surfaces can neither show nor change them.
 
@@ -95,7 +95,7 @@ A clip with pattern N on that output now selects pattern N, and the stop button 
 
 ### Transitions
 
-A unipolar or bipolar output of a clip can have a **transition**: off, A, B, C or D. While the clip is playing and another clip on its track is queued, the transition moves the output from the playing clip's value to the queued clip's, landing on it at the switch point. It is the playing clip's transition that counts. With transition off the value jumps at the switch point.
+A unipolar or bipolar output of a clip can have a **transition**: off, A, B, C or D. While the clip is playing and another clip on its track is queued, the transition moves the output from the playing clip's value to the queued clip's, landing on it at the switch point. It is the playing clip's transition that counts. If the queued clip holds a landing, the output moves to the landing's value instead (see [Landings](#landings)). With transition off the value jumps at the switch point.
 
 | Transition | Moves | When |
 |---|---|---|
@@ -108,7 +108,7 @@ With a switch interval of one bar or less, C and D behave like A and B. A queued
 
 ## Setting up clips
 
-Click the setup button to enter **setup mode**; the logo in the header shows the colour of the step you are in: green, then yellow, then red. Tracks go on playing and the function buttons and function select buttons go on working; only launching, from the grid or the scene buttons, is unavailable.
+Click the setup button to enter **setup mode**; the logo in the header shows the colour of the step you are in: green, then yellow, then red, then blue. Tracks go on playing and the function buttons and function select buttons go on working; only launching, from the grid or the scene buttons, is unavailable.
 
 1. **Clip picking.** Every launch button flashes: in its clip's colour, or in white if it is empty. Click the one you want to set up.
 2. **Clip editing.** The grid now shows the settings of that one launch button:
@@ -127,13 +127,14 @@ Each CV output's row shows what its CV mode needs:
 | Unipolar | Values 0 to 100: the chosen one vibrant cyan, those to its left dim cyan | The transition |
 | Bipolar | Values −100 to +100: the chosen one vibrant fuchsia, those between it and 0 dim fuchsia, 0 included | The transition |
 
-Clicking the transition button goes round from off through A, B, C and D. It is dim red while off and otherwise vibrant in the colour of its transition in the diagram: lime for A, light blue for B, purple for C, pink for D. The labels below each launch button have two lines: the unipolar value on the left and the bipolar value on the right (in column 8 the transitions OFF A B C D), and the pattern below. Only the labels that go with the output's CV mode are lit, in the mode colour, and of the transitions only the chosen one. The transition diagram is in colour, with its labels lit, whenever the CV labels are.
+Clicking the transition button goes round from off through A, B, C and D. It is dim red while off and otherwise vibrant in the colour of its transition in the diagram: lime for A, light blue for B, purple for C, pink for D. The labels below each launch button have two lines: the unipolar value on the left and the bipolar value on the right (in column 8 the transitions OFF A B C D), and the pattern below. Only the labels that go with the output's CV mode are lit, in the mode colour, and of the transitions only the chosen one. Whenever the CV labels are lit, so is the set of transition diagrams for the step: TRANSITION in clip editing, FILL-IN in fill-in editing, LANDING in landing editing.
 
 The colour and CV rows only show while the launch button holds a clip. A new clip has the colour of its track (red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8) and, on every CV output, the pattern of its row, unipolar and bipolar value 0 and transition off. A clip that is switched off and on again comes back with all its settings. Changing a unipolar or bipolar value of the playing clip takes effect at once.
 
-3. **Fill-in editing.** While the launch button holds a clip, the **set fill-in** button beside the back button lights up in red. Click it to set up the clip's **fill-in**; the logo turns red. The grid is laid out and lit as in clip editing: SET/CLEAR switches the fill-in on and off, and the colour and CV rows only show while there is one. A new fill-in is a copy of its clip's patterns and values, with every transition off, in white. The labels are red instead of yellow.
+3. **Fill-in editing.** While the launch button holds a clip, the **forward button** beside the back button lights up in red, with SET FILL-IN to its right. Click it to set up the clip's **fill-in**; the logo turns red. The grid is laid out and lit as in clip editing: SET/CLEAR switches the fill-in on and off, and the colour and CV rows only show while there is one. A new fill-in is a copy of its clip's patterns and values, with every transition off, in white. The labels are red instead of yellow. Row 2, column 8, labelled 1 BAR PATT, switches the fill-in's **one-bar pattern** on and off, as in landing editing (below).
+4. **Landing editing.** In fill-in editing the forward button lights up in blue, with SET LANDING, whether or not the clip holds a fill-in. Click it to set up the clip's **landing**; the logo turns blue. The grid is laid out and lit as before, with SET/CLEAR for the landing, and a new landing is likewise a copy of its clip's patterns and values, with every transition off, in white. The labels are blue. Row 2, column 8, labelled 1 BAR PATT, switches **one-bar pattern** on and off: vibrant green when on, dim red when off, like SET/CLEAR.
 
-Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to: vibrant yellow in fill-in editing, it returns to clip editing; vibrant green in clip editing, it returns to clip picking; vibrant white in clip picking, it returns to launch mode. In launch mode it is dark and does nothing.
+Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to, with that step lit to its left: vibrant red in landing editing, it returns to fill-in editing (SET FILL-IN); vibrant yellow in fill-in editing, it returns to clip editing (EDIT CLIP); vibrant green in clip editing, it returns to clip picking (PICK CLIP); vibrant white in clip picking, it returns to launch mode (LAUNCH). In launch mode it is dark and does nothing.
 
 ## Fill-ins
 
@@ -141,9 +142,31 @@ A fill-in is a pattern that a clip plays for a short while instead of its own, s
 
 The fill-in button is dim white, and vibrant red, with its caption, from the click until the switch point, whether or not any track has a fill-in to play. It works in launch mode and in setup mode alike. A click while a fill-in is playing does nothing, and so does a click while the switch interval is "immediate", which has no switch point to end the fill-in at. With the transport stopped, a fill-in goes on until the song plays through the next switch point.
 
+With **one-bar pattern** on, the outputs in pattern mode play the fill-in's patterns only in the last bar before the switch point, or from the click if that comes later, and the clip's until then; a drum fill one bar long thus leads straight into the switch point. The unipolar and bipolar outputs and the flashing launch button start at the click as usual. A new fill-in has it off.
+
 Changing a playing clip's fill-in takes effect at once. A launch button keeps its fill-in while it is empty, so that it comes back with the clip; fill-ins are part of a patch.
 
 On unipolar and bipolar outputs a fill-in's transition works differently from a clip's: it moves from whatever the output emits at the click to the fill-in's own value, landing on it at the switch point, like a riser, and then the output jumps to the clip's value, or to the queued clip's. With transition off the value jumps to the fill-in's at the click. While a fill-in plays, any transition of its clip is hidden.
+
+## Landings
+
+A landing is what a clip plays for its first switch interval, instead of its own patterns and values, such as a crash cymbal at the start of a drum pattern. It plays when the clip becomes active at a switch point, whether the track was stopped or playing another clip, and each track of a launched scene lands on its own. A clip that has played its fill-in lands again at the switch point where the fill-in ends, unless another clip or stop was queued meanwhile. The launch button shows the landing's colour meanwhile. At the next switch point the clip goes on with its own settings. Launching a clip that is already playing **relaunches** it: whatever was queued on the track is taken back, the launch button flashes in the landing's colour, and the clip lands at the next switch point. Queueing another clip or stop takes the relaunch back. A song that is opened, a clip chosen while the transport is stopped and the switch interval "immediate" never land; moving the song position ends a landing.
+
+On unipolar and bipolar outputs a landing's transition works the other way round from a clip's: it starts at the landing's value at the switch point and moves towards the clip's value, so that the clip's value is reached by the end.
+
+| Transition | Moves | When |
+|---|---|---|
+| Off | Not at all: the landing's value, then a jump to the clip's | At the next switch point |
+| A | In a straight line | Across the whole switch interval |
+| B | Along an exponential curve, quickly at first | Across the whole switch interval |
+| C | In a straight line | Within the first bar; the clip's value after that |
+| D | Along an exponential curve, quickly at first | Within the first bar; the clip's value after that |
+
+With a switch interval of one bar or less, C and D behave like A and B.
+
+With **one-bar pattern** on, the outputs in pattern mode play the landing's patterns for the first bar only, then the clip's, so that a one-bar pattern such as a crash cymbal sounds once even with a longer switch interval. The unipolar and bipolar outputs and the launch button's colour go on with the landing until the switch point. A new landing has it off.
+
+While a clip that holds a landing is queued, the playing clip's transition moves towards the landing's value. If another clip is queued while a landing plays, the landing's movement stops and the playing clip's own transition moves on from where the output is. A fill-in lies over a landing as it does over a clip. Changing a playing landing takes effect at once. A launch button keeps its landing while it is empty; landings are part of a patch.
 
 ## Setting the length of the switch interval
 
@@ -190,7 +213,7 @@ Launchnik comes with two patches: "Init Patch", in which every launch button is 
 
 Each track has one automatable parameter, "Track N Selection", with nine values: Stop and Clip 1–8, the clip being the one in that row. Automated changes behave like clicks. A change that falls exactly on a switch point takes effect there, not one switch interval later. A selection that names an empty launch button counts as Stop.
 
-The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed. So can each track's mute and solo button, as "Track N Mute" and "Track N Solo": a recorded session plays back with the same mutes and solos, whichever function is chosen during playback (see [0005](docs/adr/0005-mute-and-solo-are-presses.md)).
+The fill-in button can be automated as well, as "Fill-In": it records being pressed and released, and a fill-in plays back where it was pressed. So can each track's mute and solo button, as "Track N Mute" and "Track N Solo": a recorded session plays back with the same mutes and solos, whichever function is chosen during playback (see [0005](docs/adr/0005-mute-and-solo-are-presses.md)). Every launch also records a press of "Track N Relaunch", so that relaunches play back too; a selection alone never relaunches.
 
 Right-clicking a launch button or a function button offers automation and Remote Override for its track's selection, in any mode and function; alt-clicking opens the automation lane. The fill-in button does the same for "Fill-In". A scene launch is recorded in the selection lanes of the eight tracks; there is no lane of its own for scenes (see [0004](docs/adr/0004-a-scene-press-writes-eight-selections.md)).
 
@@ -204,6 +227,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Function Light` (8 items) | Output only | 0 = unlit, 1 = dim, 2 = vibrant, 3 = flashing, in the colour of the function |
 | `Track N Mute` (8 items) | Input and output | 1 while the track's mute button is held down, 0 otherwise |
 | `Track N Solo` (8 items) | Input and output | 1 while the track's solo button is held down, 0 otherwise |
+| `Track N Relaunch` (8 items) | Input and output | 1 while a launch on the track is held down, 0 otherwise; a codec holds it down with every launch in launch mode, from a pad or a scene button |
 | `Function` | Input and output | 0 = stop, 1 = mute, 2 = solo |
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
 | `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green, and in clip picking 3 = flashing white, 18 = flashing green |
@@ -215,13 +239,18 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Clip M Output X Transition` (384 items) | Input and output | 0 = off, 1–4 = A–D |
 | `Track N Clip M Fill-In Present` (64 items) | Input and output | 0 = no fill-in, 1 = holds one |
 | `Track N Clip M Fill-In Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Track N Clip M Fill-In One-Bar Pattern` (64 items) | Input and output | 0 = off, 1 = the fill-in's patterns play in the last bar only |
 | `Track N Clip M Fill-In Output X Pattern`, `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
+| `Track N Clip M Landing Present` (64 items) | Input and output | 0 = no landing, 1 = holds one |
+| `Track N Clip M Landing Colour` (64 items) | Input and output | 0–13 for white to pink |
+| `Track N Clip M Landing One-Bar Pattern` (64 items) | Input and output | 0 = off, 1 = the landing's patterns play for one bar only |
+| `Track N Clip M Landing Output X Pattern`, `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
 | `Track N Output X CV Mode` (48 items) | Output only | 0 = bipolar, 1 = unipolar, 2 = pattern; a copy of the switch on the back panel, which only the mouse can change |
 | `Fill-In` | Input and output | 1 while the fill-in button is held down, 0 otherwise |
 | `Fill-In Light` | Output only | As for a launch button: 1 = dim white, 5 = vibrant red |
-| `Set Fill-In Light` | Output only | As for a launch button: 0 = unlit, 5 = vibrant red |
+| `Forward Light` | Output only | As for a launch button: 0 = unlit, 5 = vibrant red, 29 = vibrant blue |
 | `Switch Interval` | Input and output | 0 = immediate, 1 = one beat, 2 = half a bar, 3–7 = 1, 2, 4, 8 and 16 bars |
-| `Setup` | Input and output | 0 = launch mode, 1 = clip picking, 2–65 = clip editing and 66–129 = fill-in editing for launch button 1–64, counted down track 1 first |
+| `Setup` | Input and output | 0 = launch mode, 1 = clip picking, 2–65 = clip editing, 66–129 = fill-in editing and 130–193 = landing editing for launch button 1–64, counted down track 1 first |
 
 A light is what the launch button shows on the panel, in launch mode and in setup mode alike, so a surface that shows the lights mirrors the panel. "Flashing" is one steady value; the surface flashes by itself.
 
@@ -267,13 +296,13 @@ The film strips of the launch buttons, the scene buttons and the side buttons (t
 ./tools/make-function-button-strip.sh
 ```
 
-The logo's four frames, light grey, green, yellow and red, are built from the versions of the lettering:
+The logo's five frames, light grey, green, yellow, red and blue, are built from the versions of the lettering:
 
 ```bash
 ./tools/make-logo-strip.sh
 ```
 
-The labels below the launch buttons in scenes 1 and 2, of the scene buttons and the other buttons, and the SETUP caption are drawn with ImageMagick; those of the CV outputs, of the transition diagram and of the back panel with Pillow, through uv, which also copies the diagram and the CV mode switch into `GUI2D`:
+The labels below the launch buttons in scenes 1 and 2, of the scene buttons and the other buttons, and the SETUP caption are drawn with ImageMagick; those of the CV outputs, the transition diagrams with their labels and the captions of the back panel with Pillow, through uv, which also copies the CV mode switch into `GUI2D`:
 
 ```bash
 ./tools/make-label-strips.sh
