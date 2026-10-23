@@ -14,14 +14,13 @@ const TJBox_Tag kCustomPropsTag_BackButtonFrame = 55;
 const TJBox_Tag kCustomPropsTag_BackLabelFrame = 56;
 const TJBox_Tag kCustomPropsTag_FillIn = 57;
 const TJBox_Tag kCustomPropsTag_FillInLight = 58;
-const TJBox_Tag kCustomPropsTag_SetFillInLight = 59;
+const TJBox_Tag kCustomPropsTag_ForwardLight = 59;
 const TJBox_Tag kCustomPropsTag_FillInLightFrame = 70;
 const TJBox_Tag kCustomPropsTag_FillInLabelFrame = 71;
-const TJBox_Tag kCustomPropsTag_SetFillInLightFrame = 72;
-const TJBox_Tag kCustomPropsTag_SetFillInLabelFrame = 73;
+const TJBox_Tag kCustomPropsTag_ForwardLightFrame = 72;
+const TJBox_Tag kCustomPropsTag_ForwardLabelFrame = 73;
 const TJBox_Tag kCustomPropsTag_Function = 74;
-const TJBox_Tag kCustomPropsTag_TransitionDiagramFrame = 150;
-const TJBox_Tag kCustomPropsTag_TransitionLabelsFrame = 151;
+const TJBox_Tag kCustomPropsTag_TransitionDiagramsFrame = 150;
 
 // Functions are numbered as in Launcher.h.
 inline TJBox_Tag FunctionSelectLightFrameTag(int iFunction) {
@@ -106,7 +105,16 @@ inline TJBox_Tag FillInColourTag(int iTrack, int iRow) {
 	return 8000 + 10 * (iTrack + 1) + iRow;
 }
 
-// The settings of a clip's CV outputs, and of its fill-in's: a base of its
+inline TJBox_Tag LandingPresentTag(int iTrack, int iRow) {
+	return 7000 + 10 * (iTrack + 1) + iRow;
+}
+
+inline TJBox_Tag LandingColourTag(int iTrack, int iRow) {
+	return 9000 + 10 * (iTrack + 1) + iRow;
+}
+
+// The settings of a clip's CV outputs, and of its fill-in's and its
+// landing's: a base of its
 // own for each kind of setting, plus 100 for each track, 10 for each row and
 // the output.
 const TJBox_Tag kOutputSettingTagSpan = 1000;
@@ -118,6 +126,10 @@ const TJBox_Tag kFillInPatternBase = 14000;
 const TJBox_Tag kFillInUnipolarBase = 15000;
 const TJBox_Tag kFillInBipolarBase = 16000;
 const TJBox_Tag kFillInTransitionBase = 17000;
+const TJBox_Tag kLandingPatternBase = 18000;
+const TJBox_Tag kLandingUnipolarBase = 19000;
+const TJBox_Tag kLandingBipolarBase = 20000;
+const TJBox_Tag kLandingTransitionBase = 21000;
 
 inline TJBox_Tag OutputSettingTag(TJBox_Tag iBase, int iTrack, int iRow, int iOutput) {
 	return iBase + 100 * (iTrack + 1) + 10 * iRow + (iOutput + 1);

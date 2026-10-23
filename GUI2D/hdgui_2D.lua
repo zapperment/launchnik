@@ -65,12 +65,12 @@ table.insert(front_widgets, jbox.sequence_meter{
 	value = "/custom_properties/back_label_frame",
 })
 table.insert(front_widgets, jbox.sequence_meter{
-	graphics = { node = "lamp_set_fill_in" },
-	value = "/custom_properties/set_fill_in_light_frame",
+	graphics = { node = "lamp_forward" },
+	value = "/custom_properties/forward_light_frame",
 })
 table.insert(front_widgets, jbox.sequence_meter{
-	graphics = { node = "label_set_fill_in" },
-	value = "/custom_properties/set_fill_in_label_frame",
+	graphics = { node = "label_forward" },
+	value = "/custom_properties/forward_label_frame",
 })
 table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "lamp_fill_in" },
@@ -105,12 +105,8 @@ for _, letter in ipairs(OUTPUT_LETTERS) do
 	})
 end
 table.insert(front_widgets, jbox.sequence_meter{
-	graphics = { node = "transition_diagram" },
-	value = "/custom_properties/transition_diagram_frame",
-})
-table.insert(front_widgets, jbox.sequence_meter{
-	graphics = { node = "label_transitions" },
-	value = "/custom_properties/transition_labels_frame",
+	graphics = { node = "transition_diagrams" },
+	value = "/custom_properties/transition_diagrams_frame",
 })
 for scene = 1, ROW_COUNT do
 	table.insert(front_widgets, jbox.sequence_meter{
@@ -120,7 +116,7 @@ for scene = 1, ROW_COUNT do
 end
 
 -- Clicks on the launch buttons, the scene buttons, the setup button, the back
--- button and the set fill-in button mean different things in launch mode and
+-- button and the forward button mean different things in launch mode and
 -- in setup mode, and clicks on the function buttons different things in each
 -- function, so they go to the click handler in Panel.cpp, which tells the
 -- displays apart by display_id. So do the function select buttons, and the
@@ -169,7 +165,7 @@ table.insert(front_widgets, jbox.custom_display{
 	values = { "/custom_properties/fill_in" },
 })
 table.insert(front_widgets, jbox.custom_display{
-	graphics = { node = "click_set_fill_in" },
+	graphics = { node = "click_forward" },
 	background = "transparent",
 	display_width_pixels = 130,
 	display_height_pixels = 135,
@@ -233,8 +229,9 @@ local function add_name_widgets(widgets, name, text_style, default_key, values, 
 end
 
 -- On the front panel, every name depends on the setup state as well: track
--- names and clip names have functions of their own, since in clip editing and
--- fill-in editing only those of the launch button being edited are shown.
+-- names and clip names have functions of their own, since in clip editing,
+-- fill-in editing and landing editing only those of the launch button being
+-- edited are shown.
 local function add_front_name_widgets(name, text_style, default_key, shown, default_shown)
 	add_name_widgets(front_widgets, name, text_style, default_key,
 		{ "/custom_properties/setup", "/custom_properties/" .. name }, shown, default_shown)

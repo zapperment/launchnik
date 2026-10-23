@@ -14,7 +14,7 @@ class CLaunchnik {
 	private: void LoadEverything();
 	private: void HandleChanges(const TJBox_PropertyDiff iPropertyDiffs[], TJBox_UInt32 iDiffCount);
 	private: void HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue);
-	// A change of a setting of a clip's or a fill-in's CV output.
+	// A change of a setting of a clip's, a fill-in's or a landing's CV output.
 	private: void HandleOutputSettingChange(TJBox_Tag iTag, int iValue);
 	private: CLauncher::TTransport ReadTransport() const;
 	private: void WriteOutputs();
@@ -38,11 +38,10 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenFillInLight;
 	private: TJBox_Int32 fWrittenFillInLightFrame;
 	private: TJBox_Int32 fWrittenFillInLabelFrame;
-	private: TJBox_Int32 fWrittenSetFillInLight;
-	private: TJBox_Int32 fWrittenSetFillInLightFrame;
-	private: TJBox_Int32 fWrittenSetFillInLabelFrame;
-	private: TJBox_Int32 fWrittenTransitionDiagramFrame;
-	private: TJBox_Int32 fWrittenTransitionLabelsFrame;
+	private: TJBox_Int32 fWrittenForwardLight;
+	private: TJBox_Int32 fWrittenForwardLightFrame;
+	private: TJBox_Int32 fWrittenForwardLabelFrame;
+	private: TJBox_Int32 fWrittenTransitionDiagramsFrame;
 	private: TJBox_Int32 fWrittenOutputLabelsFrames[CLauncher::kOutputCount];
 	private: TJBox_Int32 fWrittenSceneLabelFrames[CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenFunctionLights[CLauncher::kTrackCount];

@@ -86,6 +86,12 @@ bool HoldsFillIn(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
 	return JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInPresentTag(track, row)));
 }
 
+bool HoldsLanding(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
+	const int track = iButtonIndex / CLauncher::kRowCount;
+	const int row = iButtonIndex % CLauncher::kRowCount + 1;
+	return JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, LandingPresentTag(track, row)));
+}
+
 bool TrackHoldsClips(TJBox_ObjectRef iCustomProps, int iTrack) {
 	for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 		if (HoldsClip(iCustomProps, CLauncher::ButtonIndex(iTrack, row))) {
@@ -99,14 +105,23 @@ int LoadNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag) {
 	return static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(iCustomProps, iTag)));
 }
 
-// What a press in clip editing or fill-in editing needs to know of the
-// settings being edited, the clip's or its fill-in's.
-CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, bool iFillIn) {
+// What a press in clip editing, fill-in editing or landing editing needs to
+// know of the settings being edited, the clip's, its fill-in's or its
+// landing's.
+CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, int iSetup) {
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
 	CPress::TEdited edited;
-	edited.fPresent = iFillIn ? HoldsFillIn(iCustomProps, iButtonIndex) : HoldsClip(iCustomProps, iButtonIndex);
-	const TJBox_Tag transitionBase = iFillIn ? kFillInTransitionBase : kClipTransitionBase;
+	TJBox_Tag transitionBase = kClipTransitionBase;
+	edited.fPresent = HoldsClip(iCustomProps, iButtonIndex);
+	if (CLauncher::IsFillInEditing(iSetup)) {
+		transitionBase = kFillInTransitionBase;
+		edited.fPresent = HoldsFillIn(iCustomProps, iButtonIndex);
+	}
+	else if (CLauncher::IsLandingEditing(iSetup)) {
+		transitionBase = kLandingTransitionBase;
+		edited.fPresent = HoldsLanding(iCustomProps, iButtonIndex);
+	}
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		edited.fCVModes[output] = LoadNumber(iCustomProps, CVModeTag(track, output));
 		edited.fTransitions[output] = LoadNumber(iCustomProps, OutputSettingTag(transitionBase, track, row, output));
@@ -196,6 +211,30 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 		case CPress::kFillInColour:
 			JBox_StoreMOMPropertyByTag(iCustomProps, FillInColourTag(track, row), JBox_MakeNumber(iChange.fValue));
 			iArgs.fGestureNameKey = "gesture_fill_in_colour";
+			break;
+		case CPress::kLandingPresent:
+			JBox_StoreMOMPropertyByTag(iCustomProps, LandingPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
+			iArgs.fGestureNameKey = "gesture_landing_present";
+			break;
+		case CPress::kLandingPattern:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingPatternBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_pattern";
+			break;
+		case CPress::kLandingUnipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_unipolar";
+			break;
+		case CPress::kLandingBipolar:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingBipolarBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_bipolar";
+			break;
+		case CPress::kLandingTransition:
+			StoreNumber(iCustomProps, OutputSettingTag(kLandingTransitionBase, track, row, iChange.fOutput), iChange.fValue);
+			iArgs.fGestureNameKey = "gesture_landing_transition";
+			break;
+		case CPress::kLandingColour:
+			JBox_StoreMOMPropertyByTag(iCustomProps, LandingColourTag(track, row), JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_landing_colour";
 			break;
 		case CPress::kFillIn:
 			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_FillIn, JBox_MakeBoolean(iChange.fValue != 0));
@@ -307,11 +346,11 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		Apply(CPress::BackButton(setup), customProps, iArgs);
 		return;
 	}
-	if (iArgs.fDisplayInfo.fID == kDisplayID_SetFillInButton) {
+	if (iArgs.fDisplayInfo.fID == kDisplayID_ForwardButton) {
 		iArgs.fConsumeFlag = true;
 		const int picked = CLauncher::PickedButton(setup);
 		const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
-		Apply(CPress::SetFillInButton(setup, pickedHoldsClip), customProps, iArgs);
+		Apply(CPress::ForwardButton(setup, pickedHoldsClip), customProps, iArgs);
 		return;
 	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
@@ -348,20 +387,25 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 	iArgs.fConsumeFlag = true;
 
 	const int picked = CLauncher::PickedButton(setup);
-	if (CLauncher::IsFillInEditing(setup)) {
-		const CPress::TChanges changes = CPress::FillInEditingLaunchButton(setup, track, row, LoadEdited(customProps, picked, true), LoadClipValues(customProps, picked));
+	const bool fillInEditing = CLauncher::IsFillInEditing(setup);
+	if (fillInEditing || CLauncher::IsLandingEditing(setup)) {
+		const CPress::TEdited edited = LoadEdited(customProps, picked, setup);
+		const CPress::TClipValues clip = LoadClipValues(customProps, picked);
+		const CPress::TChanges changes = fillInEditing
+			? CPress::FillInEditingLaunchButton(setup, track, row, edited, clip)
+			: CPress::LandingEditingLaunchButton(setup, track, row, edited, clip);
 		for (int i = 0; i < changes.fCount; ++i) {
 			Apply(changes.fChanges[i], customProps, iArgs);
 		}
-		// Setting up a new fill-in is one step of the undo history, named after
-		// switching it on.
+		// Setting up a new fill-in or landing is one step of the undo history,
+		// named after switching it on.
 		if (changes.fCount > 1) {
-			iArgs.fGestureNameKey = "gesture_fill_in_present";
+			iArgs.fGestureNameKey = fillInEditing ? "gesture_fill_in_present" : "gesture_landing_present";
 		}
 		return;
 	}
 	const bool pressedHoldsClip = HoldsClip(customProps, CLauncher::ButtonIndex(track, row));
-	const CPress::TEdited pickedClip = picked >= 0 ? LoadEdited(customProps, picked, false) : CPress::Edited(false);
+	const CPress::TEdited pickedClip = picked >= 0 ? LoadEdited(customProps, picked, setup) : CPress::Edited(false);
 	Apply(CPress::LaunchButton(setup, track, row, pressedHoldsClip, pickedClip), customProps, iArgs);
 }
 

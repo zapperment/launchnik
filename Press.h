@@ -31,6 +31,12 @@ class CPress {
 		kFillInUnipolar,
 		kFillInBipolar,
 		kFillInTransition,
+		kLandingPresent,
+		kLandingColour,
+		kLandingPattern,
+		kLandingUnipolar,
+		kLandingBipolar,
+		kLandingTransition,
 		// fValue is 1 while the fill-in button is held down, 0 once it is let go.
 		kFillIn,
 		// fValue is the function.
@@ -42,9 +48,9 @@ class CPress {
 	};
 
 	// One property and its new value. A press of a launch button outside
-	// fill-in editing, a function button, a function select button, the setup
-	// button, the back button, the set fill-in button or the fill-in button
-	// never changes more than one.
+	// fill-in editing and landing editing, a function button, a function
+	// select button, the setup button, the back button, the forward button or
+	// the fill-in button never changes more than one.
 	public: struct TChange {
 		EProperty fProperty;
 		int fIndex;
@@ -54,19 +60,19 @@ class CPress {
 
 	// What a press of a scene button changes: the selection of every track,
 	// the length and the setup state, or nothing at all (see docs/adr/0004).
-	// What a press of a launch button in fill-in editing changes: up to every
-	// setting of the fill-in.
+	// What a press of a launch button in fill-in editing or landing editing
+	// changes: up to every setting of the fill-in or the landing.
 	public: static const int kMaxChangeCount = 2 + 4 * CLauncher::kOutputCount;
 	public: struct TChanges {
 		int fCount;
 		TChange fChanges[kMaxChangeCount];
 	};
 
-	// What a press in clip editing or fill-in editing needs to know of the
-	// settings being edited: whether there are any (the picked launch button
-	// holds a clip, or in fill-in editing a fill-in), the CV modes of the
-	// picked launch button's track, and the transitions, which a press moves
-	// on to the next.
+	// What a press in clip editing, fill-in editing or landing editing needs
+	// to know of the settings being edited: whether there are any (the picked
+	// launch button holds a clip, or in fill-in editing a fill-in, or in
+	// landing editing a landing), the CV modes of the picked launch button's
+	// track, and the transitions, which a press moves on to the next.
 	public: struct TEdited {
 		bool fPresent;
 		int fCVModes[CLauncher::kOutputCount];
@@ -75,7 +81,7 @@ class CPress {
 	// Settings with a new device's CV modes and every transition off.
 	public: static TEdited Edited(bool iPresent);
 
-	// A clip's values, which a new fill-in starts as a copy of.
+	// A clip's values, which a new fill-in or landing starts as a copy of.
 	public: struct TClipValues {
 		int fPatterns[CLauncher::kOutputCount];
 		int fUnipolar[CLauncher::kOutputCount];
@@ -84,14 +90,16 @@ class CPress {
 
 	// iPressedHoldsClip says whether the pressed launch button holds a clip.
 	// iPicked describes the clip being edited and only matters in clip
-	// editing. In fill-in editing a press changes nothing here; see
-	// FillInEditingLaunchButton().
+	// editing. In fill-in editing and landing editing a press changes nothing
+	// here; see FillInEditingLaunchButton() and LandingEditingLaunchButton().
 	public: static TChange LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, const TEdited& iPicked);
 	// A press of a launch button in fill-in editing. iFillIn describes the
 	// fill-in being edited, iClip the values of its clip, which a new fill-in
 	// starts as a copy of, with every transition off, in white. Outside
 	// fill-in editing a press changes nothing here.
 	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip);
+	// The same in landing editing, for the landing.
+	public: static TChanges LandingEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iLanding, const TClipValues& iClip);
 
 	public: static TChange StopButton(int iTrack);
 
@@ -109,13 +117,15 @@ class CPress {
 
 	public: static TChange SetupButton(int iSetup);
 
-	// Goes back one step of setup mode: from fill-in editing to clip editing of
-	// the same launch button, from clip editing to clip picking, from clip
-	// picking to launch mode. In launch mode it does nothing.
+	// Goes back one step of setup mode: from landing editing to fill-in
+	// editing and from fill-in editing to clip editing of the same launch
+	// button, from clip editing to clip picking, from clip picking to launch
+	// mode. In launch mode it does nothing.
 	public: static TChange BackButton(int iSetup);
-	// Goes on from clip editing to fill-in editing of the same launch button,
-	// but only if it holds a clip. Anywhere else it does nothing.
-	public: static TChange SetFillInButton(int iSetup, bool iPickedHoldsClip);
+	// Goes forward one step of setup mode: from clip editing to fill-in
+	// editing and from fill-in editing to landing editing of the same launch
+	// button, but only if it holds a clip. Anywhere else it does nothing.
+	public: static TChange ForwardButton(int iSetup, bool iPickedHoldsClip);
 	// Holding down the fill-in button and letting it go; whether a press
 	// triggers a fill-in is up to the realtime code.
 	public: static TChange FillInButton(bool iPressed);

@@ -13,9 +13,9 @@ format_version = "3.0"
 --   film strip frame of its label:         56
 --   fill-in button, held down or not:      57
 --   light of the fill-in button:           58
---   light of the set fill-in button:       59
---   film strip frames of the fill-in button, its caption, the set fill-in
---   button and its label:                  70, 71, 72, 73
+--   light of the forward button:           59
+--   film strip frames of the fill-in button, its caption, the forward
+--   button and its labels:                 70, 71, 72, 73
 --   function:                              74
 --   film strip frame of the function select button of function f (0 = stop,
 --   1 = mute, 2 = solo):                   75 + f
@@ -23,7 +23,7 @@ format_version = "3.0"
 --   film strip frame of the label of the scene button of row r: 60 + r
 --   selection of track t:            100 + t
 --   film strip frame of the labels of the row of CV output o: 140 + o
---   film strip frames of the transition diagram and its labels: 150, 151
+--   film strip frame of the transition diagrams: 150
 --   name of track t:                 400 + t
 --   name of the scene of row r:      410 + r
 --   name of a launch button's clip:  4000 + 10 * t + r
@@ -41,12 +41,15 @@ format_version = "3.0"
 --   whether a launch button holds a clip: 3000 + 10 * t + r
 --   colour of its clip:             5000 + 10 * t + r
 --   whether the clip holds a fill-in:  6000 + 10 * t + r
+--   whether the clip holds a landing:  7000 + 10 * t + r
 --   colour of the fill-in:             8000 + 10 * t + r
---   and for CV output o, from 1 for A to 6 for F, of the clip and of the
---   fill-in, each + 100 * t + 10 * r + o:
+--   colour of the landing:             9000 + 10 * t + r
+--   and for CV output o, from 1 for A to 6 for F, of the clip, of the
+--   fill-in and of the landing, each + 100 * t + 10 * r + o:
 --     pattern, unipolar value, bipolar value, transition of the clip:
 --                                      10000, 11000, 12000, 13000
 --     the same of the fill-in:         14000, 15000, 16000, 17000
+--     the same of the landing:         18000, 19000, 20000, 21000
 
 local TRACK_COUNT = 8
 local ROW_COUNT = 8
@@ -69,16 +72,16 @@ local BIPOLAR_ZERO = 3
 -- The settings of a CV output, in the order of their tag bases.
 local OUTPUT_SETTINGS = { "pattern", "unipolar", "bipolar", "transition" }
 
--- Launch mode, clip picking, then clip editing and fill-in editing for each of
--- the launch buttons
-local SETUP_COUNT = 2 + 2 * TRACK_COUNT * ROW_COUNT
+-- Launch mode, clip picking, then clip editing, fill-in editing and landing
+-- editing for each of the launch buttons
+local SETUP_COUNT = 2 + 3 * TRACK_COUNT * ROW_COUNT
 
 -- Unlit, then dim, vibrant and flashing for each colour
 local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
 -- Unlit, then dim and vibrant for each colour
 local LIGHT_FRAME_COUNT = 1 + 2 * COLOUR_COUNT
--- Unlit, then dim and vibrant for red, green, yellow and white
-local SCENE_LIGHT_FRAME_COUNT = 9
+-- Unlit, then dim and vibrant for red, green, yellow, white and blue
+local SCENE_LIGHT_FRAME_COUNT = 11
 -- Unlit, then dim and vibrant for red, green, yellow, blue and white
 local SIDE_LIGHT_FRAME_COUNT = 11
 -- Unlit, then dim and vibrant for red (stop), yellow (mute) and blue (solo)
@@ -180,9 +183,10 @@ local FIRST_MUTE_MIDI_CC = FILL_IN_MIDI_CC + 1
 local FIRST_SOLO_MIDI_CC = FIRST_MUTE_MIDI_CC + TRACK_COUNT
 local midi_cc_chart = {}
 
--- 0 = launch mode, 1 = clip picking, 2..65 = clip editing and 66..129 =
--- fill-in editing for one launch button. Written by the panel and by control surfaces, read by the realtime
--- code (see docs/adr/0002). Not saved: a song opens in launch mode.
+-- 0 = launch mode, 1 = clip picking, 2..65 = clip editing, 66..129 = fill-in
+-- editing and 130..193 = landing editing for one launch button. Written by
+-- the panel and by control surfaces, read by the realtime code (see
+-- docs/adr/0002). Not saved: a song opens in launch mode.
 document_properties.setup = jbox.number{
 	property_tag = 50,
 	default = 0,
@@ -253,10 +257,10 @@ for index, name in ipairs(FUNCTIONS) do
 	}
 end
 
--- What the fill-in button and the set fill-in button show, for control
--- surfaces, encoded like the light of a launch button: dim white (1) or
--- vibrant red (5) for the fill-in button, unlit (0) or vibrant red (5) for the
--- set fill-in button. Computed by the realtime code.
+-- What the fill-in button and the forward button show, for control surfaces,
+-- encoded like the light of a launch button: dim white (1) or vibrant red (5)
+-- for the fill-in button, unlit (0), vibrant red (5) or vibrant blue (29) for
+-- the forward button. Computed by the realtime code.
 rt_properties.fill_in_light = jbox.number{
 	property_tag = 58,
 	default = 0,
@@ -266,19 +270,20 @@ rt_properties.fill_in_light = jbox.number{
 }
 add_remote_item("fill_in_light", "Fill-In Light")
 
-rt_properties.set_fill_in_light = jbox.number{
+rt_properties.forward_light = jbox.number{
 	property_tag = 59,
 	default = 0,
 	steps = LIGHT_COUNT,
-	ui_name = jbox.ui_text("text_set_fill_in_light"),
+	ui_name = jbox.ui_text("text_forward_light"),
 	ui_type = plain_number(LIGHT_COUNT - 1),
 }
-add_remote_item("set_fill_in_light", "Set Fill-In Light")
+add_remote_item("forward_light", "Forward Light")
 
 -- The frames the front panel shows of the two buttons, and of their
 -- captions: the fill-in button's film strip is that of the side buttons, the
--- set fill-in button's that of the scene buttons; FILL-IN is 0 = white, 1 =
--- red, SET FILL-IN 0 = unlit, 1 = red.
+-- forward button's that of the scene buttons; FILL-IN is 0 = white, 1 = red;
+-- the forward button's labels 0 = unlit, 1 = SET FILL-IN in red, 2 = SET
+-- LANDING in blue.
 rt_properties.fill_in_light_frame = jbox.number{
 	property_tag = 70,
 	default = 0,
@@ -295,20 +300,20 @@ rt_properties.fill_in_label_frame = jbox.number{
 	ui_type = plain_number(1),
 }
 
-rt_properties.set_fill_in_light_frame = jbox.number{
+rt_properties.forward_light_frame = jbox.number{
 	property_tag = 72,
 	default = 0,
 	steps = SCENE_LIGHT_FRAME_COUNT,
-	ui_name = jbox.ui_text("text_set_fill_in_light"),
+	ui_name = jbox.ui_text("text_forward_light"),
 	ui_type = plain_number(SCENE_LIGHT_FRAME_COUNT - 1),
 }
 
-rt_properties.set_fill_in_label_frame = jbox.number{
+rt_properties.forward_label_frame = jbox.number{
 	property_tag = 73,
 	default = 0,
-	steps = 2,
-	ui_name = jbox.ui_text("text_set_fill_in_label"),
-	ui_type = plain_number(1),
+	steps = 3,
+	ui_name = jbox.ui_text("text_forward_label"),
+	ui_type = plain_number(2),
 }
 
 -- Whether the setup button is lit: in every step of setup mode.
@@ -321,32 +326,33 @@ rt_properties.setup_lamp = jbox.boolean{
 
 -- The labels and the logo, computed by the realtime code. The logo shows the
 -- mode colour: 0 = white (launch mode), 1 = green (clip picking), 2 = yellow
--- (clip editing), 3 = red (fill-in editing). The labels of the launch buttons
--- are lit only in clip editing, in yellow, and in fill-in editing, in red: 0 =
--- unlit, 1 = SET/CLEAR in yellow, 2 = all in yellow, 3 = SET/CLEAR in red, 4 =
--- all in red; the colours and patterns only while the picked launch button
--- holds a clip, or in fill-in editing a fill-in. A scene button's label is 0 =
--- unlit, 1 = white, 2 = green.
+-- (clip editing), 3 = red (fill-in editing), 4 = blue (landing editing). The
+-- labels of the launch buttons are lit only in clip editing, in yellow, in
+-- fill-in editing, in red, and in landing editing, in blue: 0 = unlit, then
+-- SET/CLEAR and all in yellow (1, 2), red (3, 4) and blue (5, 6); the colours
+-- and patterns only while the picked launch button holds a clip, or in
+-- fill-in editing a fill-in, or in landing editing a landing. A scene
+-- button's label is 0 = unlit, 1 = white, 2 = green.
 rt_properties.logo_frame = jbox.number{
 	property_tag = 53,
 	default = 0,
-	steps = 4,
+	steps = 5,
 	ui_name = jbox.ui_text("text_logo"),
-	ui_type = plain_number(3),
+	ui_type = plain_number(4),
 }
 
 rt_properties.launch_labels_frame = jbox.number{
 	property_tag = 54,
 	default = 0,
-	steps = 5,
+	steps = 7,
 	ui_name = jbox.ui_text("text_launch_labels"),
-	ui_type = plain_number(4),
+	ui_type = plain_number(6),
 }
 
 -- The back button's frame, computed by the realtime code: 0 = dark (launch
 -- mode), 7 = vibrant white (clip picking), 3 = vibrant green (clip editing), 5
--- = vibrant yellow (fill-in editing). Not a Remote item: a codec can tell it
--- from the setup state.
+-- = vibrant yellow (fill-in editing), 1 = vibrant red (landing editing). Not a
+-- Remote item: a codec can tell it from the setup state.
 rt_properties.back_button_frame = jbox.number{
 	property_tag = 55,
 	default = 0,
@@ -355,22 +361,24 @@ rt_properties.back_button_frame = jbox.number{
 	ui_type = plain_number(8),
 }
 
--- Its label, in the colour of the button: 0 = unlit, 1 = white, 2 = green, 3
--- = yellow.
+-- Its labels, one line for each step it goes back to, lit in the colour of
+-- the button: 0 = all unlit, 1 = LAUNCH in white, 2 = PICK CLIP in green, 3 =
+-- EDIT CLIP in yellow, 4 = SET FILL-IN in red.
 rt_properties.back_label_frame = jbox.number{
 	property_tag = 56,
 	default = 0,
-	steps = 4,
+	steps = 5,
 	ui_name = jbox.ui_text("text_back_label"),
-	ui_type = plain_number(3),
+	ui_type = plain_number(4),
 }
 
--- The labels of the rows of the CV outputs, lit only in clip editing and
--- fill-in editing of a clip or fill-in: 0 = unlit, then in yellow and in red
--- each 1 = the patterns, 2..6 = the unipolar values with transition off, A,
--- B, C or D, 7..11 = the bipolar values with transition off, A, B, C or D.
--- Computed by the realtime code from the CV mode of the picked track's output.
-local OUTPUT_LABELS_FRAME_COUNT = 1 + 2 * (1 + 2 * TRANSITION_COUNT)
+-- The labels of the rows of the CV outputs, lit only in clip editing,
+-- fill-in editing and landing editing of a clip, fill-in or landing: 0 =
+-- unlit, then in yellow, in red and in blue each 1 = the patterns, 2..6 = the
+-- unipolar values with transition off, A, B, C or D, 7..11 = the bipolar
+-- values with transition off, A, B, C or D. Computed by the realtime code
+-- from the CV mode of the picked track's output.
+local OUTPUT_LABELS_FRAME_COUNT = 1 + 3 * (1 + 2 * TRANSITION_COUNT)
 for output, letter in ipairs(OUTPUT_LETTERS) do
 	rt_properties["output_" .. letter .. "_labels_frame"] = jbox.number{
 		property_tag = 140 + output,
@@ -381,22 +389,15 @@ for output, letter in ipairs(OUTPUT_LETTERS) do
 	}
 end
 
--- The diagram of the transitions, lit like the labels of the CV outputs: 0 =
--- in colour, 1 = grey; its labels 0 = unlit, 1 = yellow, 2 = red.
-rt_properties.transition_diagram_frame = jbox.number{
+-- The three sets of transition diagrams, lit like the labels of the CV
+-- outputs: 0 = all grey, 1 = TRANSITION in yellow, 2 = FILL-IN in red, 3 =
+-- LANDING in blue.
+rt_properties.transition_diagrams_frame = jbox.number{
 	property_tag = 150,
-	default = 1,
-	steps = 2,
-	ui_name = jbox.ui_text("text_transition_diagram"),
-	ui_type = plain_number(1),
-}
-
-rt_properties.transition_labels_frame = jbox.number{
-	property_tag = 151,
 	default = 0,
-	steps = 3,
-	ui_name = jbox.ui_text("text_transition_labels"),
-	ui_type = plain_number(2),
+	steps = 4,
+	ui_name = jbox.ui_text("text_transition_diagrams"),
+	ui_type = plain_number(3),
 }
 
 for scene = 1, ROW_COUNT do
@@ -505,9 +506,9 @@ for track = 1, TRACK_COUNT do
 		local clip = "track" .. track .. "_clip" .. row
 		local remote_name = "Track " .. track .. " Clip " .. row
 
-		-- What the launch button holds. Its settings and fill-in are kept while
-		-- it is empty, so that a clip comes back as it was. All of them make up
-		-- a patch.
+		-- What the launch button holds. Its settings, fill-in and landing are
+		-- kept while it is empty, so that a clip comes back as it was. All of
+		-- them make up a patch.
 		document_properties[clip .. "_present"] = jbox.boolean{
 			property_tag = 3000 + 10 * track + row,
 			default = false,
@@ -550,11 +551,30 @@ for track = 1, TRACK_COUNT do
 		}
 		add_remote_item(clip .. "_fill_in_colour", remote_name .. " Fill-In Colour")
 
+		-- The clip's landing, set up like its fill-in.
+		document_properties[clip .. "_landing_present"] = jbox.boolean{
+			property_tag = 7000 + 10 * track + row,
+			default = false,
+			ui_name = jbox.ui_text("text_" .. clip .. "_landing_present"),
+			ui_type = plain_number(1),
+		}
+		add_remote_item(clip .. "_landing_present", remote_name .. " Landing Present")
+
+		document_properties[clip .. "_landing_colour"] = jbox.number{
+			property_tag = 9000 + 10 * track + row,
+			default = 0,
+			steps = COLOUR_COUNT,
+			ui_name = jbox.ui_text("text_" .. clip .. "_landing_colour"),
+			ui_type = jbox.ui_selector(colour_texts),
+		}
+		add_remote_item(clip .. "_landing_colour", remote_name .. " Landing Colour")
+
 		-- For each CV output, a pattern, a unipolar value, a bipolar value and
-		-- a transition, of the clip and of its fill-in (see docs/adr/0006). A
-		-- new clip plays the pattern of its row, at unipolar and bipolar 0,
-		-- with every transition off.
-		for kind_index, kind in ipairs({ "", "_fill_in" }) do
+		-- a transition, of the clip, of its fill-in and of its landing (see
+		-- docs/adr/0006). A new clip plays the pattern of its row, at unipolar
+		-- and bipolar 0, with every transition off.
+		local remote_kinds = { [""] = "", ["_fill_in"] = " Fill-In", ["_landing"] = " Landing" }
+		for kind_index, kind in ipairs({ "", "_fill_in", "_landing" }) do
 			for setting_index, setting in ipairs(OUTPUT_SETTINGS) do
 				local setting_type = OUTPUT_SETTING_TYPES[setting]
 				local base = 10000 + 1000 * (4 * (kind_index - 1) + setting_index - 1)
@@ -567,8 +587,7 @@ for track = 1, TRACK_COUNT do
 						ui_name = jbox.ui_text("text_" .. property),
 						ui_type = jbox.ui_selector(setting_type.texts),
 					}
-					local remote_kind = kind == "" and "" or " Fill-In"
-					add_remote_item(property, remote_name .. remote_kind .. " Output " .. string.upper(letter) .. " " .. setting:gsub("^%l", string.upper))
+					add_remote_item(property, remote_name .. remote_kinds[kind] .. " Output " .. string.upper(letter) .. " " .. setting:gsub("^%l", string.upper))
 				end
 			end
 		end

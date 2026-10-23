@@ -2,8 +2,9 @@
 --
 -- Whether a name, or the default name that stands in while it is empty, is
 -- shown (see docs/adr/0007). On the front panel values[1] is the setup state
--- (0 = launch mode, 1 = clip picking, 2 + i clip editing and 66 + i fill-in
--- editing of launch button i, counted from 0 down track 1 first) and
+-- (0 = launch mode, 1 = clip picking, 2 + i clip editing, 66 + i fill-in
+-- editing and 130 + i landing editing of launch button i, counted from 0 down
+-- track 1 first) and
 -- values[2] the name; on the back panel values[1] is the name.
 
 -- Track names on the back panel are always shown.

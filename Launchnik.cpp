@@ -14,12 +14,15 @@ const TJBox_Int32 kNothingWritten = -1;
 const TJBox_Tag kClipPresentBase = 3000;
 const TJBox_Tag kClipColourBase = 5000;
 const TJBox_Tag kFillInPresentBase = 6000;
+const TJBox_Tag kLandingPresentBase = 7000;
 const TJBox_Tag kFillInColourBase = 8000;
+const TJBox_Tag kLandingColourBase = 9000;
 const TJBox_Tag kClipTagSpan = 1000;
 
 const TJBox_Tag kOutputSettingBases[] = {
 	kClipPatternBase, kClipUnipolarBase, kClipBipolarBase, kClipTransitionBase,
 	kFillInPatternBase, kFillInUnipolarBase, kFillInBipolarBase, kFillInTransitionBase,
+	kLandingPatternBase, kLandingUnipolarBase, kLandingBipolarBase, kLandingTransitionBase,
 };
 
 // The names of the CV outputs in motherboard_def.lua, by track and output.
@@ -51,11 +54,10 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fWrittenFillInLight(kNothingWritten),
 	fWrittenFillInLightFrame(kNothingWritten),
 	fWrittenFillInLabelFrame(kNothingWritten),
-	fWrittenSetFillInLight(kNothingWritten),
-	fWrittenSetFillInLightFrame(kNothingWritten),
-	fWrittenSetFillInLabelFrame(kNothingWritten),
-	fWrittenTransitionDiagramFrame(kNothingWritten),
-	fWrittenTransitionLabelsFrame(kNothingWritten)
+	fWrittenForwardLight(kNothingWritten),
+	fWrittenForwardLightFrame(kNothingWritten),
+	fWrittenForwardLabelFrame(kNothingWritten),
+	fWrittenTransitionDiagramsFrame(kNothingWritten)
 {
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		fWrittenOutputLabelsFrames[output] = kNothingWritten;
@@ -110,6 +112,7 @@ void CLaunchnik::LoadEverything() {
 			const TJBox_Tag tags[] = {
 				ClipPresentTag(track, row), ClipColourTag(track, row),
 				FillInPresentTag(track, row), FillInColourTag(track, row),
+				LandingPresentTag(track, row), LandingColourTag(track, row),
 			};
 			for (TJBox_Tag tag : tags) {
 				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
@@ -171,11 +174,11 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		fLauncher.SetCVMode(track, output, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	if (iTag >= kClipPatternBase && iTag < kFillInTransitionBase + kOutputSettingTagSpan) {
+	if (iTag >= kClipPatternBase && iTag < kLandingTransitionBase + kOutputSettingTagSpan) {
 		HandleOutputSettingChange(iTag, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	if (iTag < kClipPresentBase || iTag >= kFillInColourBase + kClipTagSpan) {
+	if (iTag < kClipPresentBase || iTag >= kLandingColourBase + kClipTagSpan) {
 		return;
 	}
 	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
@@ -192,6 +195,12 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 	}
 	else if (base == kFillInColourBase) {
 		fLauncher.SetFillInColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	}
+	else if (base == kLandingPresentBase) {
+		fLauncher.SetLandingPresent(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kLandingColourBase) {
+		fLauncher.SetLandingColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
 	}
 }
 
@@ -210,6 +219,10 @@ void CLaunchnik::HandleOutputSettingChange(TJBox_Tag iTag, int iValue) {
 		case kFillInUnipolarBase: fLauncher.SetFillInUnipolar(track, row, output, iValue); break;
 		case kFillInBipolarBase: fLauncher.SetFillInBipolar(track, row, output, iValue); break;
 		case kFillInTransitionBase: fLauncher.SetFillInTransition(track, row, output, iValue); break;
+		case kLandingPatternBase: fLauncher.SetLandingPattern(track, row, output, iValue); break;
+		case kLandingUnipolarBase: fLauncher.SetLandingUnipolar(track, row, output, iValue); break;
+		case kLandingBipolarBase: fLauncher.SetLandingBipolar(track, row, output, iValue); break;
+		case kLandingTransitionBase: fLauncher.SetLandingTransition(track, row, output, iValue); break;
 		default: break;
 	}
 }
@@ -267,11 +280,10 @@ void CLaunchnik::WriteOutputs() {
 	Write(kCustomPropsTag_FillInLight, fLauncher.GetFillInLightValue(), fWrittenFillInLight);
 	Write(kCustomPropsTag_FillInLightFrame, fLauncher.GetFillInLightFrame(), fWrittenFillInLightFrame);
 	Write(kCustomPropsTag_FillInLabelFrame, fLauncher.GetFillInLabelFrame(), fWrittenFillInLabelFrame);
-	Write(kCustomPropsTag_SetFillInLight, fLauncher.GetSetFillInLightValue(), fWrittenSetFillInLight);
-	Write(kCustomPropsTag_SetFillInLightFrame, fLauncher.GetSetFillInLightFrame(), fWrittenSetFillInLightFrame);
-	Write(kCustomPropsTag_SetFillInLabelFrame, fLauncher.GetSetFillInLabelFrame(), fWrittenSetFillInLabelFrame);
-	Write(kCustomPropsTag_TransitionDiagramFrame, fLauncher.GetTransitionDiagramFrame(), fWrittenTransitionDiagramFrame);
-	Write(kCustomPropsTag_TransitionLabelsFrame, fLauncher.GetTransitionLabelsFrame(), fWrittenTransitionLabelsFrame);
+	Write(kCustomPropsTag_ForwardLight, fLauncher.GetForwardLightValue(), fWrittenForwardLight);
+	Write(kCustomPropsTag_ForwardLightFrame, fLauncher.GetForwardLightFrame(), fWrittenForwardLightFrame);
+	Write(kCustomPropsTag_ForwardLabelFrame, fLauncher.GetForwardLabelFrame(), fWrittenForwardLabelFrame);
+	Write(kCustomPropsTag_TransitionDiagramsFrame, fLauncher.GetTransitionDiagramsFrame(), fWrittenTransitionDiagramsFrame);
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		Write(OutputLabelsFrameTag(output), fLauncher.GetOutputLabelsFrame(output), fWrittenOutputLabelsFrames[output]);
 	}

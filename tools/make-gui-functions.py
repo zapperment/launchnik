@@ -4,16 +4,16 @@ or the default name that stands in while it is empty, is shown (see "Track
 name", "Clip name" and "Scene name" in CONTEXT.md, and docs/adr/0007).
 
 Track names and clip names are shown in launch mode and clip picking, and in
-clip editing and fill-in editing only for the launch button being edited and
-its track. A visibility function only gets the values of properties, not the
+clip editing, fill-in editing and landing editing only for the launch button
+being edited and its track. A visibility function only gets the values of properties, not the
 widget it belongs to, so each track name and clip name has functions of its
 own, which this script writes out. Each is self-contained, without helpers
 or library calls, since the host runs them on its own.
 
-The setup state is 0 in launch mode, 1 in clip picking, 2 + i in clip editing
-and 66 + i in fill-in editing of launch button i, counted from 0 down track 1
-first (see CLauncher::PickedButton), so (setup - 2) % 64 is the launch button
-being edited from 2 on.
+The setup state is 0 in launch mode, 1 in clip picking, 2 + i in clip
+editing, 66 + i in fill-in editing and 130 + i in landing editing of launch
+button i, counted from 0 down track 1 first (see CLauncher::PickedButton), so
+(setup - 2) % 64 is the launch button being edited from 2 on.
 
 Run: tools/make-gui-functions.py
 """
@@ -28,8 +28,9 @@ HEADER = """\
 --
 -- Whether a name, or the default name that stands in while it is empty, is
 -- shown (see docs/adr/0007). On the front panel values[1] is the setup state
--- (0 = launch mode, 1 = clip picking, 2 + i clip editing and 66 + i fill-in
--- editing of launch button i, counted from 0 down track 1 first) and
+-- (0 = launch mode, 1 = clip picking, 2 + i clip editing, 66 + i fill-in
+-- editing and 130 + i landing editing of launch button i, counted from 0 down
+-- track 1 first) and
 -- values[2] the name; on the back panel values[1] is the name.
 
 -- Track names on the back panel are always shown.

@@ -57,8 +57,10 @@ void TestBackButtonGoesBackOneStep() {
 	CHECK(IsNoChange(CPress::BackButton(kLaunchMode)));
 	CHECK(IsChange(CPress::BackButton(kClipPicking), CPress::kSetup, 0, kLaunchMode));
 	CHECK(IsChange(CPress::BackButton(CLauncher::SetupForClipEditing(3, 6)), CPress::kSetup, 0, kClipPicking));
-	// From fill-in editing it returns to clip editing of the same launch button.
+	// From fill-in editing it returns to clip editing of the same launch
+	// button, and from landing editing to fill-in editing.
 	CHECK(IsChange(CPress::BackButton(CLauncher::SetupForFillInEditing(3, 6)), CPress::kSetup, 0, CLauncher::SetupForClipEditing(3, 6)));
+	CHECK(IsChange(CPress::BackButton(CLauncher::SetupForLandingEditing(3, 6)), CPress::kSetup, 0, CLauncher::SetupForFillInEditing(3, 6)));
 }
 
 bool IsOutputChange(const CPress::TChange& iChange, CPress::EProperty iProperty, int iIndex, int iOutput, int iValue) {
@@ -180,12 +182,16 @@ void TestSetupButtonLeavesFillInEditing() {
 	CHECK(IsChange(CPress::SetupButton(CLauncher::SetupForFillInEditing(3, 3)), CPress::kSetup, 0, kLaunchMode));
 }
 
-void TestSetFillInButtonGoesOnFromClipEditingOfAClip() {
-	CHECK(IsChange(CPress::SetFillInButton(CLauncher::SetupForClipEditing(3, 6), true), CPress::kSetup, 0, CLauncher::SetupForFillInEditing(3, 6)));
-	CHECK(IsNoChange(CPress::SetFillInButton(CLauncher::SetupForClipEditing(3, 6), false)));
-	CHECK(IsNoChange(CPress::SetFillInButton(kLaunchMode, true)));
-	CHECK(IsNoChange(CPress::SetFillInButton(kClipPicking, true)));
-	CHECK(IsNoChange(CPress::SetFillInButton(CLauncher::SetupForFillInEditing(3, 6), true)));
+void TestForwardButtonGoesForwardOneStepWithAClip() {
+	CHECK(IsChange(CPress::ForwardButton(CLauncher::SetupForClipEditing(3, 6), true), CPress::kSetup, 0, CLauncher::SetupForFillInEditing(3, 6)));
+	CHECK(IsNoChange(CPress::ForwardButton(CLauncher::SetupForClipEditing(3, 6), false)));
+	CHECK(IsNoChange(CPress::ForwardButton(kLaunchMode, true)));
+	CHECK(IsNoChange(CPress::ForwardButton(kClipPicking, true)));
+	// From fill-in editing on to landing editing, whether or not there is a
+	// fill-in, but not beyond.
+	CHECK(IsChange(CPress::ForwardButton(CLauncher::SetupForFillInEditing(3, 6), true), CPress::kSetup, 0, CLauncher::SetupForLandingEditing(3, 6)));
+	CHECK(IsNoChange(CPress::ForwardButton(CLauncher::SetupForFillInEditing(3, 6), false)));
+	CHECK(IsNoChange(CPress::ForwardButton(CLauncher::SetupForLandingEditing(3, 6), true)));
 }
 
 void TestFillInButtonFollowsTheButton() {
@@ -267,9 +273,57 @@ void TestFillInEditingWithoutFillInHasNoColourOrCVControls() {
 	}
 }
 
+void TestLandingEditingDoesNothingElsewhere() {
+	CHECK(IsChanges(CPress::LandingEditingLaunchButton(kClipPicking, 7, 1, CPress::Edited(false), SomeClipValues()), 0));
+	CHECK(IsChanges(CPress::LandingEditingLaunchButton(CLauncher::SetupForFillInEditing(3, 6), 7, 1, CPress::Edited(false), SomeClipValues()), 0));
+	CHECK(IsChanges(CPress::FillInEditingLaunchButton(CLauncher::SetupForLandingEditing(3, 6), 7, 1, CPress::Edited(false), SomeClipValues()), 0));
+	CHECK(IsNoChange(CPress::LaunchButton(CLauncher::SetupForLandingEditing(3, 6), 7, 1, false, CPress::Edited(true))));
+}
+
+void TestLandingEditingToggleSetsUpANewLanding() {
+	const int editing = CLauncher::SetupForLandingEditing(3, 6);
+	const int picked = CLauncher::ButtonIndex(3, 6);
+
+	// A new landing is a copy of its clip's values, with every transition
+	// off, in white, like a new fill-in.
+	const CPress::TChanges set = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
+	CHECK(IsChanges(set, 2 + 4 * CLauncher::kOutputCount));
+	CHECK(IsChange(set.fChanges[0], CPress::kLandingPresent, picked, 1));
+	CHECK(IsChange(set.fChanges[1], CPress::kLandingColour, picked, CLauncher::kColourWhite));
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		const CPress::TChange* changes = set.fChanges + 2 + 4 * output;
+		CHECK(IsOutputChange(changes[0], CPress::kLandingPattern, picked, output, output));
+		CHECK(IsOutputChange(changes[1], CPress::kLandingUnipolar, picked, output, 6 - output));
+		CHECK(IsOutputChange(changes[2], CPress::kLandingBipolar, picked, output, output % 7));
+		CHECK(IsOutputChange(changes[3], CPress::kLandingTransition, picked, output, CLauncher::kTransitionOff));
+	}
+
+	const CPress::TChanges clear = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(clear, 1));
+	CHECK(IsChange(clear.fChanges[0], CPress::kLandingPresent, picked, 0));
+}
+
+void TestLandingEditingColourAndCVRows() {
+	const int editing = CLauncher::SetupForLandingEditing(3, 6);
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	const CPress::TChanges colour = CPress::LandingEditingLaunchButton(editing, 2, 2, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(colour, 1) && IsChange(colour.fChanges[0], CPress::kLandingColour, picked, 9));
+	const CPress::TChanges pattern = CPress::LandingEditingLaunchButton(editing, 5, 3, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(pattern, 1) && IsOutputChange(pattern.fChanges[0], CPress::kLandingPattern, picked, 0, 5));
+	const CPress::TChanges unipolar = CPress::LandingEditingLaunchButton(editing, 4, 4, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(unipolar, 1) && IsOutputChange(unipolar.fChanges[0], CPress::kLandingUnipolar, picked, 1, 4));
+	const CPress::TChanges bipolar = CPress::LandingEditingLaunchButton(editing, 0, 5, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(bipolar, 1) && IsOutputChange(bipolar.fChanges[0], CPress::kLandingBipolar, picked, 2, 0));
+	const CPress::TChanges transition = CPress::LandingEditingLaunchButton(editing, 7, 6, MixedModes(true), SomeClipValues());
+	CHECK(IsChanges(transition, 1) && IsOutputChange(transition.fChanges[0], CPress::kLandingTransition, picked, 3, CLauncher::kTransitionOff));
+	// Without a landing there is nothing but the toggle.
+	CHECK(IsChanges(CPress::LandingEditingLaunchButton(editing, 2, 2, MixedModes(false), SomeClipValues()), 0));
+}
+
 void TestSceneButtonDoesNothingInFillInEditing() {
 	const bool holdsClip[CLauncher::kTrackCount] = { true, true, true, true, true, true, true, true };
 	CHECK(CPress::SceneButton(CLauncher::SetupForFillInEditing(0, 1), 3, holdsClip).fCount == 0);
+	CHECK(CPress::SceneButton(CLauncher::SetupForLandingEditing(0, 1), 3, holdsClip).fCount == 0);
 }
 
 void TestFunctionButtonInStopFunctionSelectsStop() {
@@ -321,7 +375,7 @@ int main() {
 	TestSceneButtonInClipPickingChoosesItsLengthAndLeavesSetupMode();
 
 	TestSetupButtonLeavesFillInEditing();
-	TestSetFillInButtonGoesOnFromClipEditingOfAClip();
+	TestForwardButtonGoesForwardOneStepWithAClip();
 	TestFillInButtonFollowsTheButton();
 	TestLaunchButtonDoesNothingInFillInEditing();
 	TestFillInEditingDoesNothingElsewhere();
@@ -329,6 +383,9 @@ int main() {
 	TestFillInEditingColourAndCVRows();
 	TestFillInEditingWithoutFillInHasNoColourOrCVControls();
 	TestSceneButtonDoesNothingInFillInEditing();
+	TestLandingEditingDoesNothingElsewhere();
+	TestLandingEditingToggleSetsUpANewLanding();
+	TestLandingEditingColourAndCVRows();
 
 	TestFunctionButtonInStopFunctionSelectsStop();
 	TestFunctionButtonIsHeldDownAsMuteOrSoloButton();

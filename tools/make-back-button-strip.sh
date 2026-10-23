@@ -3,8 +3,9 @@
 # from the nine-frame image in RE2D_Launchnik_Graphics.
 #
 # The frames keep the order of the source: dark, then vibrant and dim for red,
-# green, yellow and white. The panel uses dark, vibrant green (frame 3) and
-# vibrant white (frame 7), see CLauncher::GetBackButtonFrame.
+# green, yellow and white. The panel uses dark, vibrant red (frame 1), vibrant
+# green (frame 3), vibrant yellow (frame 5) and vibrant white (frame 7), see
+# CLauncher::GetBackButtonFrame.
 #
 # The source is 126x1211 pixels with its frames 135 pixels apart. It is padded
 # to frames of 130x135, a size RE2DRender accepts, in the same way as the

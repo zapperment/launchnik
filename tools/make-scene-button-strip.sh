@@ -1,13 +1,13 @@
 #!/bin/sh
-# Builds GUI2D/Scene_Button_9frames.png, the film strip of the scene buttons
-# and the set fill-in button, from the nine-frame image in
+# Builds GUI2D/Scene_Button_11frames.png, the film strip of the scene buttons
+# and the forward button, from the eleven-frame image in
 # RE2D_Launchnik_Graphics, and GUI2D/Side_Button_11frames.png, that of the
 # fill-in button and the function select buttons, from the eleven-frame image
 # of a button without an arrow.
 #
 # Frame 0 is the unlit button. The colours follow, each as a dim frame and
-# then a vibrant one: red, green, yellow and white for the scene buttons; red,
-# green, yellow, blue and white for the side buttons.
+# then a vibrant one: red, green, yellow, white and blue for the scene
+# buttons; red, green, yellow, blue and white for the side buttons.
 #
 # The sources are 126 pixels wide with their frames 135 pixels apart. They are
 # padded to frames of 130x135, a size RE2DRender accepts and the height of a
@@ -52,5 +52,5 @@ build_strip() {
 	echo "Wrote $target"
 }
 
-build_strip RE2D_Launchnik_Graphics/Launchnik_Scene_Button_9frames.png GUI2D/Scene_Button_9frames.png 9
+build_strip RE2D_Launchnik_Graphics/Launchnik_Scene_Button_11frames.png GUI2D/Scene_Button_11frames.png 11
 build_strip RE2D_Launchnik_Graphics/Launchnik_Side_Button_11frames.png GUI2D/Side_Button_11frames.png 11

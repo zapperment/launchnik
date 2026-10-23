@@ -46,7 +46,9 @@ for track = 1, 8 do
 		table.insert(notify, clip .. "_colour")
 		table.insert(notify, clip .. "_fill_in_present")
 		table.insert(notify, clip .. "_fill_in_colour")
-		for _, kind in ipairs({ "", "_fill_in" }) do
+		table.insert(notify, clip .. "_landing_present")
+		table.insert(notify, clip .. "_landing_colour")
+		for _, kind in ipairs({ "", "_fill_in", "_landing" }) do
 			for _, letter in ipairs(OUTPUT_LETTERS) do
 				for _, setting in ipairs(OUTPUT_SETTINGS) do
 					table.insert(notify, clip .. kind .. "_" .. letter .. "_" .. setting)

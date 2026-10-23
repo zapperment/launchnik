@@ -9,11 +9,11 @@ One of the 64 large buttons on the front panel, arranged in eight rows on each o
 _Avoid_: Clip button, pad, cell
 
 **Clip**:
-What a **launch button** holds: a **colour** and, for each of its track's six **CV outputs**, a **pattern**, a **unipolar value**, a **bipolar value** and a **transition**. Launching the clip makes each CV output emit whichever of the three its **CV mode** picks. A launch button keeps all of them while it is **empty**, so a clip comes back as it was; a new clip has, on every CV output, the pattern of its row, unipolar value 0, bipolar value 0 and transition off. Several clips on a track may use the same pattern. A clip may also hold a **fill-in**.
+What a **launch button** holds: a **colour** and, for each of its track's six **CV outputs**, a **pattern**, a **unipolar value**, a **bipolar value** and a **transition**. Launching the clip makes each CV output emit whichever of the three its **CV mode** picks. A launch button keeps all of them while it is **empty**, so a clip comes back as it was; a new clip has, on every CV output, the pattern of its row, unipolar value 0, bipolar value 0 and transition off. Several clips on a track may use the same pattern. A clip may also hold a **fill-in** and a **landing**, either without the other.
 _Avoid_: Slot, pattern (for the clip itself); a **scene** is a row of launch buttons, not a clip
 
 **Clip name**:
-Text that the user gives a **launch button** so that its **clip** can be recognised. It is shown above the launch button and changed by double-clicking it. A launch button keeps and shows its clip name while it is **empty**, like its clip's other settings, so the name comes back with the clip. Like a **track name**, it shows about 12 characters. It is never shown empty: clearing it gives the launch button its default name back, Clip 1 to Clip 8 by **scene**, which is also what a new device shows. A **fill-in** has no name of its own. It is part of the **patch**, cannot be automated, and is not available to a control surface. It is shown in **launch mode** and **clip picking**; in **clip editing** and **fill-in editing** only the clip name of the launch button being set up is shown.
+Text that the user gives a **launch button** so that its **clip** can be recognised. It is shown above the launch button and changed by double-clicking it. A launch button keeps and shows its clip name while it is **empty**, like its clip's other settings, so the name comes back with the clip. Like a **track name**, it shows about 12 characters. It is never shown empty: clearing it gives the launch button its default name back, Clip 1 to Clip 8 by **scene**, which is also what a new device shows. A **fill-in** or **landing** has no name of its own. It is part of the **patch**, cannot be automated, and is not available to a control surface. It is shown in **launch mode** and **clip picking**; in **clip editing**, **fill-in editing** and **landing editing** only the clip name of the launch button being set up is shown.
 _Avoid_: Clip label, launch button name, title
 
 **Fill-in**:
@@ -27,9 +27,13 @@ _Avoid_: Fill button, trigger
 **Playing** (of a fill-in):
 Said of a fill-in from the press of the **fill-in button** until the next **switch point**. A change to a fill-in, or to whether the active clip holds one, takes effect at once while a fill-in is playing. With the transport stopped it goes on playing until the song reaches the switch point. At the switch point every track goes on with its **selection**, as it would have anyway.
 
-**Set fill-in button**:
-The button to the right of the **back button** that goes from **clip editing** to **fill-in editing**. It is lit in vibrant red, with its label, only in clip editing of a launch button that holds a clip; otherwise it is dark and a click does nothing. It cannot be automated.
-_Avoid_: Setup fill-in button, fill-in edit button
+**Landing**:
+A further **colour** and, for each **CV output**, a further pattern, unipolar value, bipolar value and **transition** that a **clip** may hold, emitted instead of the clip's own during the first **switch interval** after the clip becomes **active** at a **switch point**, so that a performance can open with, say, a crash cymbal. It plays whether the track was stopped or playing another clip, and in each track of a **scene** on its own; it does not play when the active clip is chosen again, when a song is loaded, when the transport starts or the song position jumps, nor ever while the **length** is **immediate**. While the clip is **queued**, the active clip's transition moves towards the landing's value rather than the clip's. A landing's own transition is the exception to the rule that the active clip's transition counts, and it runs the other way round: from the landing's value at the start of the interval towards the clip's; off holds the landing's value and jumps at the switch point. A and B move across the whole interval, A in a straight line and B along a curve that leaves quickly and settles slowly (a clip's B mirrored in time); C and D do the same within the first bar only and emit the clip's value for the rest (so with a length of one bar or less, they behave like A and B). If another clip is queued during the landing, the landing's movement is dropped and the active clip's own transition starts over from the value emitted at that moment. A **fill-in** lies over a landing as over a clip. While it plays, the active launch button shows the landing's colour, vibrant, and a change to the landing takes effect at once. A new landing starts as a copy of its clip's patterns and values, with every transition off and the colour white, each time it is switched on. A launch button keeps its landing while it is **empty**; landings are part of the **patch**.
+_Avoid_: Intro, opener, landing mode (it is not a way of working like **launch mode** or **setup mode**)
+
+**Forward button**:
+The button to the right of the **back button** that goes forward one step of **setup mode**: from **clip editing** to **fill-in editing**, and from fill-in editing to **landing editing**. It works only while the picked launch button holds a **clip**, and is then vibrant in the **mode colour** of the step it leads to: red in clip editing, blue in fill-in editing; otherwise it is dark and a click does nothing. It cannot be automated.
+_Avoid_: Set fill-in button, set landing button, right arrow, next button
 
 **Empty**:
 Said of a **launch button** that holds no **clip**. A new device has only empty launch buttons. Choosing an empty launch button counts as choosing **stop**.
@@ -86,7 +90,7 @@ One column of the front panel: eight **launch buttons**, one **function button**
 _Avoid_: Column, channel, lane
 
 **Track name**:
-Text that the user gives a **track** so that it can be recognised, such as the instrument it plays. It is shown above the track on the front panel and above its **CV outputs** on the back panel, the same on both, and changed by double-clicking either. The panel shows about 12 characters, centred; a longer name is kept in full but shown cut off at both ends. It is never shown empty: clearing it gives the track its default name back, Track 1 to Track 8, which is also what a new device shows. It is part of the **patch**, cannot be automated, and is not available to a control surface. On the front panel it is shown in **launch mode** and **clip picking**; in **clip editing** and **fill-in editing** only the track name of the launch button being set up is shown. On the back panel it is always shown.
+Text that the user gives a **track** so that it can be recognised, such as the instrument it plays. It is shown above the track on the front panel and above its **CV outputs** on the back panel, the same on both, and changed by double-clicking either. The panel shows about 12 characters, centred; a longer name is kept in full but shown cut off at both ends. It is never shown empty: clearing it gives the track its default name back, Track 1 to Track 8, which is also what a new device shows. It is part of the **patch**, cannot be automated, and is not available to a control surface. On the front panel it is shown in **launch mode** and **clip picking**; in **clip editing**, **fill-in editing** and **landing editing** only the track name of the launch button being set up is shown. On the back panel it is always shown.
 _Avoid_: Track label, track title, caption
 
 **Scene**:
@@ -121,7 +125,7 @@ In unipolar mode, one of seven evenly spaced values from 0 to 1 (labelled 0 to 1
 _Avoid_: Level, amount, CV value (when the mode matters)
 
 **Transition**:
-How a CV output in unipolar or bipolar mode moves from the value of the **active** clip to that of a **queued** clip on its track: **off**, A, B, C or D. It is the active clip's transition that counts, not the queued one's (a fill-in is the exception). Off keeps the active clip's value until the **switch point** and then jumps. A and B move from the moment of queueing to the switch point, A in a straight line and B along an exponential curve that starts slowly; C and D do the same as A and B, but only within the last bar before the switch point (so with a **length** of one bar or less, they behave like A and B). The movement follows the song position and lands on the new value at the switch point. A queued **stop**, a track that is stopped, and the length **immediate** never move: the value jumps. Whenever the queued clip changes, its value is edited or the active clip's transition is changed, the movement starts over from the value emitted at that moment; when nothing is left to move towards (the active clip chosen again, stop queued, transition switched off), the value jumps back to the active clip's.
+How a CV output in unipolar or bipolar mode moves from the value of the **active** clip to that of a **queued** clip on its track: **off**, A, B, C or D. It is the active clip's transition that counts, not the queued one's (a fill-in and a **landing** are the exceptions); towards a queued clip that holds a landing, it moves to the landing's value. Off keeps the active clip's value until the **switch point** and then jumps. A and B move from the moment of queueing to the switch point, A in a straight line and B along an exponential curve that starts slowly; C and D do the same as A and B, but only within the last bar before the switch point (so with a **length** of one bar or less, they behave like A and B). The movement follows the song position and lands on the new value at the switch point. A queued **stop**, a track that is stopped, and the length **immediate** never move: the value jumps. Whenever the queued clip changes, its value is edited or the active clip's transition is changed, the movement starts over from the value emitted at that moment; when nothing is left to move towards (the active clip chosen again, stop queued, transition switched off), the value jumps back to the active clip's.
 _Avoid_: Transition mode 1–4, interpolation, glide, ramp, slide
 
 **Selection**:
@@ -151,7 +155,7 @@ _Avoid_: Edit mode, config mode
 The button to the left of the **function buttons** that switches between **launch mode** and **setup mode**.
 
 **Back button**:
-The button above the first **track** that goes back one step of **setup mode**: from **fill-in editing** to **clip editing**, from **clip editing** to **clip picking**, and from clip picking to **launch mode**, which in clip picking is what the **setup button** does as well. It is dark in launch mode, where a click does nothing, and otherwise vibrant in the **mode colour** of the step it goes back to: white in clip picking, green in clip editing, yellow in **fill-in editing**.
+The button above the first **track** that goes back one step of **setup mode**: from **landing editing** to **fill-in editing**, from **fill-in editing** to **clip editing**, from **clip editing** to **clip picking**, and from clip picking to **launch mode**, which in clip picking is what the **setup button** does as well. It is dark in launch mode, where a click does nothing, and otherwise vibrant in the **mode colour** of the step it goes back to: white in clip picking, green in clip editing, yellow in **fill-in editing**, red in **landing editing**.
 _Avoid_: Arrow button, left arrow, return button
 
 **Clip picking**:
@@ -159,23 +163,27 @@ The first step of **setup mode**, in which every **launch button** flashes (in i
 _Avoid_: Clip selection (a **selection** is what a track has chosen to play)
 
 **Clip editing**:
-The second step of **setup mode**, in which the **launch buttons** stand for the settings of the one picked launch button: whether it holds a **clip**, the clip's **colour** and its pattern. From here the **set fill-in button** leads on to **fill-in editing**.
+The second step of **setup mode**, in which the **launch buttons** stand for the settings of the one picked launch button: whether it holds a **clip**, the clip's **colour** and its pattern. From here the **forward button** leads on to **fill-in editing**.
 _Avoid_: Edit mode
 
 **Fill-in editing**:
-The third step of **setup mode**, in which the **launch buttons** stand for the **fill-in** of the launch button picked in **clip picking**: whether its clip holds one, the fill-in's **colour** and its pattern, laid out as in **clip editing**. The **back button** returns to clip editing.
+The third step of **setup mode**, in which the **launch buttons** stand for the **fill-in** of the launch button picked in **clip picking**: whether its clip holds one, the fill-in's **colour** and its pattern, laid out as in **clip editing**. The **back button** returns to clip editing; the **forward button** leads on to **landing editing**, whether or not the clip holds a fill-in.
 _Avoid_: Fill-in mode, fill-in setup
+
+**Landing editing**:
+The fourth step of **setup mode**, in which the **launch buttons** stand for the **landing** of the launch button picked in **clip picking**: whether its clip holds one, the landing's **colour** and its pattern, laid out as in **clip editing**. The **back button** returns to fill-in editing.
+_Avoid_: Landing mode, landing setup, set landing (that is only the caption of the **forward button**)
 
 **Light**:
 What a **launch button** is showing at the moment, in either mode: **unlit**, or one **colour** that is **dim**, **vibrant** or flashing. A **function button** has a light too, in the colour of the **function**, and so has a **function select button**, and so has a **scene button**, as part of the **interval meter**. The front panel and a control surface show the same light for the same button.
 _Avoid_: Lamp, LED, look, state (a state is **off**, **queued** or **active**)
 
 **Label**:
-The caption printed below a **launch button**, **scene button** or the **back button** that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, back). Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, FILL-IN, MUTE, SOLO and STOP are not labels: SETUP is always white, FILL-IN belongs to the **fill-in button**, and MUTE, SOLO and STOP to the **function select buttons**. Nor are **track names**, **clip names**, **scene names** and **CV output names**, which the user writes.
+The caption printed below a **launch button** or **scene button**, or beside the **back button** or **forward button**, that tells what the button does in **setup mode** (a colour, a pattern, a **length**, set/clear, the step it leads to). The back button has one line for each step it can go back to, to its left, and the forward button one for each step it can go forward to, to its right; only the line for the step it leads to now is lit, in that step's mode colour. Every label is printed the same in every mode, but like a **light** it is either lit or **unlit**: lit while it applies, in the **mode colour**, in white or in the colour of its button, and barely visible dark grey otherwise. The captions SETUP, FILL-IN, MUTE, SOLO and STOP are not labels: SETUP is always white, FILL-IN belongs to the **fill-in button**, and MUTE, SOLO and STOP to the **function select buttons**. Nor are **track names**, **clip names**, **scene names** and **CV output names**, which the user writes.
 _Avoid_: Caption, legend, text, tag
 
 **Mode colour**:
-The colour that shows which way of working is on, worn by the logo and by the lit **labels**: white for **launch mode**, green for **clip picking**, yellow for **clip editing**, red for **fill-in editing**.
+The colour that shows which way of working is on, worn by the logo and by the lit **labels**: white for **launch mode**, green for **clip picking**, yellow for **clip editing**, red for **fill-in editing**, blue for **landing editing**.
 _Avoid_: Theme, accent
 
 **Switch interval**:

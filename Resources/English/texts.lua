@@ -46,10 +46,10 @@ texts = {
 	["text_fill_in_light_short"] = "Fill Lgt",
 	["text_fill_in_light_shortest"] = "FlLg",
 	["text_fill_in_label"] = "Fill-In Caption",
-	["text_set_fill_in_light"] = "Set Fill-In Light",
-	["text_set_fill_in_light_short"] = "SetF Lgt",
-	["text_set_fill_in_light_shortest"] = "SFLg",
-	["text_set_fill_in_label"] = "Set Fill-In Label",
+	["text_forward_light"] = "Forward Light",
+	["text_forward_light_short"] = "Fwd Lgt",
+	["text_forward_light_shortest"] = "FwLg",
+	["text_forward_label"] = "Forward Button Label",
 
 	["text_selected_function"] = "Function",
 	["text_selected_function_short"] = "Function",
@@ -89,6 +89,12 @@ texts = {
 	["gesture_fill_in_bipolar"] = "Change fill-in bipolar value",
 	["gesture_fill_in_transition"] = "Change fill-in transition",
 	["gesture_fill_in_colour"] = "Change fill-in colour",
+	["gesture_landing_present"] = "Switch landing on or off",
+	["gesture_landing_pattern"] = "Change landing pattern",
+	["gesture_landing_unipolar"] = "Change landing unipolar value",
+	["gesture_landing_bipolar"] = "Change landing bipolar value",
+	["gesture_landing_transition"] = "Change landing transition",
+	["gesture_landing_colour"] = "Change landing colour",
 	["gesture_function"] = "Change function",
 	["gesture_mute"] = "Mute or unmute track",
 	["gesture_solo"] = "Solo or unsolo track",
@@ -96,8 +102,7 @@ texts = {
 	["text_cv_mode_bipolar"] = "Bipolar",
 	["text_cv_mode_unipolar"] = "Unipolar",
 	["text_cv_mode_pattern"] = "Pattern",
-	["text_transition_diagram"] = "Transition Diagram",
-	["text_transition_labels"] = "Transition Diagram Labels",
+	["text_transition_diagrams"] = "Transition Diagrams",
 }
 
 for index, letter in ipairs(OUTPUT_LETTERS) do
@@ -173,8 +178,17 @@ for track = 1, 8 do
 		texts[clip .. "_fill_in_colour_short"] = short .. " FCl"
 		texts[clip .. "_fill_in_colour_shortest"] = "FC" .. digits
 
+		texts[clip .. "_landing_present"] = long .. " Landing Present"
+		texts[clip .. "_landing_present_short"] = short .. " LOn"
+		texts[clip .. "_landing_present_shortest"] = "LO" .. digits
+
+		texts[clip .. "_landing_colour"] = long .. " Landing Colour"
+		texts[clip .. "_landing_colour_short"] = short .. " LCl"
+		texts[clip .. "_landing_colour_shortest"] = "LC" .. digits
+
 		-- The settings of the CV outputs, for example "T1C1 APt" and "11AP"
-		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in.
+		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in, "T1C1LAPt" and
+		-- "11Ap" for the landing.
 		for _, letter in ipairs(OUTPUT_LETTERS) do
 			local upper = string.upper(letter)
 			for _, setting in ipairs(OUTPUT_SETTINGS) do
@@ -187,6 +201,10 @@ for track = 1, 8 do
 				texts[fill_in] = long .. " Fill-In Output " .. upper .. " " .. name
 				texts[fill_in .. "_short"] = short .. "F" .. upper .. short_letters
 				texts[fill_in .. "_shortest"] = digits .. letter .. string.lower(shortest_letter)
+				local landing = clip .. "_landing_" .. letter .. "_" .. setting[1]
+				texts[landing] = long .. " Landing Output " .. upper .. " " .. name
+				texts[landing .. "_short"] = short .. "L" .. upper .. short_letters
+				texts[landing .. "_shortest"] = digits .. upper .. string.lower(shortest_letter)
 			end
 		end
 
