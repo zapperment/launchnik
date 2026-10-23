@@ -555,13 +555,13 @@ for track = 1, TRACK_COUNT do
 
 		-- While on, the fill-in's patterns play in the last bar before the
 		-- switch point only.
-		document_properties[clip .. "_fill_in_one_bar_pattern"] = jbox.boolean{
+		document_properties[clip .. "_fill_in_one_bar"] = jbox.boolean{
 			property_tag = 23000 + 10 * track + row,
 			default = false,
-			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_one_bar_pattern"),
+			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_one_bar"),
 			ui_type = plain_number(1),
 		}
-		add_remote_item(clip .. "_fill_in_one_bar_pattern", remote_name .. " Fill-In One-Bar Pattern")
+		add_remote_item(clip .. "_fill_in_one_bar", remote_name .. " Fill-In One-Bar Pattern")
 
 		-- The clip's landing, set up like its fill-in.
 		document_properties[clip .. "_landing_present"] = jbox.boolean{
@@ -582,13 +582,13 @@ for track = 1, TRACK_COUNT do
 		add_remote_item(clip .. "_landing_colour", remote_name .. " Landing Colour")
 
 		-- While on, the landing's patterns play for its first bar only.
-		document_properties[clip .. "_landing_one_bar_pattern"] = jbox.boolean{
+		document_properties[clip .. "_landing_one_bar"] = jbox.boolean{
 			property_tag = 22000 + 10 * track + row,
 			default = false,
-			ui_name = jbox.ui_text("text_" .. clip .. "_landing_one_bar_pattern"),
+			ui_name = jbox.ui_text("text_" .. clip .. "_landing_one_bar"),
 			ui_type = plain_number(1),
 		}
-		add_remote_item(clip .. "_landing_one_bar_pattern", remote_name .. " Landing One-Bar Pattern")
+		add_remote_item(clip .. "_landing_one_bar", remote_name .. " Landing One-Bar Pattern")
 
 		-- For each CV output, a pattern, a unipolar value, a bipolar value and
 		-- a transition, of the clip, of its fill-in and of its landing (see

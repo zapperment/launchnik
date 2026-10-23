@@ -7,3 +7,5 @@ clang++ -std=c++17 -Wall -Wextra -o build/LauncherTest LauncherTest.cpp ../Launc
 clang++ -std=c++17 -Wall -Wextra -o build/PressTest PressTest.cpp ../Press.cpp ../Launcher.cpp
 ./build/LauncherTest
 ./build/PressTest
+cd ..
+luajit tools/check-names.lua

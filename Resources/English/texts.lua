@@ -179,9 +179,9 @@ for track = 1, 8 do
 		texts[clip .. "_fill_in_colour_short"] = short .. " FCl"
 		texts[clip .. "_fill_in_colour_shortest"] = "FC" .. digits
 
-		texts[clip .. "_fill_in_one_bar_pattern"] = long .. " Fill-In One-Bar Pattern"
-		texts[clip .. "_fill_in_one_bar_pattern_short"] = short .. " F1B"
-		texts[clip .. "_fill_in_one_bar_pattern_shortest"] = "FB" .. digits
+		texts[clip .. "_fill_in_one_bar"] = long .. " Fill-In One-Bar Pattern"
+		texts[clip .. "_fill_in_one_bar_short"] = short .. " F1B"
+		texts[clip .. "_fill_in_one_bar_shortest"] = "FB" .. digits
 
 		texts[clip .. "_landing_present"] = long .. " Landing Present"
 		texts[clip .. "_landing_present_short"] = short .. " LOn"
@@ -191,9 +191,9 @@ for track = 1, 8 do
 		texts[clip .. "_landing_colour_short"] = short .. " LCl"
 		texts[clip .. "_landing_colour_shortest"] = "LC" .. digits
 
-		texts[clip .. "_landing_one_bar_pattern"] = long .. " Landing One-Bar Pattern"
-		texts[clip .. "_landing_one_bar_pattern_short"] = short .. " L1B"
-		texts[clip .. "_landing_one_bar_pattern_shortest"] = "LB" .. digits
+		texts[clip .. "_landing_one_bar"] = long .. " Landing One-Bar Pattern"
+		texts[clip .. "_landing_one_bar_short"] = short .. " L1B"
+		texts[clip .. "_landing_one_bar_shortest"] = "LB" .. digits
 
 		-- The settings of the CV outputs, for example "T1C1 APt" and "11AP"
 		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in, "T1C1LAPt" and
