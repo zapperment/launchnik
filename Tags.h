@@ -20,6 +20,8 @@ const TJBox_Tag kCustomPropsTag_FillInLabelFrame = 71;
 const TJBox_Tag kCustomPropsTag_ForwardLightFrame = 72;
 const TJBox_Tag kCustomPropsTag_ForwardLabelFrame = 73;
 const TJBox_Tag kCustomPropsTag_Function = 74;
+const TJBox_Tag kCustomPropsTag_ClearLightFrame = 84;
+const TJBox_Tag kCustomPropsTag_ClearCaptionFrame = 85;
 const TJBox_Tag kCustomPropsTag_TransitionDiagramsFrame = 150;
 
 // Functions are numbered as in Launcher.h.

@@ -5,10 +5,10 @@
 #
 # - GUI2D/Labels_Launch_7frames.png holds the labels of the launch buttons in
 #   scenes 1 and 2, placed as on the panel: all unlit, then SET/CLEAR lit and
-#   all lit, in yellow, in red and in blue. Yellow is for clip editing, red
-#   for fill-in editing, blue for landing editing; 1 BAR PATT, the one-bar
-#   pattern switch of a fill-in or a landing, is lit only in the frames with
-#   all lit in red and in blue. The labels of colours stay
+#   all lit, in yellow, in orange and in blue. Yellow is for clip editing,
+#   orange for fill-in editing, blue for landing editing; 1 BAR PATT, the
+#   one-bar pattern switch of a fill-in or a landing, is lit only in the
+#   frames with all lit in orange and in blue. The labels of colours stay
 #   unlit while there is no clip, fill-in or landing to set up. The labels of
 #   the CV outputs in scenes 3 to 8 are made by tools/make-cv-labels.py.
 # - GUI2D/Label_Scene<n>_3frames.png holds the label of scene button n:
@@ -16,12 +16,14 @@
 # - GUI2D/Label_Back_5frames.png holds the labels to the left of the back
 #   button, one line for each step it goes back to, aligned on the right: all
 #   unlit, then LAUNCH lit in white, PICK CLIP in green, EDIT CLIP in yellow
-#   and SET FILL-IN in red.
+#   and SET FILL-IN in orange.
 # - GUI2D/Label_Forward_3frames.png holds the labels to the right of the
 #   forward button, one line for each step it goes forward to, aligned on the
-#   left: both unlit, then SET FILL-IN lit in red and SET LANDING in blue.
+#   left: both unlit, then SET FILL-IN lit in orange and SET LANDING in blue.
 # - GUI2D/Caption_Fill_In_2frames.png holds the caption of the fill-in button:
-#   white, red.
+#   white, orange.
+# - GUI2D/Caption_Clear_2frames.png holds the caption of the clear button:
+#   white, then dark grey like an unlit label.
 # - GUI2D/Caption_Mute_2frames.png, Caption_Solo_2frames.png and
 #   Caption_Stop_2frames.png hold the captions of the function select buttons:
 #   white, then yellow, blue and red.
@@ -50,6 +52,8 @@ GREEN="#1aac08"
 STEP_GREEN="#4bfd58"
 YELLOW="#fafe07"
 RED="#ff5e5e"
+# The orange of the logo in fill-in editing
+ORANGE="#fe881c"
 BLUE="#0598fe"
 
 # Launch buttons are 205 pixels wide, 283 apart, with 250 pixels from one
@@ -126,8 +130,8 @@ LABELS
 draw_launch_labels "$UNLIT" "$UNLIT" "$UNLIT" "$WORK/launch0.png"
 draw_launch_labels "$YELLOW" "$UNLIT" "$UNLIT" "$WORK/launch1.png"
 draw_launch_labels "$YELLOW" "$YELLOW" "$UNLIT" "$WORK/launch2.png"
-draw_launch_labels "$RED" "$UNLIT" "$UNLIT" "$WORK/launch3.png"
-draw_launch_labels "$RED" "$RED" "$RED" "$WORK/launch4.png"
+draw_launch_labels "$ORANGE" "$UNLIT" "$UNLIT" "$WORK/launch3.png"
+draw_launch_labels "$ORANGE" "$ORANGE" "$ORANGE" "$WORK/launch4.png"
 draw_launch_labels "$BLUE" "$UNLIT" "$UNLIT" "$WORK/launch5.png"
 draw_launch_labels "$BLUE" "$BLUE" "$BLUE" "$WORK/launch6.png"
 magick "$WORK"/launch[0-6].png -background none -append +repage "PNG32:GUI2D/Labels_Launch_7frames.png"
@@ -169,10 +173,10 @@ BACK_LINES="
 $WHITE LAUNCH
 $STEP_GREEN PICK|CLIP
 $YELLOW EDIT|CLIP
-$RED SET|FILL-IN
+$ORANGE SET|FILL-IN
 "
 FORWARD_LINES="
-$RED SET|FILL-IN
+$ORANGE SET|FILL-IN
 $BLUE SET|LANDING
 "
 
@@ -219,7 +223,8 @@ draw_step_strip() {
 
 draw_step_strip "$BACK_LINES" northeast GUI2D/Label_Back_5frames.png
 draw_step_strip "$FORWARD_LINES" northwest GUI2D/Label_Forward_3frames.png
-draw_strip "$SCENE_SIZE" "$POINTSIZE" FILL-IN GUI2D/Caption_Fill_In_2frames.png "$WHITE" "$RED"
+draw_strip "$SCENE_SIZE" "$POINTSIZE" FILL-IN GUI2D/Caption_Fill_In_2frames.png "$WHITE" "$ORANGE"
+draw_strip "$SCENE_SIZE" "$POINTSIZE" CLEAR GUI2D/Caption_Clear_2frames.png "$WHITE" "$UNLIT"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" MUTE GUI2D/Caption_Mute_2frames.png "$WHITE" "$YELLOW"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" SOLO GUI2D/Caption_Solo_2frames.png "$WHITE" "$BLUE"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" STOP GUI2D/Caption_Stop_2frames.png "$WHITE" "$RED"

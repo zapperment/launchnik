@@ -1,13 +1,15 @@
 #!/bin/sh
-# Builds GUI2D/Scene_Button_11frames.png, the film strip of the scene buttons
+# Builds GUI2D/Scene_Button_13frames.png, the film strip of the scene buttons
 # and the forward button, from the eleven-frame image in
-# RE2D_Launchnik_Graphics, and GUI2D/Side_Button_11frames.png, that of the
-# fill-in button and the function select buttons, from the eleven-frame image
-# of a button without an arrow.
+# RE2D_Launchnik_Graphics, and GUI2D/Side_Button_13frames.png, that of the
+# fill-in button, the clear button and the function select buttons, from the
+# eleven-frame image of a button without an arrow.
 #
 # Frame 0 is the unlit button. The colours follow, each as a dim frame and
-# then a vibrant one: red, green, yellow, white and blue for the scene
-# buttons; red, green, yellow, blue and white for the side buttons.
+# then a vibrant one: red, green, yellow, white, blue and orange for the scene
+# buttons; red, green, yellow, blue, white and orange for the side buttons.
+# The sources have no orange, so its two frames are the red ones with their
+# hue turned towards orange (see ORANGE).
 #
 # The sources are 126 pixels wide with their frames 135 pixels apart. They are
 # padded to frames of 130x135, a size RE2DRender accepts and the height of a
@@ -19,12 +21,16 @@ set -e
 cd "$(dirname "$0")/.."
 
 FRAME=130x135
+# Brightness, saturation and hue for -modulate that turn the sources' red into
+# an orange close to that of the launch buttons.
+ORANGE=100,160,111
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 # In the sources the unlit frame comes first, then vibrant and dim for each
-# colour, so the two frames of each colour swap places.
+# colour, so the two frames of each colour swap places. The orange frames
+# come last, made from the red ones (frames 1 and 2 of the source).
 build_strip() {
 	source=$1
 	target=$2
@@ -45,6 +51,11 @@ build_strip() {
 		list="$list $WORK/frame$index.png"
 		index=$((index + 1))
 	done
+	magick "$WORK/frame1.png" -modulate "$ORANGE" "$WORK/frame$index.png"
+	list="$list $WORK/frame$index.png"
+	index=$((index + 1))
+	magick "$WORK/frame2.png" -modulate "$ORANGE" "$WORK/frame$index.png"
+	list="$list $WORK/frame$index.png"
 
 	# shellcheck disable=SC2086
 	magick $list -background none -append +repage "PNG32:$target"
@@ -52,5 +63,5 @@ build_strip() {
 	echo "Wrote $target"
 }
 
-build_strip RE2D_Launchnik_Graphics/Launchnik_Scene_Button_11frames.png GUI2D/Scene_Button_11frames.png 11
-build_strip RE2D_Launchnik_Graphics/Launchnik_Side_Button_11frames.png GUI2D/Side_Button_11frames.png 11
+build_strip RE2D_Launchnik_Graphics/Launchnik_Scene_Button_11frames.png GUI2D/Scene_Button_13frames.png 11
+build_strip RE2D_Launchnik_Graphics/Launchnik_Side_Button_11frames.png GUI2D/Side_Button_13frames.png 11

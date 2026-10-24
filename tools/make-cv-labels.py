@@ -11,7 +11,7 @@ CONTEXT.md):
   editing, fill-in editing and landing editing. Every launch button has two
   lines: on top the unipolar value on the left and the bipolar value on the
   right, or in the last track the transitions OFF A B C D; below it the
-  pattern. The frames are: all unlit, then in yellow, in red and in blue each
+  pattern. The frames are: all unlit, then in yellow, in orange and in blue each
   the patterns lit, the unipolar values lit with each of the five
   transitions, and the bipolar values lit with each of the five transitions.
   The six scenes share it.
@@ -19,7 +19,7 @@ CONTEXT.md):
   diagrams to the right of the scene buttons, one above the other:
   TRANSITION, FILL-IN and LANDING, each with its letters A to D and its four
   diagrams. In the first frame all are grey; in the others one set is lit,
-  TRANSITION in yellow, FILL-IN in red or LANDING in blue, with its diagrams
+  TRANSITION in yellow, FILL-IN in orange or LANDING in blue, with its diagrams
   in colour.
 - GUI2D/Labels_Back.png holds every caption of the back panel, as large as
   the panel: CV OUT and, left of the first track, the names of the CV modes with lines to the
@@ -46,7 +46,7 @@ REGULAR = "/System/Library/Fonts/Supplemental/Arial.ttf"
 
 UNLIT = "#4d4d4d"
 YELLOW = "#fafe07"
-RED = "#ff5e5e"
+ORANGE = "#fe881c"
 BLUE = "#0598fe"
 BACK_TEXT = "#e0e0e0"
 
@@ -84,7 +84,7 @@ DIAGRAM_ROWS = [28, 92, 156, 219]
 # grey.
 DIAGRAM_SETS = [
 	("TRANSITION", YELLOW, "fill-in"),
-	("FILL-IN", RED, "fill-in"),
+	("FILL-IN", ORANGE, "fill-in"),
 	("LANDING", BLUE, "landing"),
 ]
 
@@ -141,7 +141,7 @@ def output_frame(top_colour, bottom_colour, lit):
 
 def make_output_labels():
 	frames = [output_frame(UNLIT, UNLIT, None)]
-	for colour in (YELLOW, RED, BLUE):
+	for colour in (YELLOW, ORANGE, BLUE):
 		frames.append(output_frame(colour, colour, "patterns"))
 		for kind in ("unipolar", "bipolar"):
 			for transition in range(len(TRANSITIONS)):

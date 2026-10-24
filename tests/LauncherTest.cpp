@@ -410,7 +410,7 @@ void TestEditingActiveClipWaitsForSwitchPoint() {
 	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8.0);
 }
 
-void TestSwitchingActiveClipOffStopsAtSwitchPoint() {
+void TestSwitchingActiveClipOffStopsAtOnce() {
 	CLauncher launcher;
 	launcher.SetClipPresent(0, 1, true);
 	launcher.SetClipColour(0, 1, 5);
@@ -419,16 +419,12 @@ void TestSwitchingActiveClipOffStopsAtSwitchPoint() {
 	launcher.SetClipPresent(0, 1, false);
 	launcher.Advance(Playing(120));
 
-	// It plays on, in its colour, with the stop button queued.
-	CHECK(launcher.GetCVValue(0, 0) == 1.0 / 8.0);
-	CHECK(launcher.GetButtonState(0, 1) == CLauncher::kActive);
-	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, 5));
-	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kQueued);
-
-	launcher.Advance(Playing(kInterval - 1));
+	// It does not wait for the switch point.
 	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
 	CHECK(IsUnlit(launcher.GetLight(0, 1)));
+	launcher.Advance(Playing(kInterval - 1));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 
 	// The track's selection still names it, so switched on again it is queued,
 	// as it was.
@@ -467,12 +463,11 @@ void TestStopLights() {
 	CHECK(launcher.GetStopLight(0) == CLauncher::kVibrant);
 	CHECK(launcher.GetStopLight(1) == CLauncher::kDim);
 
-	// Losing its last clip while it plays, a track still has something to stop.
+	// Losing its last clip while it plays, a track stops at once, with
+	// nothing left to stop.
 	launcher.Advance(Playing(kInterval + 2 * kBatch));
 	launcher.SetClipPresent(0, 1, false);
 	launcher.Advance(Playing(kInterval + 3 * kBatch));
-	CHECK(launcher.GetStopLight(0) == CLauncher::kFlashing);
-	launcher.Advance(Playing(2 * kInterval - 1));
 	CHECK(launcher.GetStopLight(0) == CLauncher::kUnlit);
 }
 
@@ -675,7 +670,8 @@ void TestButtonIndexAndSetupNumbering() {
 	CHECK(CLauncher::SetupForFillInEditing(0, 1) == 66);
 	CHECK(CLauncher::SetupForFillInEditing(7, 8) == 129);
 	CHECK(CLauncher::SetupForLandingEditing(0, 1) == 130);
-	CHECK(CLauncher::SetupForLandingEditing(7, 8) == CLauncher::kSetupCount - 1);
+	CHECK(CLauncher::SetupForLandingEditing(7, 8) == 193);
+	CHECK(CLauncher::kSetupClearMode == 194);
 
 	CHECK(!CLauncher::IsClipEditing(CLauncher::kSetupClipPicking));
 	CHECK(CLauncher::IsClipEditing(2));
@@ -1020,9 +1016,11 @@ void TestModeColourFollowsTheSetupStep() {
 	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 5));
 	CHECK(launcher.GetModeColour() == CLauncher::kModeYellow);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 5));
-	CHECK(launcher.GetModeColour() == CLauncher::kModeRed);
+	CHECK(launcher.GetModeColour() == CLauncher::kModeOrange);
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 5));
 	CHECK(launcher.GetModeColour() == CLauncher::kModeBlue);
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(launcher.GetModeColour() == CLauncher::kModeRed);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetModeColour() == CLauncher::kModeWhite);
 }
@@ -1069,9 +1067,12 @@ void TestBackButtonShowsTheStepItGoesBackFrom() {
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantYellow);
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantRed);
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantOrange);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
+	// In clear mode it goes back to launch mode, as in clip picking.
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantWhite);
 }
 
 // Frames of the back labels' film strip: all unlit, then LAUNCH, PICK CLIP,
@@ -1089,6 +1090,8 @@ void TestBackLabelHasTheColourOfTheBackButton() {
 	CHECK(launcher.GetBackLabelFrame() == 4);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetBackLabelFrame() == 0);
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(launcher.GetBackLabelFrame() == 1);
 }
 
 // Frames of the scene labels' film strip: unlit, white, green.
@@ -1296,13 +1299,13 @@ void TestEmptyLaunchButtonHasNoFillInToPlay() {
 	CLauncher launcher;
 	SetUpFillIns(launcher);
 	PlayThrough(launcher, 0.0, kBar);
-	// Switching the active clip off stops the track at the switch point; until
-	// then it plays its pattern, but no longer its fill-in.
+	// Switching the active clip off stops the track at once, so it has no
+	// fill-in to play.
 	launcher.SetClipPresent(0, 1, false);
 	Press(launcher);
 	launcher.Advance(Playing(kBar));
 	CHECK(launcher.IsFillInPlaying());
-	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 }
 
 void TestFillInLights() {
@@ -1317,9 +1320,9 @@ void TestFillInLights() {
 
 	Press(launcher);
 	launcher.Advance(Playing(kBar));
-	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourRed));
-	CHECK(launcher.GetFillInLightValue() == 5);
-	CHECK(launcher.GetFillInLightFrame() == 2);
+	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(launcher.GetFillInLightValue() == 8);
+	CHECK(launcher.GetFillInLightFrame() == 12);
 	CHECK(launcher.GetFillInLabelFrame() == 1);
 	// The launch button of a track that plays its fill-in flashes in the
 	// fill-in's colour; the others are as they were.
@@ -1327,11 +1330,13 @@ void TestFillInLights() {
 	CHECK(IsLight(launcher.GetLight(1, 1), CLauncher::kVibrant, CLauncher::DefaultColour(1)));
 	CHECK(IsLight(launcher.GetLight(2, 1), CLauncher::kDim, CLauncher::DefaultColour(2)));
 
-	// The button is red whether or not any track has a fill-in, and in every
-	// mode.
+	// The button is orange whether or not any track has a fill-in, and in
+	// every mode.
 	launcher.SetFillInPresent(0, 1, false);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(4, 4));
-	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
 
 	PlayThrough(launcher, kBar, kInterval + kBatch);
 	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kDim, CLauncher::kColourWhite));
@@ -1350,11 +1355,11 @@ void TestForwardButtonIsLitWhileItLeadsSomewhere() {
 	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
 	CHECK(IsUnlit(launcher.GetForwardLight()));
 
-	// Red towards fill-in editing.
+	// Orange towards fill-in editing.
 	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
-	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourRed));
-	CHECK(launcher.GetForwardLightValue() == 5);
-	CHECK(launcher.GetForwardLightFrame() == 2);
+	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(launcher.GetForwardLightValue() == 8);
+	CHECK(launcher.GetForwardLightFrame() == 12);
 	CHECK(launcher.GetForwardLabelFrame() == 1);
 
 	// Blue towards landing editing, whether or not there is a fill-in.
@@ -1370,6 +1375,227 @@ void TestForwardButtonIsLitWhileItLeadsSomewhere() {
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
 	CHECK(IsUnlit(launcher.GetForwardLight()));
 	CHECK(launcher.GetForwardLabelFrame() == 0);
+
+	// Clear mode has no steps.
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(IsUnlit(launcher.GetForwardLight()));
+}
+
+void TestClearModeLightsWhatThereIsToClear() {
+	CLauncher launcher;
+	launcher.SetClipPresent(2, 4, true);
+	launcher.SetClipColour(2, 4, CLauncher::kColourBlue);
+	launcher.SetClipPresent(5, 4, true);
+	launcher.SetClipPresent(0, 7, true);
+	launcher.SetSelection(2, 4);
+	launcher.Open();
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	launcher.Advance(Playing(100));
+
+	// Launch buttons that hold a clip flash red, whatever their colour and
+	// state; empty ones are unlit.
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			const bool holdsClip = (track == 2 && row == 4) || (track == 5 && row == 4) || (track == 0 && row == 7);
+			if (holdsClip) {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kFlashing, CLauncher::kColourRed));
+			}
+			else {
+				CHECK(IsUnlit(launcher.GetLight(track, row)));
+			}
+		}
+	}
+	// So do the scene buttons of scenes that hold a clip, instead of the
+	// interval meter.
+	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
+		if (scene == 4 || scene == 7) {
+			CHECK(IsLight(launcher.GetSceneLight(scene), CLauncher::kFlashing, CLauncher::kColourRed));
+		}
+		else {
+			CHECK(IsUnlit(launcher.GetSceneLight(scene)));
+		}
+	}
+	// Flashing red is light value 3 * 1 + 3; the film strips show vibrant red
+	// in the first quaver of a beat.
+	CHECK(launcher.GetLightValue(2, 4) == 6);
+	CHECK(launcher.GetSceneLightValue(4) == 6);
+	CHECK(launcher.GetLightFrame(2, 4) == 4);
+	CHECK(launcher.GetSceneLightFrame(4) == 2);
+
+	// The labels of the setup steps stay unlit, and the scene labels are as in
+	// launch mode.
+	CHECK(launcher.GetLaunchLabelsFrame() == 0);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 0);
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		CHECK(launcher.GetOutputLabelsFrame(output) == 0);
+	}
+	CHECK(launcher.GetSceneLabelFrame(3) == 1);
+	CHECK(launcher.GetSceneLabelFrame(4) == 0);
+}
+
+void TestClearModeLetsTracksPlayOn() {
+	CLauncher launcher;
+	launcher.SetClipPresent(2, 4, true);
+	launcher.SetClipPresent(3, 1, true);
+	launcher.SetSelection(2, 4);
+	launcher.SetSelection(3, 1);
+	launcher.Open();
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(launcher.GetButtonState(2, 4) == CLauncher::kActive);
+	CHECK(launcher.GetCVValue(2, 0) == 4.0 / 8);
+	CHECK(launcher.GetButtonState(3, 1) == CLauncher::kActive);
+}
+
+// Track 1 plays a clip in row 2 with output A in pattern mode, B unipolar at
+// 100 and C bipolar at +100.
+void SetUpClipToClear(CLauncher& iLauncher) {
+	iLauncher.SetClipPresent(0, 2, true);
+	iLauncher.SetCVMode(0, 2, CLauncher::kCVModeBipolar);
+	iLauncher.SetClipUnipolar(0, 2, 1, CLauncher::kValueCount - 1);
+	iLauncher.SetClipBipolar(0, 2, 2, CLauncher::kValueCount - 1);
+	iLauncher.SetSelection(0, 2);
+	iLauncher.Open();
+}
+
+void CheckClearedAtOnce(CLauncher& iLauncher) {
+	CHECK(iLauncher.GetButtonState(0, 2) == CLauncher::kOff);
+	CHECK(IsUnlit(iLauncher.GetLight(0, 2)));
+	CHECK(iLauncher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		CHECK(iLauncher.GetCVValue(0, output) == 0.0);
+	}
+}
+
+// Emptying the active launch button stops its track at once, with 0 on
+// every CV output, not at the next switch point.
+void TestClearingThePlayingClipStopsAtOnce() {
+	CLauncher launcher;
+	SetUpClipToClear(launcher);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	CHECK(launcher.GetCVValue(0, 1) == 1.0);
+	CHECK(launcher.GetCVValue(0, 2) == 1.0);
+
+	launcher.SetClipPresent(0, 2, false);
+	CheckClearedAtOnce(launcher);
+	PlayThrough(launcher, kBar, kBar + 4 * kBatch);
+	CheckClearedAtOnce(launcher);
+	// It stays stopped past the switch point.
+	PlayThrough(launcher, kBar + 4 * kBatch, kInterval + kBatch);
+	CheckClearedAtOnce(launcher);
+}
+
+void TestClearingThePlayingClipWhileStoppedEmitsZero() {
+	CLauncher launcher;
+	SetUpClipToClear(launcher);
+	launcher.Advance(Stopped(kBar));
+	launcher.SetClipPresent(0, 2, false);
+	launcher.Advance(Stopped(kBar));
+	CheckClearedAtOnce(launcher);
+}
+
+void TestClearingTheClipThatFillsInStopsAtOnce() {
+	CLauncher launcher;
+	SetUpClipToClear(launcher);
+	launcher.SetFillInPresent(0, 2, true);
+	launcher.SetFillInPattern(0, 2, 0, 6);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetFillInPressed(true);
+	PlayThrough(launcher, kBar, kBar + kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 7.0 / 8);
+
+	launcher.SetClipPresent(0, 2, false);
+	CheckClearedAtOnce(launcher);
+	PlayThrough(launcher, kBar + kBatch, kBar + 4 * kBatch);
+	CheckClearedAtOnce(launcher);
+}
+
+void TestClearingTheClipThatLandsStopsAtOnce() {
+	CLauncher launcher;
+	launcher.SetClipPresent(0, 2, true);
+	launcher.SetLandingPresent(0, 2, true);
+	launcher.SetLandingPattern(0, 2, 0, 6);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetSelection(0, 2);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, 0) == 7.0 / 8);
+
+	launcher.SetClipPresent(0, 2, false);
+	CHECK(!launcher.PlaysLanding(0));
+	CheckClearedAtOnce(launcher);
+	PlayThrough(launcher, kInterval + kBatch, kInterval + 4 * kBatch);
+	CheckClearedAtOnce(launcher);
+}
+
+// A clip that is only queued goes on as before: the track heads for stop.
+void TestClearingAQueuedClipLeavesTheActiveOne() {
+	CLauncher launcher;
+	SetUpClipToClear(launcher);
+	launcher.SetClipPresent(0, 5, true);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetSelection(0, 5);
+	PlayThrough(launcher, kBar, kBar + kBatch);
+	launcher.SetClipPresent(0, 5, false);
+	PlayThrough(launcher, kBar + kBatch, kBar + 2 * kBatch);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(launcher.GetCVValue(0, 1) == 1.0);
+}
+
+// Setting the clip again, or undoing the clear, queues it once more, since
+// the track's selection still names it.
+void TestClearedClipComesBackAtTheSwitchPoint() {
+	CLauncher launcher;
+	SetUpClipToClear(launcher);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetClipPresent(0, 2, false);
+	PlayThrough(launcher, kBar, kBar + kBatch);
+	launcher.SetClipPresent(0, 2, true);
+	PlayThrough(launcher, kBar + kBatch, kBar + 2 * kBatch);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kQueued);
+	CHECK(launcher.GetCVValue(0, 1) == 0.0);
+	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + kBatch);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(launcher.GetCVValue(0, 1) == 1.0);
+}
+
+// Frames of the side buttons' film strip: 9 and 10 are dim and vibrant
+// white.
+void TestClearButtonLights() {
+	CLauncher launcher;
+	CHECK(IsLight(launcher.GetClearLight(), CLauncher::kDim, CLauncher::kColourWhite));
+	CHECK(launcher.GetClearLightFrame() == 9);
+	CHECK(launcher.GetClearCaptionFrame() == 0);
+
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(IsLight(launcher.GetClearLight(), CLauncher::kVibrant, CLauncher::kColourWhite));
+	CHECK(launcher.GetClearLightFrame() == 10);
+	CHECK(launcher.GetClearCaptionFrame() == 0);
+
+	// In setup mode it does nothing, so it is dark, with its caption dark grey.
+	const int steps[] = { CLauncher::kSetupClipPicking, CLauncher::SetupForClipEditing(2, 4), CLauncher::SetupForFillInEditing(2, 4), CLauncher::SetupForLandingEditing(2, 4) };
+	for (int step : steps) {
+		launcher.SetSetup(step);
+		CHECK(IsUnlit(launcher.GetClearLight()));
+		CHECK(launcher.GetClearLightFrame() == 0);
+		CHECK(launcher.GetClearCaptionFrame() == 1);
+	}
+}
+
+void TestClearModeIsNotASetupStep() {
+	CHECK(!CLauncher::IsClipEditing(CLauncher::kSetupClearMode));
+	CHECK(!CLauncher::IsFillInEditing(CLauncher::kSetupClearMode));
+	CHECK(!CLauncher::IsLandingEditing(CLauncher::kSetupClearMode));
+	CHECK(CLauncher::PickedButton(CLauncher::kSetupClearMode) == -1);
+	CHECK(CLauncher::IsLandingEditing(CLauncher::kSetupClearMode - 1));
+	CHECK(CLauncher::kSetupCount == CLauncher::kSetupClearMode + 1);
+
+	// It is a setup state like any other, and one past it is ignored.
+	CLauncher launcher;
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	launcher.SetSetup(CLauncher::kSetupCount);
+	CHECK(launcher.GetModeColour() == CLauncher::kModeRed);
 }
 
 void TestFillInEditingWithoutFillInShowsOnlyToggle() {
@@ -2731,7 +2957,7 @@ int main() {
 	TestSelectingEmptyLaunchButtonStopsTheTrack();
 	TestLaunchModeLights();
 	TestEditingActiveClipWaitsForSwitchPoint();
-	TestSwitchingActiveClipOffStopsAtSwitchPoint();
+	TestSwitchingActiveClipOffStopsAtOnce();
 	TestStopLights();
 	TestDefaultColourFollowsTheTrack();
 	TestClipPickingFlashesEveryLaunchButton();
@@ -2782,6 +3008,16 @@ int main() {
 	TestChangesToTheFillInTakeEffectAtOnce();
 	TestEmptyLaunchButtonHasNoFillInToPlay();
 	TestFillInLights();
+	TestClearModeLightsWhatThereIsToClear();
+	TestClearModeLetsTracksPlayOn();
+	TestClearingThePlayingClipStopsAtOnce();
+	TestClearingThePlayingClipWhileStoppedEmitsZero();
+	TestClearingTheClipThatFillsInStopsAtOnce();
+	TestClearingTheClipThatLandsStopsAtOnce();
+	TestClearingAQueuedClipLeavesTheActiveOne();
+	TestClearedClipComesBackAtTheSwitchPoint();
+	TestClearButtonLights();
+	TestClearModeIsNotASetupStep();
 	TestForwardButtonIsLitWhileItLeadsSomewhere();
 	TestFillInEditingWithoutFillInShowsOnlyToggle();
 	TestFillInEditingShowsColoursAndPatterns();
