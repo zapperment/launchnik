@@ -49,8 +49,8 @@ bool IsValidTransition(int iTransition) {
 }
 
 // Which of the colours the labels of the editing steps are lit in: 0 for
-// yellow in clip editing, 1 for red in fill-in editing, 2 for blue in landing
-// editing.
+// yellow in clip editing, 1 for orange in fill-in editing, 2 for blue in
+// landing editing.
 int EditingColourIndex(int iSetup) {
 	if (CLauncher::IsFillInEditing(iSetup)) {
 		return 1;
@@ -150,7 +150,7 @@ bool CLauncher::IsFillInEditing(int iSetup) {
 }
 
 bool CLauncher::IsLandingEditing(int iSetup) {
-	return iSetup >= kSetupFirstLandingEditing && iSetup < kSetupCount;
+	return iSetup >= kSetupFirstLandingEditing && iSetup < kSetupClearMode;
 }
 
 int CLauncher::PickedButton(int iSetup) {
@@ -193,8 +193,29 @@ CLauncher::TSettings* CLauncher::EditableSettings(int iTrack, int iRow, int iOut
 }
 
 void CLauncher::SetClipPresent(int iTrack, int iRow, bool iPresent) {
-	if (IsValidButton(iTrack, iRow)) {
-		fClips[iTrack][iRow - 1].fPresent = iPresent;
+	if (!IsValidButton(iTrack, iRow)) {
+		return;
+	}
+	fClips[iTrack][iRow - 1].fPresent = iPresent;
+	if (!iPresent && fActive[iTrack] == iRow) {
+		StopAtOnce(iTrack);
+	}
+}
+
+// A track whose active launch button is emptied does not wait for the switch
+// point: it stops there and then, whatever it was playing, fill-in and landing
+// included, and every CV output emits 0, unipolar and bipolar ones too.
+void CLauncher::StopAtOnce(int iTrack) {
+	fActive[iTrack] = kSelectionStop;
+	fLastActive[iTrack] = kSelectionStop;
+	fLandingRows[iTrack] = kSelectionStop;
+	fRelaunched[iTrack] = false;
+	for (int output = 0; output < kOutputCount; ++output) {
+		fEmitted[iTrack][output] = 0;
+		fClipValues[iTrack][output] = 0.0;
+		fValues[iTrack][output] = 0.0;
+		fMovements[iTrack][output] = kNoMovement;
+		fFillInMovements[iTrack][output] = kNoMovement;
 	}
 }
 
@@ -972,6 +993,9 @@ CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
 	if (fSetup == kSetupClipPicking) {
 		return GetClipPickingLight(iTrack, iRow);
 	}
+	if (fSetup == kSetupClearMode) {
+		return GetClearModeLight(iTrack, iRow);
+	}
 	// Clip editing, fill-in editing and landing editing are laid out and lit
 	// the same: only the labels tell them apart.
 	return GetEditingLight(iTrack, iRow, EditedSettings());
@@ -980,9 +1004,7 @@ CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
 CLauncher::TLight CLauncher::GetLaunchModeLight(int iTrack, int iRow) const {
 	const TClip& clip = Clip(iTrack, iRow);
 	switch (GetButtonState(iTrack, iRow)) {
-		// A clip that was switched off while active goes on showing its colour
-		// until its track has switched.
-		// It flashes while a change of its pattern waits for the switch point.
+		// An active clip flashes while a change of its pattern waits for the switch point.
 		// While it plays its fill-in, it flashes in the fill-in's colour, and
 		// while it lands it shows the landing's colour. Relaunched, it flashes
 		// in the landing's colour until the switch point.
@@ -1004,6 +1026,20 @@ CLauncher::TLight CLauncher::GetLaunchModeLight(int iTrack, int iRow) const {
 CLauncher::TLight CLauncher::GetClipPickingLight(int iTrack, int iRow) const {
 	const TClip& clip = Clip(iTrack, iRow);
 	return MakeLight(kFlashing, clip.fPresent ? clip.fColour : kColourWhite);
+}
+
+// Only what there is to clear flashes, in the mode colour.
+CLauncher::TLight CLauncher::GetClearModeLight(int iTrack, int iRow) const {
+	return Clip(iTrack, iRow).fPresent ? MakeLight(kFlashing, kColourRed) : kUnlitLight;
+}
+
+bool CLauncher::SceneHasClips(int iScene) const {
+	for (int track = 0; track < kTrackCount; ++track) {
+		if (Clip(track, iScene).fPresent) {
+			return true;
+		}
+	}
+	return false;
 }
 
 const CLauncher::TClip& CLauncher::PickedClip() const {
@@ -1097,6 +1133,10 @@ CLauncher::TLight CLauncher::GetSceneLight(int iScene) const {
 	if (fSetup == kSetupClipPicking) {
 		return MakeLight(kFlashing, iScene == SceneForLength(fLength) ? kColourGreen : kColourWhite);
 	}
+	if (fSetup == kSetupClearMode) {
+		const bool clearable = iScene >= 1 && iScene <= kRowCount && SceneHasClips(iScene);
+		return clearable ? MakeLight(kFlashing, kColourRed) : kUnlitLight;
+	}
 	// The bottom scene button stands for the first segment.
 	const int segment = kSegmentCount + 1 - iScene;
 	if (segment < 1 || segment > fReachedSegments) {
@@ -1123,7 +1163,8 @@ int CLauncher::SceneStripFrame(const TLight& iLight) const {
 	if (iLight.fBrightness == kUnlit) {
 		return 0;
 	}
-	// The film strip holds red, green, yellow, white and blue, in that order.
+	// The film strip holds red, green, yellow, white, blue and orange, in
+	// that order.
 	int stripColour = 3;
 	if (iLight.fColour == kColourRed) {
 		stripColour = 0;
@@ -1137,6 +1178,9 @@ int CLauncher::SceneStripFrame(const TLight& iLight) const {
 	else if (iLight.fColour == kColourBlue) {
 		stripColour = 4;
 	}
+	else if (iLight.fColour == kColourOrange) {
+		stripColour = 5;
+	}
 	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
 }
 
@@ -1144,7 +1188,8 @@ int CLauncher::SideStripFrame(const TLight& iLight) const {
 	if (iLight.fBrightness == kUnlit) {
 		return 0;
 	}
-	// The film strip holds red, green, yellow, blue and white, in that order.
+	// The film strip holds red, green, yellow, blue, white and orange, in
+	// that order.
 	int stripColour = 4;
 	if (iLight.fColour == kColourRed) {
 		stripColour = 0;
@@ -1158,6 +1203,9 @@ int CLauncher::SideStripFrame(const TLight& iLight) const {
 	else if (iLight.fColour == kColourBlue) {
 		stripColour = 3;
 	}
+	else if (iLight.fColour == kColourOrange) {
+		stripColour = 5;
+	}
 	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
 }
 
@@ -1168,8 +1216,11 @@ CLauncher::EModeColour CLauncher::GetModeColour() const {
 	if (fSetup == kSetupClipPicking) {
 		return kModeGreen;
 	}
-	if (IsFillInEditing(fSetup)) {
+	if (fSetup == kSetupClearMode) {
 		return kModeRed;
+	}
+	if (IsFillInEditing(fSetup)) {
+		return kModeOrange;
 	}
 	return IsLandingEditing(fSetup) ? kModeBlue : kModeYellow;
 }
@@ -1179,13 +1230,13 @@ int CLauncher::GetBackButtonFrame() const {
 	if (fSetup == kSetupLaunchMode) {
 		return kBackButtonDark;
 	}
-	if (fSetup == kSetupClipPicking) {
+	if (fSetup == kSetupClipPicking || fSetup == kSetupClearMode) {
 		return kBackButtonVibrantWhite;
 	}
 	if (IsFillInEditing(fSetup)) {
 		return kBackButtonVibrantYellow;
 	}
-	return IsLandingEditing(fSetup) ? kBackButtonVibrantRed : kBackButtonVibrantGreen;
+	return IsLandingEditing(fSetup) ? kBackButtonVibrantOrange : kBackButtonVibrantGreen;
 }
 
 // The line of the step the back button goes back to: the one before the
@@ -1194,7 +1245,7 @@ int CLauncher::GetBackLabelFrame() const {
 	if (fSetup == kSetupLaunchMode) {
 		return 0;
 	}
-	if (fSetup == kSetupClipPicking) {
+	if (fSetup == kSetupClipPicking || fSetup == kSetupClearMode) {
 		return 1;
 	}
 	if (IsFillInEditing(fSetup)) {
@@ -1235,7 +1286,7 @@ int CLauncher::GetTransitionDiagramsFrame() const {
 }
 
 CLauncher::TLight CLauncher::GetFillInLight() const {
-	return fFillInPlaying ? MakeLight(kVibrant, kColourRed) : MakeLight(kDim, kColourWhite);
+	return fFillInPlaying ? MakeLight(kVibrant, kColourOrange) : MakeLight(kDim, kColourWhite);
 }
 
 int CLauncher::GetFillInLightValue() const {
@@ -1250,6 +1301,21 @@ int CLauncher::GetFillInLabelFrame() const {
 	return fFillInPlaying ? 1 : 0;
 }
 
+CLauncher::TLight CLauncher::GetClearLight() const {
+	if (fSetup == kSetupLaunchMode) {
+		return MakeLight(kDim, kColourWhite);
+	}
+	return fSetup == kSetupClearMode ? MakeLight(kVibrant, kColourWhite) : kUnlitLight;
+}
+
+int CLauncher::GetClearLightFrame() const {
+	return SideStripFrame(GetClearLight());
+}
+
+int CLauncher::GetClearCaptionFrame() const {
+	return fSetup == kSetupLaunchMode || fSetup == kSetupClearMode ? 0 : 1;
+}
+
 // It is lit while it leads somewhere, in the mode colour of the step it leads
 // to: from clip editing of a clip to its fill-in, and on to its landing.
 CLauncher::TLight CLauncher::GetForwardLight() const {
@@ -1257,7 +1323,7 @@ CLauncher::TLight CLauncher::GetForwardLight() const {
 		return kUnlitLight;
 	}
 	if (IsClipEditing(fSetup)) {
-		return MakeLight(kVibrant, kColourRed);
+		return MakeLight(kVibrant, kColourOrange);
 	}
 	if (IsFillInEditing(fSetup)) {
 		return MakeLight(kVibrant, kColourBlue);
@@ -1278,7 +1344,7 @@ int CLauncher::GetForwardLabelFrame() const {
 	if (light.fBrightness == kUnlit) {
 		return 0;
 	}
-	return light.fColour == kColourRed ? 1 : 2;
+	return light.fColour == kColourOrange ? 1 : 2;
 }
 
 int CLauncher::GetSceneLabelFrame(int iScene) const {

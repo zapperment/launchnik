@@ -372,6 +372,12 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		Apply(CPress::SetupButton(setup), customProps, iArgs);
 		return;
 	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_ClearButton) {
+		iArgs.fConsumeFlag = true;
+		Apply(CPress::ClearButton(setup), customProps, iArgs);
+		iArgs.fGestureNameKey = "gesture_clear_mode";
+		return;
+	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_BackButton) {
 		iArgs.fConsumeFlag = true;
 		Apply(CPress::BackButton(setup), customProps, iArgs);
@@ -403,7 +409,10 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		}
 		// All the changes of a press are one step of the undo history, named
 		// after what the press was for.
-		if (changes.fCount > 0) {
+		if (setup == CLauncher::kSetupClearMode) {
+			iArgs.fGestureNameKey = "gesture_clear_scene";
+		}
+		else if (changes.fCount > 0) {
 			iArgs.fGestureNameKey = changes.fChanges[0].fProperty == CPress::kLength ? "gesture_length" : "gesture_scene";
 		}
 		return;
@@ -418,6 +427,17 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		return;
 	}
 	iArgs.fConsumeFlag = true;
+
+	// Clearing a launch button and returning to launch mode are one step of
+	// the undo history.
+	if (setup == CLauncher::kSetupClearMode) {
+		const CPress::TChanges changes = CPress::ClearModeLaunchButton(setup, track, row, HoldsClip(customProps, CLauncher::ButtonIndex(track, row)));
+		for (int i = 0; i < changes.fCount; ++i) {
+			Apply(changes.fChanges[i], customProps, iArgs);
+		}
+		iArgs.fGestureNameKey = "gesture_clear_clip";
+		return;
+	}
 
 	const int picked = CLauncher::PickedButton(setup);
 	const bool fillInEditing = CLauncher::IsFillInEditing(setup);

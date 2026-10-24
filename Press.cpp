@@ -167,6 +167,19 @@ CPress::TChanges CPress::LandingEditingLaunchButton(int iSetup, int iTrack, int 
 	return EditOverlay(kLandingProperties, iSetup, iTrack, iRow, iLanding, iClip);
 }
 
+CPress::TChanges CPress::ClearModeLaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip) {
+	TChanges changes;
+	changes.fCount = 0;
+	if (iSetup != CLauncher::kSetupClearMode) {
+		return changes;
+	}
+	if (iPressedHoldsClip) {
+		changes.fChanges[changes.fCount++] = MakeChange(kClipPresent, CLauncher::ButtonIndex(iTrack, iRow), 0);
+	}
+	changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+	return changes;
+}
+
 CPress::TChange CPress::RelaunchButton(int iSetup, int iTrack, bool iPressed) {
 	if (iTrack < 0 || iTrack >= CLauncher::kTrackCount || (iPressed && iSetup != CLauncher::kSetupLaunchMode)) {
 		return kNoChange;
@@ -209,6 +222,15 @@ CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsCl
 		changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
 		return changes;
 	}
+	if (iSetup == CLauncher::kSetupClearMode) {
+		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+			if (iHoldsClip[track]) {
+				changes.fChanges[changes.fCount++] = MakeChange(kClipPresent, CLauncher::ButtonIndex(track, iScene), 0);
+			}
+		}
+		changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+		return changes;
+	}
 	if (iSetup != CLauncher::kSetupLaunchMode) {
 		return changes;
 	}
@@ -226,9 +248,22 @@ CPress::TChange CPress::SetupButton(int iSetup) {
 	return MakeChange(kSetup, 0, inSetupMode ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);
 }
 
+CPress::TChange CPress::ClearButton(int iSetup) {
+	if (iSetup == CLauncher::kSetupLaunchMode) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupClearMode);
+	}
+	if (iSetup == CLauncher::kSetupClearMode) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+	}
+	return kNoChange;
+}
+
 CPress::TChange CPress::BackButton(int iSetup) {
 	if (iSetup == CLauncher::kSetupLaunchMode) {
 		return kNoChange;
+	}
+	if (iSetup == CLauncher::kSetupClearMode) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
 	}
 	if (CLauncher::IsLandingEditing(iSetup)) {
 		return MakeChange(kSetup, 0, CLauncher::kSetupFirstFillInEditing + CLauncher::PickedButton(iSetup));

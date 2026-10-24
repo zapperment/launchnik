@@ -8,7 +8,8 @@
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
 // active, light, label, mode colour, switch interval, switch point, length,
 // immediate, clip picking, clip editing, fill-in, fill-in editing, landing,
-// landing editing, one-bar pattern, relaunch, forward button, scene,
+// landing editing, one-bar pattern, relaunch, forward button, clear mode,
+// clear button, scene,
 // segment, interval meter, function, function button, function select button,
 // stop, muted, soloed, solo-muted, CV output, CV mode, pattern, unipolar value,
 // bipolar value, transition.
@@ -71,14 +72,16 @@ class CLauncher {
 	public: static const int kColourFuchsia = 12;
 	public: static const int kColourPink = 13;
 
-	// The setup state is one number: launch mode, clip picking, or clip
-	// editing, fill-in editing or landing editing for one launch button.
+	// The setup state is one number: launch mode, clip picking, clip editing,
+	// fill-in editing or landing editing for one launch button, or clear mode,
+	// which is not part of setup mode.
 	public: static const int kSetupLaunchMode = 0;
 	public: static const int kSetupClipPicking = 1;
 	public: static const int kSetupFirstClipEditing = 2;
 	public: static const int kSetupFirstFillInEditing = kSetupFirstClipEditing + kButtonCount;
 	public: static const int kSetupFirstLandingEditing = kSetupFirstFillInEditing + kButtonCount;
-	public: static const int kSetupCount = kSetupFirstLandingEditing + kButtonCount;
+	public: static const int kSetupClearMode = kSetupFirstLandingEditing + kButtonCount;
+	public: static const int kSetupCount = kSetupClearMode + 1;
 
 	// Where the controls of clip editing sit on the grid; fill-in editing and
 	// landing editing have them in the same places. The colours fill the first seven tracks of rows
@@ -124,10 +127,10 @@ class CLauncher {
 	// vibrant for red (stop), yellow (mute) and blue (solo).
 	public: static const int kFunctionLightFrameCount = 7;
 
-	// The film strip of the fill-in button and the function select buttons:
-	// frame 0 is unlit, then dim and vibrant for red, green, yellow, blue and
-	// white.
-	public: static const int kSideLightFrameCount = 11;
+	// The film strip of the fill-in button, the clear button and the function
+	// select buttons: frame 0 is unlit, then dim and vibrant for red, green,
+	// yellow, blue, white and orange.
+	public: static const int kSideLightFrameCount = 13;
 
 	// A jump of the song position by more than this, between one batch and the
 	// next, is a locate or a loop rather than the song playing on.
@@ -164,8 +167,9 @@ class CLauncher {
 	public: static const int kLightFrameCount = 1 + 2 * kColourCount;
 
 	// The film strip of the scene buttons and the forward button: frame 0 is
-	// unlit, then dim and vibrant for red, green, yellow, white and blue.
-	public: static const int kSceneLightFrameCount = 11;
+	// unlit, then dim and vibrant for red, green, yellow, white, blue and
+	// orange.
+	public: static const int kSceneLightFrameCount = 13;
 
 	// What the host's transport looks like for one batch of audio.
 	public: struct TTransport {
@@ -200,7 +204,8 @@ class CLauncher {
 	// Record what a launch button holds. A launch button keeps its settings
 	// while it is empty, so that a clip comes back as it was. A new clip has,
 	// on every CV output, the pattern of its row, unipolar value 0, bipolar
-	// value 0 and transition off.
+	// value 0 and transition off. Emptying the active launch button stops its
+	// track at once, with 0 on every CV output, even while the song plays.
 	public: void SetClipPresent(int iTrack, int iRow, bool iPresent);
 	public: void SetClipColour(int iTrack, int iRow, int iColour);
 	public: void SetClipPattern(int iTrack, int iRow, int iOutput, int iPattern);
@@ -333,7 +338,8 @@ class CLauncher {
 
 	// What a scene button shows: its part of the interval meter, or in clip
 	// picking the length it stands for, flashing in green if that is the
-	// current length and in white otherwise. Scenes are numbered like rows,
+	// current length and in white otherwise, or in clear mode flashing red if
+	// its scene holds a clip and unlit otherwise. Scenes are numbered like rows,
 	// 1..8 from the top, so the meter fills from scene 8 upwards. The value is
 	// encoded like the light of a launch button.
 	public: TLight GetSceneLight(int iScene) const;
@@ -341,25 +347,28 @@ class CLauncher {
 	public: int GetSceneLightFrame(int iScene) const;
 
 	// The mode colour, worn by the logo and the lit labels: white in launch
-	// mode, green in clip picking, yellow in clip editing, red in fill-in
-	// editing, blue in landing editing. Also the frame of the logo's film
-	// strip.
+	// mode, green in clip picking, yellow in clip editing, orange in fill-in
+	// editing, blue in landing editing, red in clear mode. Also the frame of
+	// the logo's film strip.
 	public: enum EModeColour {
 		kModeWhite = 0,
 		kModeGreen = 1,
 		kModeYellow = 2,
 		kModeRed = 3,
-		kModeBlue = 4
+		kModeBlue = 4,
+		kModeOrange = 5
 	};
+	public: static const int kModeColourCount = 6;
 	public: EModeColour GetModeColour() const;
 
 	// The frame of the back button's film strip to show: dark in launch mode,
-	// vibrant white in clip picking, vibrant green in clip editing, vibrant
-	// yellow in fill-in editing, vibrant red in landing editing. The strip has
-	// the frames of the scene button's source image, in its order.
+	// vibrant white in clip picking and clear mode, vibrant green in clip
+	// editing, vibrant yellow in fill-in editing, vibrant orange in landing
+	// editing. The strip has the frames of the scene button's source image,
+	// in its order, with orange in place of red.
 	public: static const int kBackButtonFrameCount = 9;
 	public: static const int kBackButtonDark = 0;
-	public: static const int kBackButtonVibrantRed = 1;
+	public: static const int kBackButtonVibrantOrange = 1;
 	public: static const int kBackButtonVibrantGreen = 3;
 	public: static const int kBackButtonVibrantYellow = 5;
 	public: static const int kBackButtonVibrantWhite = 7;
@@ -368,22 +377,22 @@ class CLauncher {
 	// The frame of the back button's labels to show, one line for each step
 	// it can go back to, lit in the colour of the button: 0 all unlit, 1
 	// LAUNCH in white, 2 PICK CLIP in green, 3 EDIT CLIP in yellow, 4 SET
-	// FILL-IN in red.
+	// FILL-IN in orange.
 	public: static const int kBackLabelFrameCount = 5;
 	public: int GetBackLabelFrame() const;
 
 	// The frame of the launch labels' film strip to show, for rows 1 and 2: 0
-	// unlit, then SET/CLEAR lit and all lit, in yellow (1, 2), red (3, 4) and
-	// blue (5, 6). They are lit only in clip editing, in yellow, in fill-in
-	// editing, in red, and in landing editing, in blue; the labels of colours
-	// only while there is something to set up: the picked launch button's
-	// clip, fill-in or landing. 1 BAR PATT is lit only in the frames with all
-	// lit in red and in blue.
+	// unlit, then SET/CLEAR lit and all lit, in yellow (1, 2), orange (3, 4)
+	// and blue (5, 6). They are lit only in clip editing, in yellow, in
+	// fill-in editing, in orange, and in landing editing, in blue; the labels
+	// of colours only while there is something to set up: the picked launch
+	// button's clip, fill-in or landing. 1 BAR PATT is lit only in the frames
+	// with all lit in orange and in blue.
 	public: static const int kLaunchLabelsFrameCount = 7;
 	public: int GetLaunchLabelsFrame() const;
 
 	// The frame of the film strip of the labels of a CV output's row, lit like
-	// the colours': 0 unlit, then for yellow, red and blue in turn the
+	// the colours': 0 unlit, then for yellow, orange and blue in turn the
 	// patterns, the unipolar values with each of the five transitions, and the
 	// bipolar values with each of the five transitions. Only the labels that
 	// go with the output's CV mode are lit, and of the transitions only the
@@ -394,22 +403,30 @@ class CLauncher {
 
 	// The three sets of transition diagrams to the right of the scene
 	// buttons, TRANSITION, FILL-IN and LANDING from the top, lit like the
-	// colours: 0 all grey, 1 TRANSITION lit in yellow, 2 FILL-IN lit in red,
-	// 3 LANDING lit in blue.
+	// colours: 0 all grey, 1 TRANSITION lit in yellow, 2 FILL-IN lit in
+	// orange, 3 LANDING lit in blue.
 	public: static const int kTransitionDiagramsFrameCount = 4;
 	public: int GetTransitionDiagramsFrame() const;
 
-	// What the fill-in button shows: dim white, or vibrant red while a fill-in
-	// is playing. The value is encoded like the light of a launch button, the
-	// frame is one of the side buttons' film strip.
+	// What the fill-in button shows: dim white, or vibrant orange while a
+	// fill-in is playing. The value is encoded like the light of a launch
+	// button, the frame is one of the side buttons' film strip.
 	public: TLight GetFillInLight() const;
 	public: int GetFillInLightValue() const;
 	public: int GetFillInLightFrame() const;
-	// The frame of the FILL-IN caption: 0 white, 1 red while a fill-in is
+	// The frame of the FILL-IN caption: 0 white, 1 orange while a fill-in is
 	// playing.
 	public: int GetFillInLabelFrame() const;
 
-	// What the forward button shows: vibrant red in clip editing and vibrant
+	// What the clear button shows: dim white in launch mode, vibrant white in
+	// clear mode, unlit in setup mode, where it does nothing. The frame is one
+	// of the side buttons' film strip.
+	public: TLight GetClearLight() const;
+	public: int GetClearLightFrame() const;
+	// The frame of the CLEAR caption: 0 white, 1 dark grey in setup mode.
+	public: int GetClearCaptionFrame() const;
+
+	// What the forward button shows: vibrant orange in clip editing and vibrant
 	// blue in fill-in editing of a launch button that holds a clip, unlit
 	// otherwise. Encoded like the fill-in button's light, framed like a scene
 	// button's.
@@ -417,7 +434,7 @@ class CLauncher {
 	public: int GetForwardLightValue() const;
 	public: int GetForwardLightFrame() const;
 	// The frame of its labels, one line for each step it can go forward to:
-	// 0 both unlit, 1 SET FILL-IN in red, 2 SET LANDING in blue.
+	// 0 both unlit, 1 SET FILL-IN in orange, 2 SET LANDING in blue.
 	public: static const int kForwardLabelFrameCount = 3;
 	public: int GetForwardLabelFrame() const;
 
@@ -525,12 +542,15 @@ class CLauncher {
 	// the stop button.
 	private: int Target(int iTrack) const;
 	private: void Switch();
+	private: void StopAtOnce(int iTrack);
 	private: bool HasClips(int iTrack) const;
 	// Whether a pattern of the active clip on a CV output in pattern mode has
 	// been changed and the track has not switched to it yet.
 	private: bool HasPendingPattern(int iTrack) const;
 	private: TLight GetLaunchModeLight(int iTrack, int iRow) const;
 	private: TLight GetClipPickingLight(int iTrack, int iRow) const;
+	private: TLight GetClearModeLight(int iTrack, int iRow) const;
+	private: bool SceneHasClips(int iScene) const;
 	// The light of a launch button in clip editing, fill-in editing or landing
 	// editing, given the settings being edited and the CV modes of the picked
 	// track.
@@ -551,10 +571,10 @@ class CLauncher {
 	// the landing's first bar.
 	private: bool PlaysLandingPatterns(int iTrack) const;
 	// The frame of a film strip laid out like the scene buttons': unlit, then
-	// dim and vibrant for red, green, yellow, white and blue.
+	// dim and vibrant for red, green, yellow, white, blue and orange.
 	private: int SceneStripFrame(const TLight& iLight) const;
 	// The frame of the side buttons' film strip: unlit, then dim and vibrant
-	// for red, green, yellow, blue and white.
+	// for red, green, yellow, blue, white and orange.
 	private: int SideStripFrame(const TLight& iLight) const;
 	// Whether a light shows vibrant right now, as opposed to dim.
 	private: bool ShowsVibrant(const TLight& iLight) const;

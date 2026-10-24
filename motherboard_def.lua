@@ -17,6 +17,7 @@ format_version = "3.0"
 --   film strip frames of the fill-in button, its caption, the forward
 --   button and its labels:                 70, 71, 72, 73
 --   function:                              74
+--   film strip frames of the clear button and its caption: 84, 85
 --   film strip frame of the function select button of function f (0 = stop,
 --   1 = mute, 2 = solo):                   75 + f
 --   film strip frame of its caption:       80 + f
@@ -76,17 +77,17 @@ local BIPOLAR_ZERO = 3
 local OUTPUT_SETTINGS = { "pattern", "unipolar", "bipolar", "transition" }
 
 -- Launch mode, clip picking, then clip editing, fill-in editing and landing
--- editing for each of the launch buttons
-local SETUP_COUNT = 2 + 3 * TRACK_COUNT * ROW_COUNT
+-- editing for each of the launch buttons, then clear mode
+local SETUP_COUNT = 3 + 3 * TRACK_COUNT * ROW_COUNT
 
 -- Unlit, then dim, vibrant and flashing for each colour
 local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
 -- Unlit, then dim and vibrant for each colour
 local LIGHT_FRAME_COUNT = 1 + 2 * COLOUR_COUNT
--- Unlit, then dim and vibrant for red, green, yellow, white and blue
-local SCENE_LIGHT_FRAME_COUNT = 11
--- Unlit, then dim and vibrant for red, green, yellow, blue and white
-local SIDE_LIGHT_FRAME_COUNT = 11
+-- Unlit, then dim and vibrant for red, green, yellow, white, blue and orange
+local SCENE_LIGHT_FRAME_COUNT = 13
+-- Unlit, then dim and vibrant for red, green, yellow, blue, white and orange
+local SIDE_LIGHT_FRAME_COUNT = 13
 -- Unlit, then dim and vibrant for red (stop), yellow (mute) and blue (solo)
 local FUNCTION_LIGHT_FRAME_COUNT = 7
 
@@ -189,7 +190,8 @@ local FIRST_RELAUNCH_MIDI_CC = FIRST_SOLO_MIDI_CC + TRACK_COUNT
 local midi_cc_chart = {}
 
 -- 0 = launch mode, 1 = clip picking, 2..65 = clip editing, 66..129 = fill-in
--- editing and 130..193 = landing editing for one launch button. Written by
+-- editing and 130..193 = landing editing for one launch button, 194 = clear
+-- mode. Written by
 -- the panel and by control surfaces, read by the realtime code (see
 -- docs/adr/0002). Not saved: a song opens in launch mode.
 document_properties.setup = jbox.number{
@@ -263,9 +265,9 @@ for index, name in ipairs(FUNCTIONS) do
 end
 
 -- What the fill-in button and the forward button show, for control surfaces,
--- encoded like the light of a launch button: dim white (1) or vibrant red (5)
--- for the fill-in button, unlit (0), vibrant red (5) or vibrant blue (29) for
--- the forward button. Computed by the realtime code.
+-- encoded like the light of a launch button: dim white (1) or vibrant orange
+-- (8) for the fill-in button, unlit (0), vibrant orange (8) or vibrant blue
+-- (29) for the forward button. Computed by the realtime code.
 rt_properties.fill_in_light = jbox.number{
 	property_tag = 58,
 	default = 0,
@@ -286,9 +288,9 @@ add_remote_item("forward_light", "Forward Light")
 
 -- The frames the front panel shows of the two buttons, and of their
 -- captions: the fill-in button's film strip is that of the side buttons, the
--- forward button's that of the scene buttons; FILL-IN is 0 = white, 1 = red;
--- the forward button's labels 0 = unlit, 1 = SET FILL-IN in red, 2 = SET
--- LANDING in blue.
+-- forward button's that of the scene buttons; FILL-IN is 0 = white, 1 =
+-- orange; the forward button's labels 0 = unlit, 1 = SET FILL-IN in orange, 2
+-- = SET LANDING in blue.
 rt_properties.fill_in_light_frame = jbox.number{
 	property_tag = 70,
 	default = 0,
@@ -321,7 +323,27 @@ rt_properties.forward_label_frame = jbox.number{
 	ui_type = plain_number(2),
 }
 
--- Whether the setup button is lit: in every step of setup mode.
+-- The frames the front panel shows of the clear button, in the side buttons'
+-- film strip, and of its caption: 0 = white, 1 = dark grey in setup mode.
+-- Not Remote items: a codec can tell them from the setup state.
+rt_properties.clear_light_frame = jbox.number{
+	property_tag = 84,
+	default = 0,
+	steps = SIDE_LIGHT_FRAME_COUNT,
+	ui_name = jbox.ui_text("text_clear_light"),
+	ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
+}
+
+rt_properties.clear_caption_frame = jbox.number{
+	property_tag = 85,
+	default = 0,
+	steps = 2,
+	ui_name = jbox.ui_text("text_clear_caption"),
+	ui_type = plain_number(1),
+}
+
+-- Whether the setup button is lit: in every step of setup mode, not in clear
+-- mode.
 rt_properties.setup_lamp = jbox.boolean{
 	property_tag = 51,
 	default = false,
@@ -331,19 +353,20 @@ rt_properties.setup_lamp = jbox.boolean{
 
 -- The labels and the logo, computed by the realtime code. The logo shows the
 -- mode colour: 0 = white (launch mode), 1 = green (clip picking), 2 = yellow
--- (clip editing), 3 = red (fill-in editing), 4 = blue (landing editing). The
--- labels of the launch buttons are lit only in clip editing, in yellow, in
--- fill-in editing, in red, and in landing editing, in blue: 0 = unlit, then
--- SET/CLEAR and all in yellow (1, 2), red (3, 4) and blue (5, 6); the colours
+-- (clip editing), 3 = red (clear mode), 4 = blue (landing editing), 5 =
+-- orange (fill-in editing). The labels of the launch buttons are lit only in
+-- clip editing, in yellow, in fill-in editing, in orange, and in landing
+-- editing, in blue: 0 = unlit, then SET/CLEAR and all in yellow (1, 2),
+-- orange (3, 4) and blue (5, 6); the colours
 -- and patterns only while the picked launch button holds a clip, or in
 -- fill-in editing a fill-in, or in landing editing a landing. A scene
 -- button's label is 0 = unlit, 1 = white, 2 = green.
 rt_properties.logo_frame = jbox.number{
 	property_tag = 53,
 	default = 0,
-	steps = 5,
+	steps = 6,
 	ui_name = jbox.ui_text("text_logo"),
-	ui_type = plain_number(4),
+	ui_type = plain_number(5),
 }
 
 rt_properties.launch_labels_frame = jbox.number{
@@ -355,9 +378,10 @@ rt_properties.launch_labels_frame = jbox.number{
 }
 
 -- The back button's frame, computed by the realtime code: 0 = dark (launch
--- mode), 7 = vibrant white (clip picking), 3 = vibrant green (clip editing), 5
--- = vibrant yellow (fill-in editing), 1 = vibrant red (landing editing). Not a
--- Remote item: a codec can tell it from the setup state.
+-- mode), 7 = vibrant white (clip picking and clear mode), 3 = vibrant green
+-- (clip editing), 5 = vibrant yellow (fill-in editing), 1 = vibrant orange
+-- (landing editing). Not a Remote item: a codec can tell it from the setup
+-- state.
 rt_properties.back_button_frame = jbox.number{
 	property_tag = 55,
 	default = 0,
@@ -368,7 +392,7 @@ rt_properties.back_button_frame = jbox.number{
 
 -- Its labels, one line for each step it goes back to, lit in the colour of
 -- the button: 0 = all unlit, 1 = LAUNCH in white, 2 = PICK CLIP in green, 3 =
--- EDIT CLIP in yellow, 4 = SET FILL-IN in red.
+-- EDIT CLIP in yellow, 4 = SET FILL-IN in orange.
 rt_properties.back_label_frame = jbox.number{
 	property_tag = 56,
 	default = 0,
@@ -379,7 +403,7 @@ rt_properties.back_label_frame = jbox.number{
 
 -- The labels of the rows of the CV outputs, lit only in clip editing,
 -- fill-in editing and landing editing of a clip, fill-in or landing: 0 =
--- unlit, then in yellow, in red and in blue each 1 = the patterns, 2..6 = the
+-- unlit, then in yellow, in orange and in blue each 1 = the patterns, 2..6 = the
 -- unipolar values with transition off, A, B, C or D, 7..11 = the bipolar
 -- values with transition off, A, B, C or D. Computed by the realtime code
 -- from the CV mode of the picked track's output.
@@ -395,8 +419,8 @@ for output, letter in ipairs(OUTPUT_LETTERS) do
 end
 
 -- The three sets of transition diagrams, lit like the labels of the CV
--- outputs: 0 = all grey, 1 = TRANSITION in yellow, 2 = FILL-IN in red, 3 =
--- LANDING in blue.
+-- outputs: 0 = all grey, 1 = TRANSITION in yellow, 2 = FILL-IN in orange, 3
+-- = LANDING in blue.
 rt_properties.transition_diagrams_frame = jbox.number{
 	property_tag = 150,
 	default = 0,

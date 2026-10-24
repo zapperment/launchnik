@@ -54,6 +54,8 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fWrittenFillInLight(kNothingWritten),
 	fWrittenFillInLightFrame(kNothingWritten),
 	fWrittenFillInLabelFrame(kNothingWritten),
+	fWrittenClearLightFrame(kNothingWritten),
+	fWrittenClearCaptionFrame(kNothingWritten),
 	fWrittenForwardLight(kNothingWritten),
 	fWrittenForwardLightFrame(kNothingWritten),
 	fWrittenForwardLabelFrame(kNothingWritten),
@@ -141,7 +143,8 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 	if (iTag == kCustomPropsTag_Setup) {
 		const int setup = static_cast<int>(JBox_GetNumber(iValue));
 		fLauncher.SetSetup(setup);
-		fSetupLampLit = setup != CLauncher::kSetupLaunchMode;
+		// Clear mode is not part of setup mode.
+		fSetupLampLit = setup != CLauncher::kSetupLaunchMode && setup != CLauncher::kSetupClearMode;
 		return;
 	}
 	if (iTag == kCustomPropsTag_Length) {
@@ -295,6 +298,8 @@ void CLaunchnik::WriteOutputs() {
 	Write(kCustomPropsTag_FillInLight, fLauncher.GetFillInLightValue(), fWrittenFillInLight);
 	Write(kCustomPropsTag_FillInLightFrame, fLauncher.GetFillInLightFrame(), fWrittenFillInLightFrame);
 	Write(kCustomPropsTag_FillInLabelFrame, fLauncher.GetFillInLabelFrame(), fWrittenFillInLabelFrame);
+	Write(kCustomPropsTag_ClearLightFrame, fLauncher.GetClearLightFrame(), fWrittenClearLightFrame);
+	Write(kCustomPropsTag_ClearCaptionFrame, fLauncher.GetClearCaptionFrame(), fWrittenClearCaptionFrame);
 	Write(kCustomPropsTag_ForwardLight, fLauncher.GetForwardLightValue(), fWrittenForwardLight);
 	Write(kCustomPropsTag_ForwardLightFrame, fLauncher.GetForwardLightFrame(), fWrittenForwardLightFrame);
 	Write(kCustomPropsTag_ForwardLabelFrame, fLauncher.GetForwardLabelFrame(), fWrittenForwardLabelFrame);

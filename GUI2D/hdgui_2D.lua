@@ -80,6 +80,14 @@ table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "caption_fill_in" },
 	value = "/custom_properties/fill_in_label_frame",
 })
+table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "lamp_clear" },
+	value = "/custom_properties/clear_light_frame",
+})
+table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "caption_clear" },
+	value = "/custom_properties/clear_caption_frame",
+})
 
 -- Stop, mute and solo, in the order of their display ids from 8 (see Panel.h).
 local FUNCTIONS = { "stop", "mute", "solo" }
@@ -115,9 +123,9 @@ for scene = 1, ROW_COUNT do
 	})
 end
 
--- Clicks on the launch buttons, the scene buttons, the setup button, the back
--- button and the forward button mean different things in launch mode and
--- in setup mode, and clicks on the function buttons different things in each
+-- Clicks on the launch buttons, the scene buttons, the setup button, the
+-- clear button, the back button and the forward button mean different things
+-- in launch mode, in setup mode and in clear mode, and clicks on the function buttons different things in each
 -- function, so they go to the click handler in Panel.cpp, which tells the
 -- displays apart by display_id. So do the function select buttons, and the
 -- fill-in button, which is held down while the mouse button is, as are the
@@ -163,6 +171,14 @@ table.insert(front_widgets, jbox.custom_display{
 	display_height_pixels = 135,
 	display_id = 5,
 	values = { "/custom_properties/fill_in" },
+})
+table.insert(front_widgets, jbox.custom_display{
+	graphics = { node = "click_clear" },
+	background = "transparent",
+	display_width_pixels = 130,
+	display_height_pixels = 135,
+	display_id = 11,
+	values = { "/custom_properties/setup" },
 })
 table.insert(front_widgets, jbox.custom_display{
 	graphics = { node = "click_forward" },

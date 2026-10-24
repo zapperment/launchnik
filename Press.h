@@ -53,9 +53,10 @@ class CPress {
 	};
 
 	// One property and its new value. A press of a launch button outside
-	// fill-in editing and landing editing, a function button, a function
-	// select button, the setup button, the back button, the forward button or
-	// the fill-in button never changes more than one.
+	// fill-in editing, landing editing and clear mode, a function button, a
+	// function select button, the setup button, the clear button, the back
+	// button, the forward button or the fill-in button never changes more
+	// than one.
 	public: struct TChange {
 		EProperty fProperty;
 		int fIndex;
@@ -64,8 +65,9 @@ class CPress {
 	};
 
 	// What a press of a scene button changes: the selection and the relaunch
-	// press of every track, the length and the setup state, or nothing at all
-	// (see docs/adr/0004).
+	// press of every track, the length and the setup state, what every track
+	// holds in its scene and the setup state, or nothing at all (see
+	// docs/adr/0004).
 	// What a press of a launch button in fill-in editing or landing editing
 	// changes: up to every setting of the fill-in or the landing.
 	public: static const int kMaxChangeCount = 3 + 4 * CLauncher::kOutputCount;
@@ -101,8 +103,9 @@ class CPress {
 
 	// iPressedHoldsClip says whether the pressed launch button holds a clip.
 	// iPicked describes the clip being edited and only matters in clip
-	// editing. In fill-in editing and landing editing a press changes nothing
-	// here; see FillInEditingLaunchButton() and LandingEditingLaunchButton().
+	// editing. In fill-in editing, landing editing and clear mode a press
+	// changes nothing here; see FillInEditingLaunchButton(),
+	// LandingEditingLaunchButton() and ClearModeLaunchButton().
 	public: static TChange LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, const TEdited& iPicked);
 	// A press of a launch button in fill-in editing. iFillIn describes the
 	// fill-in being edited, iClip the values of its clip, which a new fill-in
@@ -111,6 +114,10 @@ class CPress {
 	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip);
 	// The same in landing editing, for the landing.
 	public: static TChanges LandingEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iLanding, const TClipValues& iClip);
+	// A press of a launch button in clear mode empties it, if it holds a
+	// clip, as SET/CLEAR does in clip editing, and returns to launch mode.
+	// Outside clear mode a press changes nothing here.
+	public: static TChanges ClearModeLaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip);
 
 	// Holding down a launch button and letting it go, or a scene button for
 	// each track: in launch mode a press holds the track's relaunch press down
@@ -133,12 +140,16 @@ class CPress {
 	// Chooses the function of a function select button.
 	public: static TChange FunctionSelectButton(int iFunction);
 
+	// From launch mode to clip picking, and from any step of setup mode or
+	// from clear mode back to launch mode.
 	public: static TChange SetupButton(int iSetup);
+	// From launch mode to clear mode and back. In setup mode it does nothing.
+	public: static TChange ClearButton(int iSetup);
 
 	// Goes back one step of setup mode: from landing editing to fill-in
 	// editing and from fill-in editing to clip editing of the same launch
-	// button, from clip editing to clip picking, from clip picking to launch
-	// mode. In launch mode it does nothing.
+	// button, from clip editing to clip picking, from clip picking and from
+	// clear mode to launch mode. In launch mode it does nothing.
 	public: static TChange BackButton(int iSetup);
 	// Goes forward one step of setup mode: from clip editing to fill-in
 	// editing and from fill-in editing to landing editing of the same launch
@@ -151,7 +162,9 @@ class CPress {
 	// In launch mode, a scene button means what the eight launch buttons of
 	// its scene mean, track by track: the selections, then the relaunch
 	// presses. In clip picking it chooses the length it
-	// stands for and returns to launch mode. In clip editing it does nothing.
+	// stands for and returns to launch mode. In clear mode it empties every
+	// launch button of its scene that holds a clip and returns to launch mode.
+	// In clip editing it does nothing.
 	// iHoldsClip says of each track whether its launch button in the scene
 	// holds a clip.
 	public: static TChanges SceneButton(int iSetup, int iScene, const bool iHoldsClip[]);

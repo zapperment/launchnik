@@ -4,7 +4,8 @@
 
 // The click handler of the front panel. The launch buttons, the scene buttons,
 // the function buttons, the function select buttons, the setup button, the
-// back button, the forward button and the fill-in button are lamps with a
+// clear button, the back button, the forward button and the fill-in button
+// are lamps with a
 // transparent display on top; a click on a display
 // ends up here, where the rules in CPress decide which property it changes.
 
@@ -19,6 +20,7 @@ const TJBox_DisplayID kDisplayID_FunctionButtons = 7;
 // One display for each function select button, numbered from here by
 // function as in Launcher.h: stop, mute, solo.
 const TJBox_DisplayID kDisplayID_FirstFunctionSelectButton = 8;
+const TJBox_DisplayID kDisplayID_ClearButton = 11;
 
 void HandlePanelGesture(TJBox_GestureArgs& iArgs);
 

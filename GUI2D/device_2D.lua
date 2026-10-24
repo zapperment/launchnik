@@ -21,8 +21,8 @@ local FUNCTION_HEIGHT = 75
 -- The header is the strip above the divider on the front panel. It is as high
 -- as the folded panel, so the logo sits at the same place on both. It is a
 -- lamp with one frame for each mode colour: light grey in launch mode, green
--- in clip picking, yellow in clip editing, red in fill-in editing, blue in
--- landing editing.
+-- in clip picking, yellow in clip editing, red in clear mode, blue in landing
+-- editing, orange in fill-in editing.
 local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
@@ -56,7 +56,7 @@ front = {
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_4" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_5frames", frames = 5 },
+		{ path = "Logo_6frames", frames = 6 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -100,16 +100,16 @@ front.click_grid = {
 }
 
 -- The scene buttons stand 100 pixels to the right of the grid, each level with
--- its scene. They are lamps as well, showing one of eleven frames (unlit,
--- then dim and vibrant for red, green, yellow, white and blue), with one
--- transparent display on top of all eight.
+-- its scene. They are lamps as well, showing one of thirteen frames (unlit,
+-- then dim and vibrant for red, green, yellow, white, blue and orange), with
+-- one transparent display on top of all eight.
 local SCENE_WIDTH = 130
 local SIDE_GAP = 100
 local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH + SIDE_GAP
 for scene = 1, ROW_COUNT do
 	front["lamp_scene" .. scene] = {
 		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
-		{ path = "Scene_Button_11frames", frames = 11 },
+		{ path = "Scene_Button_13frames", frames = 13 },
 	}
 end
 front.click_scenes = {
@@ -120,8 +120,8 @@ front.click_scenes = {
 -- The labels sit centred below their buttons, their tops 8 pixels above the
 -- bottom of the buttons' images, right below the buttons themselves. Those of
 -- the launch buttons in scenes 1 and 2 are one lamp whose film strip starts
--- 25 pixels left of the grid: all unlit, or SET/CLEAR or all in yellow, red
--- or blue (see tools/make-label-strips.sh). Each of scenes 3
+-- 25 pixels left of the grid: all unlit, or SET/CLEAR or all in yellow,
+-- orange or blue (see tools/make-label-strips.sh). Each of scenes 3
 -- to 8, which stand for the CV outputs A to F, has a lamp of its own, with
 -- two lines below every launch button (see tools/make-cv-labels.py). Each
 -- scene button has a lamp of its own, 250 pixels wide and unlit, white or
@@ -234,7 +234,7 @@ front.label_back = {
 local FORWARD_LEFT = BACK_LEFT + TRACK_PITCH
 front.lamp_forward = {
 	offset = { FORWARD_LEFT, BACK_TOP },
-	{ path = "Scene_Button_11frames", frames = 11 },
+	{ path = "Scene_Button_13frames", frames = 13 },
 }
 front.click_forward = {
 	offset = { FORWARD_LEFT, BACK_TOP },
@@ -247,15 +247,15 @@ front.label_forward = {
 
 -- The fill-in button stands to the left of scene 6, as far from the grid as
 -- the scene buttons are on the right. It is a side button: like a scene button
--- but without an arrow, with one of eleven frames (unlit, then dim and vibrant
--- for red, green, yellow, blue and white). Its caption is white or red,
--- centred below it like a label.
+-- but without an arrow, with one of thirteen frames (unlit, then dim and
+-- vibrant for red, green, yellow, blue, white and orange). Its caption is
+-- white or orange, centred below it like a label.
 local FILL_IN_LEFT = LAUNCH_LEFT - (SCENE_LEFT - (LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH)) - SCENE_WIDTH
 local FILL_IN_TOP = LAUNCH_TOP + ROW_PITCH * 5
 local CAPTION_WIDTH = 250
 front.lamp_fill_in = {
 	offset = { FILL_IN_LEFT, FILL_IN_TOP },
-	{ path = "Side_Button_11frames", frames = 11 },
+	{ path = "Side_Button_13frames", frames = 13 },
 }
 front.click_fill_in = {
 	offset = { FILL_IN_LEFT, FILL_IN_TOP },
@@ -264,6 +264,22 @@ front.click_fill_in = {
 front.caption_fill_in = {
 	offset = { FILL_IN_LEFT + (SCENE_WIDTH - CAPTION_WIDTH) / 2, FILL_IN_TOP + BUTTON_HEIGHT + LABEL_GAP },
 	{ path = "Caption_Fill_In_2frames", frames = 2 },
+}
+
+-- The clear button is a side button like the fill-in button, above it, to
+-- the left of scene 3. Its caption is white, or dark grey in setup mode.
+local CLEAR_TOP = LAUNCH_TOP + ROW_PITCH * 2
+front.lamp_clear = {
+	offset = { FILL_IN_LEFT, CLEAR_TOP },
+	{ path = "Side_Button_13frames", frames = 13 },
+}
+front.click_clear = {
+	offset = { FILL_IN_LEFT, CLEAR_TOP },
+	{ size = { 130, 135 } },
+}
+front.caption_clear = {
+	offset = { FILL_IN_LEFT + (SCENE_WIDTH - CAPTION_WIDTH) / 2, CLEAR_TOP + BUTTON_HEIGHT + LABEL_GAP },
+	{ path = "Caption_Clear_2frames", frames = 2 },
 }
 
 -- The function select buttons are side buttons in a row below the function
@@ -278,7 +294,7 @@ for name, track in pairs(FUNCTION_SELECT_TRACKS) do
 	local left = LAUNCH_LEFT + TRACK_PITCH * (track - 1) + 38
 	front["lamp_function_select_" .. name] = {
 		offset = { left, FUNCTION_SELECT_TOP },
-		{ path = "Side_Button_11frames", frames = 11 },
+		{ path = "Side_Button_13frames", frames = 13 },
 	}
 	front["click_function_select_" .. name] = {
 		offset = { left, FUNCTION_SELECT_TOP },
@@ -359,7 +375,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_5frames", frames = 5 },
+		{ path = "Logo_6frames", frames = 6 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,

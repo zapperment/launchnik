@@ -183,6 +183,62 @@ void TestSceneButtonInClipPickingChoosesItsLengthAndLeavesSetupMode() {
 	}
 }
 
+const int kClearMode = CLauncher::kSetupClearMode;
+
+void TestClearButtonSwitchesBetweenLaunchModeAndClearMode() {
+	CHECK(IsChange(CPress::ClearButton(kLaunchMode), CPress::kSetup, 0, kClearMode));
+	CHECK(IsChange(CPress::ClearButton(kClearMode), CPress::kSetup, 0, kLaunchMode));
+	// In setup mode it does nothing.
+	CHECK(IsNoChange(CPress::ClearButton(kClipPicking)));
+	CHECK(IsNoChange(CPress::ClearButton(CLauncher::SetupForClipEditing(3, 6))));
+	CHECK(IsNoChange(CPress::ClearButton(CLauncher::SetupForFillInEditing(3, 6))));
+	CHECK(IsNoChange(CPress::ClearButton(CLauncher::SetupForLandingEditing(3, 6))));
+}
+
+void TestSetupAndBackButtonsLeaveClearMode() {
+	CHECK(IsChange(CPress::SetupButton(kClearMode), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsChange(CPress::BackButton(kClearMode), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsNoChange(CPress::ForwardButton(kClearMode, true)));
+}
+
+void TestClearModeEmptiesThePressedLaunchButtonAndReturns() {
+	const CPress::TChanges changes = CPress::ClearModeLaunchButton(kClearMode, 3, 6, true);
+	CHECK(changes.fCount == 2);
+	CHECK(IsChange(changes.fChanges[0], CPress::kClipPresent, CLauncher::ButtonIndex(3, 6), 0));
+	CHECK(IsChange(changes.fChanges[1], CPress::kSetup, 0, kLaunchMode));
+}
+
+void TestClearModeLeavesAnEmptyLaunchButtonEmpty() {
+	const CPress::TChanges changes = CPress::ClearModeLaunchButton(kClearMode, 3, 6, false);
+	CHECK(changes.fCount == 1);
+	CHECK(IsChange(changes.fChanges[0], CPress::kSetup, 0, kLaunchMode));
+}
+
+void TestClearModeLaunchButtonDoesNothingElsewhere() {
+	CHECK(CPress::ClearModeLaunchButton(kLaunchMode, 3, 6, true).fCount == 0);
+	CHECK(CPress::ClearModeLaunchButton(kClipPicking, 3, 6, true).fCount == 0);
+	CHECK(CPress::ClearModeLaunchButton(CLauncher::SetupForClipEditing(3, 6), 3, 6, true).fCount == 0);
+	// And the ordinary rules do nothing in clear mode, not even a relaunch.
+	CHECK(IsNoChange(CPress::LaunchButton(kClearMode, 3, 6, true, CPress::Edited(false))));
+	CHECK(IsNoChange(CPress::RelaunchButton(kClearMode, 3, true)));
+}
+
+void TestSceneButtonInClearModeEmptiesItsSceneAndReturns() {
+	const bool holdsClip[8] = { true, false, true, false, false, false, false, true };
+	const CPress::TChanges changes = CPress::SceneButton(kClearMode, 5, holdsClip);
+	CHECK(changes.fCount == 4);
+	CHECK(IsChange(changes.fChanges[0], CPress::kClipPresent, CLauncher::ButtonIndex(0, 5), 0));
+	CHECK(IsChange(changes.fChanges[1], CPress::kClipPresent, CLauncher::ButtonIndex(2, 5), 0));
+	CHECK(IsChange(changes.fChanges[2], CPress::kClipPresent, CLauncher::ButtonIndex(7, 5), 0));
+	CHECK(IsChange(changes.fChanges[3], CPress::kSetup, 0, kLaunchMode));
+
+	// A scene without clips only returns to launch mode.
+	const bool none[8] = { false, false, false, false, false, false, false, false };
+	const CPress::TChanges nothing = CPress::SceneButton(kClearMode, 5, none);
+	CHECK(nothing.fCount == 1);
+	CHECK(IsChange(nothing.fChanges[0], CPress::kSetup, 0, kLaunchMode));
+}
+
 } // namespace
 
 bool IsChanges(const CPress::TChanges& iChanges, int iCount) {
@@ -407,6 +463,12 @@ int main() {
 	TestSceneButtonOfAnEmptySceneStopsEveryTrack();
 	TestSceneButtonDoesNothingInClipEditing();
 	TestSceneButtonInClipPickingChoosesItsLengthAndLeavesSetupMode();
+	TestClearButtonSwitchesBetweenLaunchModeAndClearMode();
+	TestSetupAndBackButtonsLeaveClearMode();
+	TestClearModeEmptiesThePressedLaunchButtonAndReturns();
+	TestClearModeLeavesAnEmptyLaunchButtonEmpty();
+	TestClearModeLaunchButtonDoesNothingElsewhere();
+	TestSceneButtonInClearModeEmptiesItsSceneAndReturns();
 
 	TestSetupButtonLeavesFillInEditing();
 	TestForwardButtonGoesForwardOneStepWithAClip();
