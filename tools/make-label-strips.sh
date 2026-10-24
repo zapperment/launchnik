@@ -22,8 +22,10 @@
 #   left: both unlit, then SET FILL-IN lit in orange and SET LANDING in blue.
 # - GUI2D/Caption_Fill_In_2frames.png holds the caption of the fill-in button:
 #   white, orange.
-# - GUI2D/Caption_Clear_2frames.png holds the caption of the clear button:
-#   white, then dark grey like an unlit label.
+# - GUI2D/Caption_Clear_3frames.png holds the caption of the clear button:
+#   white, then dark grey like an unlit label, then red.
+# - GUI2D/Caption_Duplicate_3frames.png holds the caption of the duplicate
+#   button: white, then dark grey like an unlit label, then fuchsia.
 # - GUI2D/Caption_Mute_2frames.png, Caption_Solo_2frames.png and
 #   Caption_Stop_2frames.png hold the captions of the function select buttons:
 #   white, then yellow, blue and red.
@@ -55,6 +57,8 @@ RED="#ff5e5e"
 # The orange of the logo in fill-in editing
 ORANGE="#fe881c"
 BLUE="#0598fe"
+# The fuchsia of the logo in duplicate mode
+FUCHSIA="#f225fe"
 
 # Launch buttons are 205 pixels wide, 283 apart, with 250 pixels from one
 # scene to the next. The strip starts 25 pixels left of the first track and
@@ -224,7 +228,8 @@ draw_step_strip() {
 draw_step_strip "$BACK_LINES" northeast GUI2D/Label_Back_5frames.png
 draw_step_strip "$FORWARD_LINES" northwest GUI2D/Label_Forward_3frames.png
 draw_strip "$SCENE_SIZE" "$POINTSIZE" FILL-IN GUI2D/Caption_Fill_In_2frames.png "$WHITE" "$ORANGE"
-draw_strip "$SCENE_SIZE" "$POINTSIZE" CLEAR GUI2D/Caption_Clear_2frames.png "$WHITE" "$UNLIT"
+draw_strip "$SCENE_SIZE" "$POINTSIZE" CLEAR GUI2D/Caption_Clear_3frames.png "$WHITE" "$UNLIT" "$RED"
+draw_strip "$SCENE_SIZE" "$POINTSIZE" DUPLICATE GUI2D/Caption_Duplicate_3frames.png "$WHITE" "$UNLIT" "$FUCHSIA"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" MUTE GUI2D/Caption_Mute_2frames.png "$WHITE" "$YELLOW"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" SOLO GUI2D/Caption_Solo_2frames.png "$WHITE" "$BLUE"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" STOP GUI2D/Caption_Stop_2frames.png "$WHITE" "$RED"

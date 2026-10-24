@@ -143,6 +143,37 @@ CPress::TClipValues LoadClipValues(TJBox_ObjectRef iCustomProps, int iButtonInde
 	return values;
 }
 
+// One kind of settings of a launch button, whose properties have these tags.
+CPress::TSettings LoadSettings(TJBox_ObjectRef iCustomProps, int iTrack, int iRow, TJBox_Tag iPresentTag, TJBox_Tag iColourTag, TJBox_Tag iPatternBase, TJBox_Tag iUnipolarBase, TJBox_Tag iBipolarBase, TJBox_Tag iTransitionBase) {
+	CPress::TSettings settings;
+	settings.fPresent = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, iPresentTag));
+	settings.fColour = LoadNumber(iCustomProps, iColourTag);
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		settings.fPatterns[output] = LoadNumber(iCustomProps, OutputSettingTag(iPatternBase, iTrack, iRow, output));
+		settings.fUnipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(iUnipolarBase, iTrack, iRow, output));
+		settings.fBipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(iBipolarBase, iTrack, iRow, output));
+		settings.fTransitions[output] = LoadNumber(iCustomProps, OutputSettingTag(iTransitionBase, iTrack, iRow, output));
+	}
+	settings.fOneBarPattern = false;
+	return settings;
+}
+
+// Everything a launch button holds, which a duplicate copies.
+CPress::TButton LoadButton(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
+	const int track = iButtonIndex / CLauncher::kRowCount;
+	const int row = iButtonIndex % CLauncher::kRowCount + 1;
+	CPress::TButton button;
+	button.fClip = LoadSettings(iCustomProps, track, row, ClipPresentTag(track, row), ClipColourTag(track, row),
+		kClipPatternBase, kClipUnipolarBase, kClipBipolarBase, kClipTransitionBase);
+	button.fFillIn = LoadSettings(iCustomProps, track, row, FillInPresentTag(track, row), FillInColourTag(track, row),
+		kFillInPatternBase, kFillInUnipolarBase, kFillInBipolarBase, kFillInTransitionBase);
+	button.fFillIn.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row)));
+	button.fLanding = LoadSettings(iCustomProps, track, row, LandingPresentTag(track, row), LandingColourTag(track, row),
+		kLandingPatternBase, kLandingUnipolarBase, kLandingBipolarBase, kLandingTransitionBase);
+	button.fLanding.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row)));
+	return button;
+}
+
 void StoreNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag, int iValue) {
 	JBox_StoreMOMPropertyByTag(iCustomProps, iTag, JBox_MakeNumber(iValue));
 }
@@ -378,6 +409,12 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		iArgs.fGestureNameKey = "gesture_clear_mode";
 		return;
 	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_DuplicateButton) {
+		iArgs.fConsumeFlag = true;
+		Apply(CPress::DuplicateButton(setup), customProps, iArgs);
+		iArgs.fGestureNameKey = "gesture_duplicate_mode";
+		return;
+	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_BackButton) {
 		iArgs.fConsumeFlag = true;
 		Apply(CPress::BackButton(setup), customProps, iArgs);
@@ -398,8 +435,31 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		iArgs.fConsumeFlag = true;
 
 		bool holdsClip[CLauncher::kTrackCount];
+		bool sceneHoldsClip = false;
 		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 			holdsClip[track] = HoldsClip(customProps, CLauncher::ButtonIndex(track, scene));
+			sceneHoldsClip = sceneHoldsClip || holdsClip[track];
+		}
+		// Duplicating a scene and returning to launch mode are one step of the
+		// undo history. The scene is copied track by track, then the setup
+		// state changes.
+		if (CLauncher::IsDuplicateMode(setup)) {
+			const CPress::TChange change = CPress::DuplicateModeSceneButton(setup, scene, sceneHoldsClip);
+			const int source = CLauncher::SourceScene(setup);
+			if (change.fProperty != CPress::kNothing && source > 0) {
+				for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+					const CPress::TButton button = LoadButton(customProps, CLauncher::ButtonIndex(track, source));
+					const CPress::TChanges copy = CPress::CopyButton(button, CLauncher::ButtonIndex(track, scene));
+					for (int i = 0; i < copy.fCount; ++i) {
+						Apply(copy.fChanges[i], customProps, iArgs);
+					}
+				}
+			}
+			Apply(change, customProps, iArgs);
+			if (change.fProperty != CPress::kNothing && source > 0) {
+				iArgs.fGestureNameKey = "gesture_duplicate_scene";
+			}
+			return;
 		}
 		const CPress::TChanges changes = CPress::SceneButton(setup, scene, holdsClip);
 		for (int i = 0; i < changes.fCount; ++i) {
@@ -436,6 +496,22 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 			Apply(changes.fChanges[i], customProps, iArgs);
 		}
 		iArgs.fGestureNameKey = "gesture_clear_clip";
+		return;
+	}
+
+	// Duplicating a launch button and returning to launch mode are one step
+	// of the undo history.
+	if (CLauncher::IsDuplicateMode(setup)) {
+		const int source = CLauncher::SourceButton(setup);
+		const int pressed = CLauncher::ButtonIndex(track, row);
+		const CPress::TButton sourceButton = LoadButton(customProps, source >= 0 ? source : pressed);
+		const CPress::TChanges changes = CPress::DuplicateModeLaunchButton(setup, track, row, HoldsClip(customProps, pressed), sourceButton);
+		for (int i = 0; i < changes.fCount; ++i) {
+			Apply(changes.fChanges[i], customProps, iArgs);
+		}
+		if (changes.fCount > 1) {
+			iArgs.fGestureNameKey = "gesture_duplicate_clip";
+		}
 		return;
 	}
 

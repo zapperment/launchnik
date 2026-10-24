@@ -21,6 +21,7 @@ const TJBox_DisplayID kDisplayID_FunctionButtons = 7;
 // function as in Launcher.h: stop, mute, solo.
 const TJBox_DisplayID kDisplayID_FirstFunctionSelectButton = 8;
 const TJBox_DisplayID kDisplayID_ClearButton = 11;
+const TJBox_DisplayID kDisplayID_DuplicateButton = 12;
 
 void HandlePanelGesture(TJBox_GestureArgs& iArgs);
 

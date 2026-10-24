@@ -1392,21 +1392,22 @@ void TestClearModeLightsWhatThereIsToClear() {
 	launcher.SetSetup(CLauncher::kSetupClearMode);
 	launcher.Advance(Playing(100));
 
-	// Launch buttons that hold a clip flash red, whatever their colour and
-	// state; empty ones are unlit.
+	// Launch buttons that hold a clip flash in its colour, whatever their
+	// state, so that the user can tell them apart; empty ones are unlit.
 	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 			const bool holdsClip = (track == 2 && row == 4) || (track == 5 && row == 4) || (track == 0 && row == 7);
 			if (holdsClip) {
-				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kFlashing, CLauncher::kColourRed));
+				const int colour = track == 2 ? CLauncher::kColourBlue : CLauncher::DefaultColour(track);
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kFlashing, colour));
 			}
 			else {
 				CHECK(IsUnlit(launcher.GetLight(track, row)));
 			}
 		}
 	}
-	// So do the scene buttons of scenes that hold a clip, instead of the
-	// interval meter.
+	// The scene buttons of scenes that hold a clip flash red, the mode colour,
+	// instead of the interval meter.
 	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
 		if (scene == 4 || scene == 7) {
 			CHECK(IsLight(launcher.GetSceneLight(scene), CLauncher::kFlashing, CLauncher::kColourRed));
@@ -1415,11 +1416,11 @@ void TestClearModeLightsWhatThereIsToClear() {
 			CHECK(IsUnlit(launcher.GetSceneLight(scene)));
 		}
 	}
-	// Flashing red is light value 3 * 1 + 3; the film strips show vibrant red
-	// in the first quaver of a beat.
-	CHECK(launcher.GetLightValue(2, 4) == 6);
+	// Flashing blue is light value 3 * 9 + 3, flashing red 3 * 1 + 3; the
+	// film strips show the vibrant frames in the first quaver of a beat.
+	CHECK(launcher.GetLightValue(2, 4) == 30);
 	CHECK(launcher.GetSceneLightValue(4) == 6);
-	CHECK(launcher.GetLightFrame(2, 4) == 4);
+	CHECK(launcher.GetLightFrame(2, 4) == 20);
 	CHECK(launcher.GetSceneLightFrame(4) == 2);
 
 	// The labels of the setup steps stay unlit, and the scene labels are as in
@@ -1560,21 +1561,25 @@ void TestClearedClipComesBackAtTheSwitchPoint() {
 	CHECK(launcher.GetCVValue(0, 1) == 1.0);
 }
 
-// Frames of the side buttons' film strip: 9 and 10 are dim and vibrant
-// white.
+// Frames of the side buttons' film strip: 9 is dim white, 2 vibrant red.
 void TestClearButtonLights() {
 	CLauncher launcher;
 	CHECK(IsLight(launcher.GetClearLight(), CLauncher::kDim, CLauncher::kColourWhite));
 	CHECK(launcher.GetClearLightFrame() == 9);
 	CHECK(launcher.GetClearCaptionFrame() == 0);
 
+	// In clear mode it is red, the mode colour, like its caption.
 	launcher.SetSetup(CLauncher::kSetupClearMode);
-	CHECK(IsLight(launcher.GetClearLight(), CLauncher::kVibrant, CLauncher::kColourWhite));
-	CHECK(launcher.GetClearLightFrame() == 10);
-	CHECK(launcher.GetClearCaptionFrame() == 0);
+	CHECK(IsLight(launcher.GetClearLight(), CLauncher::kVibrant, CLauncher::kColourRed));
+	CHECK(launcher.GetClearLightFrame() == 2);
+	CHECK(launcher.GetClearCaptionFrame() == 2);
 
-	// In setup mode it does nothing, so it is dark, with its caption dark grey.
-	const int steps[] = { CLauncher::kSetupClipPicking, CLauncher::SetupForClipEditing(2, 4), CLauncher::SetupForFillInEditing(2, 4), CLauncher::SetupForLandingEditing(2, 4) };
+	// In setup mode and duplicate mode it does nothing, so it is dark, with
+	// its caption dark grey.
+	const int steps[] = {
+		CLauncher::kSetupClipPicking, CLauncher::SetupForClipEditing(2, 4), CLauncher::SetupForFillInEditing(2, 4), CLauncher::SetupForLandingEditing(2, 4),
+		CLauncher::kSetupSourcePicking, CLauncher::SetupForClipDestinationPicking(2, 4), CLauncher::SetupForSceneDestinationPicking(4),
+	};
 	for (int step : steps) {
 		launcher.SetSetup(step);
 		CHECK(IsUnlit(launcher.GetClearLight()));
@@ -1589,7 +1594,8 @@ void TestClearModeIsNotASetupStep() {
 	CHECK(!CLauncher::IsLandingEditing(CLauncher::kSetupClearMode));
 	CHECK(CLauncher::PickedButton(CLauncher::kSetupClearMode) == -1);
 	CHECK(CLauncher::IsLandingEditing(CLauncher::kSetupClearMode - 1));
-	CHECK(CLauncher::kSetupCount == CLauncher::kSetupClearMode + 1);
+	CHECK(!CLauncher::IsSetupMode(CLauncher::kSetupClearMode));
+	CHECK(!CLauncher::IsDuplicateMode(CLauncher::kSetupClearMode));
 
 	// It is a setup state like any other, and one past it is ignored.
 	CLauncher launcher;
@@ -2937,6 +2943,182 @@ void TestHoldingTheRelaunchPressRelaunchesOnlyOnce() {
 	CHECK(!launcher.PlaysLanding(0));
 }
 
+void TestDuplicateModeStates() {
+	// Source picking, then destination picking for each launch button and
+	// each scene, after clear mode.
+	CHECK(CLauncher::kSetupSourcePicking == CLauncher::kSetupClearMode + 1);
+	CHECK(CLauncher::kSetupCount == 268);
+	CHECK(CLauncher::SetupForClipDestinationPicking(0, 1) == 196);
+	CHECK(CLauncher::SetupForClipDestinationPicking(7, 8) == 259);
+	CHECK(CLauncher::SetupForSceneDestinationPicking(1) == 260);
+	CHECK(CLauncher::SetupForSceneDestinationPicking(8) == 267);
+
+	CHECK(!CLauncher::IsDuplicateMode(CLauncher::kSetupLaunchMode));
+	CHECK(!CLauncher::IsDuplicateMode(CLauncher::kSetupClearMode));
+	CHECK(CLauncher::IsDuplicateMode(CLauncher::kSetupSourcePicking));
+	CHECK(CLauncher::IsDuplicateMode(CLauncher::kSetupCount - 1));
+	CHECK(!CLauncher::IsDuplicateMode(CLauncher::kSetupCount));
+
+	// Duplicate mode is not part of setup mode.
+	CHECK(CLauncher::IsSetupMode(CLauncher::kSetupClipPicking));
+	CHECK(CLauncher::IsSetupMode(CLauncher::SetupForLandingEditing(7, 8)));
+	CHECK(!CLauncher::IsSetupMode(CLauncher::kSetupLaunchMode));
+	CHECK(!CLauncher::IsSetupMode(CLauncher::kSetupSourcePicking));
+	CHECK(!CLauncher::IsSetupMode(CLauncher::SetupForClipDestinationPicking(2, 4)));
+	CHECK(!CLauncher::IsLandingEditing(CLauncher::kSetupSourcePicking));
+	CHECK(CLauncher::PickedButton(CLauncher::SetupForClipDestinationPicking(2, 4)) == -1);
+
+	// The source of destination picking.
+	CHECK(CLauncher::SourceButton(CLauncher::SetupForClipDestinationPicking(2, 4)) == CLauncher::ButtonIndex(2, 4));
+	CHECK(CLauncher::SourceScene(CLauncher::SetupForClipDestinationPicking(2, 4)) == 0);
+	CHECK(CLauncher::SourceButton(CLauncher::SetupForSceneDestinationPicking(5)) == -1);
+	CHECK(CLauncher::SourceScene(CLauncher::SetupForSceneDestinationPicking(5)) == 5);
+	CHECK(CLauncher::SourceButton(CLauncher::kSetupSourcePicking) == -1);
+	CHECK(CLauncher::SourceScene(CLauncher::kSetupSourcePicking) == 0);
+
+	// The last state is a setup state like any other.
+	CLauncher launcher;
+	launcher.SetSetup(CLauncher::kSetupCount - 1);
+	CHECK(launcher.GetModeColour() == CLauncher::kModeFuchsia);
+}
+
+// A launcher with clips in track 3, row 4 (blue), track 6, row 4 and track 1,
+// row 7, with track 3 playing, in the first quaver of a beat.
+CLauncher DuplicateLauncher(int iSetup) {
+	CLauncher launcher;
+	launcher.SetClipPresent(2, 4, true);
+	launcher.SetClipColour(2, 4, CLauncher::kColourBlue);
+	launcher.SetClipPresent(5, 4, true);
+	launcher.SetClipPresent(0, 7, true);
+	launcher.SetSelection(2, 4);
+	launcher.Open();
+	launcher.SetSetup(iSetup);
+	launcher.Advance(Playing(100));
+	return launcher;
+}
+
+bool HoldsDuplicateClip(int iTrack, int iRow) {
+	return (iTrack == 2 && iRow == 4) || (iTrack == 5 && iRow == 4) || (iTrack == 0 && iRow == 7);
+}
+
+int DuplicateClipColour(int iTrack) {
+	return iTrack == 2 ? CLauncher::kColourBlue : CLauncher::DefaultColour(iTrack);
+}
+
+void TestSourcePickingLightsWhatThereIsToCopy() {
+	const CLauncher launcher = DuplicateLauncher(CLauncher::kSetupSourcePicking);
+
+	// Launch buttons that hold a clip flash in its colour; empty ones are
+	// unlit.
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			if (HoldsDuplicateClip(track, row)) {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kFlashing, DuplicateClipColour(track)));
+			}
+			else {
+				CHECK(IsUnlit(launcher.GetLight(track, row)));
+			}
+		}
+	}
+	// The scene buttons of scenes that hold a clip flash fuchsia, instead of
+	// the interval meter.
+	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
+		if (scene == 4 || scene == 7) {
+			CHECK(IsLight(launcher.GetSceneLight(scene), CLauncher::kFlashing, CLauncher::kColourFuchsia));
+		}
+		else {
+			CHECK(IsUnlit(launcher.GetSceneLight(scene)));
+		}
+	}
+	// Flashing fuchsia is light value 3 * 12 + 3; the scene buttons' film
+	// strip shows vibrant fuchsia, its last frame, in the first quaver.
+	CHECK(launcher.GetSceneLightValue(4) == 39);
+	CHECK(launcher.GetSceneLightFrame(4) == 14);
+}
+
+void TestClipDestinationPickingLightsTheDestinations() {
+	const CLauncher launcher = DuplicateLauncher(CLauncher::SetupForClipDestinationPicking(2, 4));
+
+	// The source stands still, in its colour; every other launch button
+	// flashes, in its clip's colour or, if empty, in white.
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			if (track == 2 && row == 4) {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kVibrant, CLauncher::kColourBlue));
+			}
+			else if (HoldsDuplicateClip(track, row)) {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kFlashing, DuplicateClipColour(track)));
+			}
+			else {
+				CHECK(IsLight(launcher.GetLight(track, row), CLauncher::kFlashing, CLauncher::kColourWhite));
+			}
+		}
+	}
+	// The scene buttons are unlit: a scene is no destination for a launch
+	// button.
+	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
+		CHECK(IsUnlit(launcher.GetSceneLight(scene)));
+	}
+}
+
+void TestSceneDestinationPickingLightsTheDestinations() {
+	const CLauncher launcher = DuplicateLauncher(CLauncher::SetupForSceneDestinationPicking(4));
+
+	// The launch buttons are unlit.
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			CHECK(IsUnlit(launcher.GetLight(track, row)));
+		}
+	}
+	// The source scene stands still in fuchsia; every other scene flashes
+	// fuchsia, with clips or without.
+	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
+		const CLauncher::EBrightness brightness = scene == 4 ? CLauncher::kVibrant : CLauncher::kFlashing;
+		CHECK(IsLight(launcher.GetSceneLight(scene), brightness, CLauncher::kColourFuchsia));
+	}
+}
+
+void TestDuplicateModeWearsFuchsia() {
+	const int steps[] = { CLauncher::kSetupSourcePicking, CLauncher::SetupForClipDestinationPicking(2, 4), CLauncher::SetupForSceneDestinationPicking(4) };
+	for (int step : steps) {
+		const CLauncher launcher = DuplicateLauncher(step);
+		CHECK(launcher.GetModeColour() == CLauncher::kModeFuchsia);
+		// The back button leads back to launch mode, in white.
+		CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantWhite);
+		CHECK(launcher.GetBackLabelFrame() == 1);
+		// Nothing of setup mode is lit.
+		CHECK(IsUnlit(launcher.GetForwardLight()));
+		CHECK(launcher.GetLaunchLabelsFrame() == 0);
+		CHECK(launcher.GetTransitionDiagramsFrame() == 0);
+		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+			CHECK(launcher.GetOutputLabelsFrame(output) == 0);
+		}
+		// The duplicate button and its caption are fuchsia: frame 14 of the
+		// side buttons' film strip is vibrant fuchsia.
+		CHECK(IsLight(launcher.GetDuplicateLight(), CLauncher::kVibrant, CLauncher::kColourFuchsia));
+		CHECK(launcher.GetDuplicateLightFrame() == 14);
+		CHECK(launcher.GetDuplicateCaptionFrame() == 2);
+	}
+}
+
+// Frame 9 of the side buttons' film strip is dim white.
+void TestDuplicateButtonLights() {
+	CLauncher launcher;
+	CHECK(IsLight(launcher.GetDuplicateLight(), CLauncher::kDim, CLauncher::kColourWhite));
+	CHECK(launcher.GetDuplicateLightFrame() == 9);
+	CHECK(launcher.GetDuplicateCaptionFrame() == 0);
+
+	// In setup mode and clear mode it does nothing, so it is dark, with its
+	// caption dark grey.
+	const int steps[] = { CLauncher::kSetupClipPicking, CLauncher::SetupForClipEditing(2, 4), CLauncher::SetupForFillInEditing(2, 4), CLauncher::SetupForLandingEditing(2, 4), CLauncher::kSetupClearMode };
+	for (int step : steps) {
+		launcher.SetSetup(step);
+		CHECK(IsUnlit(launcher.GetDuplicateLight()));
+		CHECK(launcher.GetDuplicateLightFrame() == 0);
+		CHECK(launcher.GetDuplicateCaptionFrame() == 1);
+	}
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -3018,6 +3200,12 @@ int main() {
 	TestClearedClipComesBackAtTheSwitchPoint();
 	TestClearButtonLights();
 	TestClearModeIsNotASetupStep();
+	TestDuplicateModeStates();
+	TestSourcePickingLightsWhatThereIsToCopy();
+	TestClipDestinationPickingLightsTheDestinations();
+	TestSceneDestinationPickingLightsTheDestinations();
+	TestDuplicateModeWearsFuchsia();
+	TestDuplicateButtonLights();
 	TestForwardButtonIsLitWhileItLeadsSomewhere();
 	TestFillInEditingWithoutFillInShowsOnlyToggle();
 	TestFillInEditingShowsColoursAndPatterns();

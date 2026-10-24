@@ -166,6 +166,36 @@ int CLauncher::PickedButton(int iSetup) {
 	return -1;
 }
 
+bool CLauncher::IsSetupMode(int iSetup) {
+	return iSetup >= kSetupClipPicking && iSetup < kSetupClearMode;
+}
+
+bool CLauncher::IsDuplicateMode(int iSetup) {
+	return iSetup >= kSetupSourcePicking && iSetup < kSetupCount;
+}
+
+int CLauncher::SetupForClipDestinationPicking(int iTrack, int iRow) {
+	return kSetupFirstClipDestinationPicking + ButtonIndex(iTrack, iRow);
+}
+
+int CLauncher::SetupForSceneDestinationPicking(int iScene) {
+	return kSetupFirstSceneDestinationPicking + (iScene - 1);
+}
+
+int CLauncher::SourceButton(int iSetup) {
+	if (iSetup >= kSetupFirstClipDestinationPicking && iSetup < kSetupFirstSceneDestinationPicking) {
+		return iSetup - kSetupFirstClipDestinationPicking;
+	}
+	return -1;
+}
+
+int CLauncher::SourceScene(int iSetup) {
+	if (iSetup >= kSetupFirstSceneDestinationPicking && iSetup < kSetupCount) {
+		return iSetup - kSetupFirstSceneDestinationPicking + 1;
+	}
+	return 0;
+}
+
 bool CLauncher::IsValidButton(int iTrack, int iRow) {
 	return iTrack >= 0 && iTrack < kTrackCount && iRow >= 1 && iRow <= kRowCount;
 }
@@ -996,6 +1026,9 @@ CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
 	if (fSetup == kSetupClearMode) {
 		return GetClearModeLight(iTrack, iRow);
 	}
+	if (IsDuplicateMode(fSetup)) {
+		return GetDuplicateModeLight(iTrack, iRow);
+	}
 	// Clip editing, fill-in editing and landing editing are laid out and lit
 	// the same: only the labels tell them apart.
 	return GetEditingLight(iTrack, iRow, EditedSettings());
@@ -1028,9 +1061,30 @@ CLauncher::TLight CLauncher::GetClipPickingLight(int iTrack, int iRow) const {
 	return MakeLight(kFlashing, clip.fPresent ? clip.fColour : kColourWhite);
 }
 
-// Only what there is to clear flashes, in the mode colour.
+// Only what there is to clear flashes, in its own colour, so that the user
+// can tell the clips apart.
 CLauncher::TLight CLauncher::GetClearModeLight(int iTrack, int iRow) const {
-	return Clip(iTrack, iRow).fPresent ? MakeLight(kFlashing, kColourRed) : kUnlitLight;
+	const TClip& clip = Clip(iTrack, iRow);
+	return clip.fPresent ? MakeLight(kFlashing, clip.fColour) : kUnlitLight;
+}
+
+// In source picking what there is to copy flashes; in destination picking for
+// a launch button the source stands still and everything else flashes, empty
+// launch buttons in white. With a scene as the source, the launch buttons are
+// unlit.
+CLauncher::TLight CLauncher::GetDuplicateModeLight(int iTrack, int iRow) const {
+	const TClip& clip = Clip(iTrack, iRow);
+	if (fSetup == kSetupSourcePicking) {
+		return clip.fPresent ? MakeLight(kFlashing, clip.fColour) : kUnlitLight;
+	}
+	const int source = SourceButton(fSetup);
+	if (source < 0) {
+		return kUnlitLight;
+	}
+	if (source == ButtonIndex(iTrack, iRow)) {
+		return MakeLight(kVibrant, clip.fColour);
+	}
+	return MakeLight(kFlashing, clip.fPresent ? clip.fColour : kColourWhite);
 }
 
 bool CLauncher::SceneHasClips(int iScene) const {
@@ -1137,6 +1191,17 @@ CLauncher::TLight CLauncher::GetSceneLight(int iScene) const {
 		const bool clearable = iScene >= 1 && iScene <= kRowCount && SceneHasClips(iScene);
 		return clearable ? MakeLight(kFlashing, kColourRed) : kUnlitLight;
 	}
+	if (fSetup == kSetupSourcePicking) {
+		const bool copyable = iScene >= 1 && iScene <= kRowCount && SceneHasClips(iScene);
+		return copyable ? MakeLight(kFlashing, kColourFuchsia) : kUnlitLight;
+	}
+	if (IsDuplicateMode(fSetup)) {
+		const int source = SourceScene(fSetup);
+		if (source == 0 || iScene < 1 || iScene > kRowCount) {
+			return kUnlitLight;
+		}
+		return MakeLight(iScene == source ? kVibrant : kFlashing, kColourFuchsia);
+	}
 	// The bottom scene button stands for the first segment.
 	const int segment = kSegmentCount + 1 - iScene;
 	if (segment < 1 || segment > fReachedSegments) {
@@ -1163,8 +1228,8 @@ int CLauncher::SceneStripFrame(const TLight& iLight) const {
 	if (iLight.fBrightness == kUnlit) {
 		return 0;
 	}
-	// The film strip holds red, green, yellow, white, blue and orange, in
-	// that order.
+	// The film strip holds red, green, yellow, white, blue, orange and
+	// fuchsia, in that order.
 	int stripColour = 3;
 	if (iLight.fColour == kColourRed) {
 		stripColour = 0;
@@ -1181,6 +1246,9 @@ int CLauncher::SceneStripFrame(const TLight& iLight) const {
 	else if (iLight.fColour == kColourOrange) {
 		stripColour = 5;
 	}
+	else if (iLight.fColour == kColourFuchsia) {
+		stripColour = 6;
+	}
 	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
 }
 
@@ -1188,8 +1256,8 @@ int CLauncher::SideStripFrame(const TLight& iLight) const {
 	if (iLight.fBrightness == kUnlit) {
 		return 0;
 	}
-	// The film strip holds red, green, yellow, blue, white and orange, in
-	// that order.
+	// The film strip holds red, green, yellow, blue, white, orange and
+	// fuchsia, in that order.
 	int stripColour = 4;
 	if (iLight.fColour == kColourRed) {
 		stripColour = 0;
@@ -1206,6 +1274,9 @@ int CLauncher::SideStripFrame(const TLight& iLight) const {
 	else if (iLight.fColour == kColourOrange) {
 		stripColour = 5;
 	}
+	else if (iLight.fColour == kColourFuchsia) {
+		stripColour = 6;
+	}
 	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
 }
 
@@ -1219,6 +1290,9 @@ CLauncher::EModeColour CLauncher::GetModeColour() const {
 	if (fSetup == kSetupClearMode) {
 		return kModeRed;
 	}
+	if (IsDuplicateMode(fSetup)) {
+		return kModeFuchsia;
+	}
 	if (IsFillInEditing(fSetup)) {
 		return kModeOrange;
 	}
@@ -1230,7 +1304,7 @@ int CLauncher::GetBackButtonFrame() const {
 	if (fSetup == kSetupLaunchMode) {
 		return kBackButtonDark;
 	}
-	if (fSetup == kSetupClipPicking || fSetup == kSetupClearMode) {
+	if (fSetup == kSetupClipPicking || fSetup == kSetupClearMode || IsDuplicateMode(fSetup)) {
 		return kBackButtonVibrantWhite;
 	}
 	if (IsFillInEditing(fSetup)) {
@@ -1245,7 +1319,7 @@ int CLauncher::GetBackLabelFrame() const {
 	if (fSetup == kSetupLaunchMode) {
 		return 0;
 	}
-	if (fSetup == kSetupClipPicking || fSetup == kSetupClearMode) {
+	if (fSetup == kSetupClipPicking || fSetup == kSetupClearMode || IsDuplicateMode(fSetup)) {
 		return 1;
 	}
 	if (IsFillInEditing(fSetup)) {
@@ -1305,7 +1379,7 @@ CLauncher::TLight CLauncher::GetClearLight() const {
 	if (fSetup == kSetupLaunchMode) {
 		return MakeLight(kDim, kColourWhite);
 	}
-	return fSetup == kSetupClearMode ? MakeLight(kVibrant, kColourWhite) : kUnlitLight;
+	return fSetup == kSetupClearMode ? MakeLight(kVibrant, kColourRed) : kUnlitLight;
 }
 
 int CLauncher::GetClearLightFrame() const {
@@ -1313,7 +1387,28 @@ int CLauncher::GetClearLightFrame() const {
 }
 
 int CLauncher::GetClearCaptionFrame() const {
-	return fSetup == kSetupLaunchMode || fSetup == kSetupClearMode ? 0 : 1;
+	if (fSetup == kSetupLaunchMode) {
+		return 0;
+	}
+	return fSetup == kSetupClearMode ? 2 : 1;
+}
+
+CLauncher::TLight CLauncher::GetDuplicateLight() const {
+	if (fSetup == kSetupLaunchMode) {
+		return MakeLight(kDim, kColourWhite);
+	}
+	return IsDuplicateMode(fSetup) ? MakeLight(kVibrant, kColourFuchsia) : kUnlitLight;
+}
+
+int CLauncher::GetDuplicateLightFrame() const {
+	return SideStripFrame(GetDuplicateLight());
+}
+
+int CLauncher::GetDuplicateCaptionFrame() const {
+	if (fSetup == kSetupLaunchMode) {
+		return 0;
+	}
+	return IsDuplicateMode(fSetup) ? 2 : 1;
 }
 
 // It is lit while it leads somewhere, in the mode colour of the step it leads

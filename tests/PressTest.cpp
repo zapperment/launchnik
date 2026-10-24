@@ -239,6 +239,217 @@ void TestSceneButtonInClearModeEmptiesItsSceneAndReturns() {
 	CHECK(IsChange(nothing.fChanges[0], CPress::kSetup, 0, kLaunchMode));
 }
 
+const int kSourcePicking = CLauncher::kSetupSourcePicking;
+
+void TestDuplicateButtonSwitchesBetweenLaunchModeAndDuplicateMode() {
+	CHECK(IsChange(CPress::DuplicateButton(kLaunchMode), CPress::kSetup, 0, kSourcePicking));
+	// From either step it returns to launch mode, copying nothing.
+	CHECK(IsChange(CPress::DuplicateButton(kSourcePicking), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsChange(CPress::DuplicateButton(CLauncher::SetupForClipDestinationPicking(3, 6)), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsChange(CPress::DuplicateButton(CLauncher::SetupForSceneDestinationPicking(6)), CPress::kSetup, 0, kLaunchMode));
+	// In setup mode and clear mode it does nothing.
+	CHECK(IsNoChange(CPress::DuplicateButton(kClipPicking)));
+	CHECK(IsNoChange(CPress::DuplicateButton(CLauncher::SetupForClipEditing(3, 6))));
+	CHECK(IsNoChange(CPress::DuplicateButton(CLauncher::SetupForFillInEditing(3, 6))));
+	CHECK(IsNoChange(CPress::DuplicateButton(CLauncher::SetupForLandingEditing(3, 6))));
+	CHECK(IsNoChange(CPress::DuplicateButton(kClearMode)));
+	// Nor does the clear button in duplicate mode.
+	CHECK(IsNoChange(CPress::ClearButton(kSourcePicking)));
+	CHECK(IsNoChange(CPress::ClearButton(CLauncher::SetupForClipDestinationPicking(3, 6))));
+}
+
+void TestSetupAndBackButtonsLeaveDuplicateMode() {
+	const int steps[] = { kSourcePicking, CLauncher::SetupForClipDestinationPicking(3, 6), CLauncher::SetupForSceneDestinationPicking(6) };
+	for (int step : steps) {
+		CHECK(IsChange(CPress::SetupButton(step), CPress::kSetup, 0, kLaunchMode));
+		CHECK(IsChange(CPress::BackButton(step), CPress::kSetup, 0, kLaunchMode));
+		CHECK(IsNoChange(CPress::ForwardButton(step, true)));
+		// And the ordinary rules do nothing, not even a relaunch.
+		CHECK(IsNoChange(CPress::LaunchButton(step, 3, 6, true, CPress::Edited(false))));
+		CHECK(IsNoChange(CPress::RelaunchButton(step, 3, true)));
+		const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
+		CHECK(CPress::SceneButton(step, 6, holdsClip).fCount == 0);
+	}
+}
+
+// Settings that differ from one another and from a new clip's, so that a copy
+// can be told from them.
+CPress::TSettings SomeSettings(int iSeed) {
+	CPress::TSettings settings;
+	settings.fPresent = iSeed % 2 == 0;
+	settings.fColour = iSeed % CLauncher::kColourCount;
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		settings.fPatterns[output] = (iSeed + output) % CLauncher::kPatternCount;
+		settings.fUnipolar[output] = (iSeed + output + 1) % CLauncher::kValueCount;
+		settings.fBipolar[output] = (iSeed + output + 2) % CLauncher::kValueCount;
+		settings.fTransitions[output] = (iSeed + output) % CLauncher::kTransitionCount;
+	}
+	settings.fOneBarPattern = iSeed % 3 == 0;
+	return settings;
+}
+
+CPress::TButton SomeButton(int iSeed) {
+	CPress::TButton button;
+	button.fClip = SomeSettings(iSeed);
+	button.fClip.fOneBarPattern = false;
+	button.fFillIn = SomeSettings(iSeed + 5);
+	button.fLanding = SomeSettings(iSeed + 10);
+	return button;
+}
+
+// Plays the changes to one launch button back onto a launch button whose
+// settings are all -1, and counts them.
+void Replay(const CPress::TChange iChanges[], int iCount, int iButtonIndex, CPress::TButton& oButton, int& oCount) {
+	CPress::TSettings blank;
+	blank.fPresent = false;
+	blank.fColour = -1;
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		blank.fPatterns[output] = -1;
+		blank.fUnipolar[output] = -1;
+		blank.fBipolar[output] = -1;
+		blank.fTransitions[output] = -1;
+	}
+	blank.fOneBarPattern = false;
+	oButton.fClip = blank;
+	oButton.fFillIn = blank;
+	oButton.fLanding = blank;
+	oCount = 0;
+	for (int i = 0; i < iCount; ++i) {
+		const CPress::TChange& change = iChanges[i];
+		if (change.fProperty == CPress::kSetup || change.fIndex != iButtonIndex) {
+			continue;
+		}
+		++oCount;
+		const int output = change.fOutput;
+		switch (change.fProperty) {
+			case CPress::kClipPresent: oButton.fClip.fPresent = change.fValue != 0; break;
+			case CPress::kClipColour: oButton.fClip.fColour = change.fValue; break;
+			case CPress::kClipPattern: oButton.fClip.fPatterns[output] = change.fValue; break;
+			case CPress::kClipUnipolar: oButton.fClip.fUnipolar[output] = change.fValue; break;
+			case CPress::kClipBipolar: oButton.fClip.fBipolar[output] = change.fValue; break;
+			case CPress::kClipTransition: oButton.fClip.fTransitions[output] = change.fValue; break;
+			case CPress::kFillInPresent: oButton.fFillIn.fPresent = change.fValue != 0; break;
+			case CPress::kFillInColour: oButton.fFillIn.fColour = change.fValue; break;
+			case CPress::kFillInPattern: oButton.fFillIn.fPatterns[output] = change.fValue; break;
+			case CPress::kFillInUnipolar: oButton.fFillIn.fUnipolar[output] = change.fValue; break;
+			case CPress::kFillInBipolar: oButton.fFillIn.fBipolar[output] = change.fValue; break;
+			case CPress::kFillInTransition: oButton.fFillIn.fTransitions[output] = change.fValue; break;
+			case CPress::kFillInOneBarPattern: oButton.fFillIn.fOneBarPattern = change.fValue != 0; break;
+			case CPress::kLandingPresent: oButton.fLanding.fPresent = change.fValue != 0; break;
+			case CPress::kLandingColour: oButton.fLanding.fColour = change.fValue; break;
+			case CPress::kLandingPattern: oButton.fLanding.fPatterns[output] = change.fValue; break;
+			case CPress::kLandingUnipolar: oButton.fLanding.fUnipolar[output] = change.fValue; break;
+			case CPress::kLandingBipolar: oButton.fLanding.fBipolar[output] = change.fValue; break;
+			case CPress::kLandingTransition: oButton.fLanding.fTransitions[output] = change.fValue; break;
+			case CPress::kLandingOneBarPattern: oButton.fLanding.fOneBarPattern = change.fValue != 0; break;
+			default: --oCount; break;
+		}
+	}
+}
+
+bool IsSameSettings(const CPress::TSettings& iA, const CPress::TSettings& iB) {
+	if (iA.fPresent != iB.fPresent || iA.fColour != iB.fColour || iA.fOneBarPattern != iB.fOneBarPattern) {
+		return false;
+	}
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		if (iA.fPatterns[output] != iB.fPatterns[output] || iA.fUnipolar[output] != iB.fUnipolar[output]
+			|| iA.fBipolar[output] != iB.fBipolar[output] || iA.fTransitions[output] != iB.fTransitions[output]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool IsSameButton(const CPress::TButton& iA, const CPress::TButton& iB) {
+	return IsSameSettings(iA.fClip, iB.fClip) && IsSameSettings(iA.fFillIn, iB.fFillIn) && IsSameSettings(iA.fLanding, iB.fLanding);
+}
+
+void TestSourcePickingPicksALaunchButtonWithAClip() {
+	const CPress::TChanges changes = CPress::DuplicateModeLaunchButton(kSourcePicking, 3, 6, true, SomeButton(1));
+	CHECK(changes.fCount == 1);
+	CHECK(IsChange(changes.fChanges[0], CPress::kSetup, 0, CLauncher::SetupForClipDestinationPicking(3, 6)));
+	// An empty launch button cannot be the source.
+	CHECK(CPress::DuplicateModeLaunchButton(kSourcePicking, 3, 6, false, SomeButton(1)).fCount == 0);
+}
+
+void TestClipDestinationPickingCopiesEverythingAndReturns() {
+	const CPress::TButton source = SomeButton(2);
+	const int setup = CLauncher::SetupForClipDestinationPicking(3, 6);
+	// The destination may be on another track, empty or not.
+	for (int held = 0; held < 2; ++held) {
+		const CPress::TChanges changes = CPress::DuplicateModeLaunchButton(setup, 5, 2, held == 1, source);
+		CHECK(changes.fCount == CPress::kButtonSettingCount + 1);
+		CHECK(IsChange(changes.fChanges[changes.fCount - 1], CPress::kSetup, 0, kLaunchMode));
+		CPress::TButton copy;
+		int count = 0;
+		Replay(changes.fChanges, changes.fCount, CLauncher::ButtonIndex(5, 2), copy, count);
+		CHECK(count == CPress::kButtonSettingCount);
+		CHECK(IsSameButton(copy, source));
+	}
+	// A source without a fill-in or landing switched on still hands on their
+	// settings, and an empty one makes the destination empty.
+	CPress::TButton bare = SomeButton(3);
+	bare.fFillIn.fPresent = false;
+	bare.fLanding.fPresent = false;
+	const CPress::TChanges changes = CPress::DuplicateModeLaunchButton(setup, 0, 1, true, bare);
+	CPress::TButton copy;
+	int count = 0;
+	Replay(changes.fChanges, changes.fCount, CLauncher::ButtonIndex(0, 1), copy, count);
+	CHECK(IsSameButton(copy, bare));
+}
+
+void TestClipDestinationPickingIgnoresTheSource() {
+	const int setup = CLauncher::SetupForClipDestinationPicking(3, 6);
+	CHECK(CPress::DuplicateModeLaunchButton(setup, 3, 6, true, SomeButton(2)).fCount == 0);
+}
+
+void TestDuplicateModeLaunchButtonDoesNothingElsewhere() {
+	const CPress::TButton source = SomeButton(2);
+	CHECK(CPress::DuplicateModeLaunchButton(kLaunchMode, 3, 6, true, source).fCount == 0);
+	CHECK(CPress::DuplicateModeLaunchButton(kClipPicking, 3, 6, true, source).fCount == 0);
+	CHECK(CPress::DuplicateModeLaunchButton(kClearMode, 3, 6, true, source).fCount == 0);
+	// With a scene as the source, launch buttons do nothing.
+	CHECK(CPress::DuplicateModeLaunchButton(CLauncher::SetupForSceneDestinationPicking(6), 3, 2, true, source).fCount == 0);
+}
+
+void TestSourcePickingPicksASceneWithAClip() {
+	CHECK(IsChange(CPress::DuplicateModeSceneButton(kSourcePicking, 6, true), CPress::kSetup, 0, CLauncher::SetupForSceneDestinationPicking(6)));
+	// A scene without clips cannot be the source.
+	CHECK(IsNoChange(CPress::DuplicateModeSceneButton(kSourcePicking, 6, false)));
+}
+
+void TestSceneDestinationPickingReturnsToLaunchMode() {
+	// With clips or without, any scene but the source is a destination.
+	CHECK(IsChange(CPress::DuplicateModeSceneButton(CLauncher::SetupForSceneDestinationPicking(6), 2, false), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsChange(CPress::DuplicateModeSceneButton(CLauncher::SetupForSceneDestinationPicking(6), 2, true), CPress::kSetup, 0, kLaunchMode));
+}
+
+void TestCopyButtonCopiesEverything() {
+	// Even seeds hold a clip, odd ones are empty: a copy of an empty launch
+	// button empties the destination, as a scene copy needs.
+	for (int seed = 0; seed < 2; ++seed) {
+		const CPress::TButton source = SomeButton(seed);
+		CHECK(source.fClip.fPresent == (seed == 0));
+		const CPress::TChanges changes = CPress::CopyButton(source, CLauncher::ButtonIndex(4, 2));
+		CHECK(changes.fCount == CPress::kButtonSettingCount);
+		CPress::TButton copy;
+		int count = 0;
+		Replay(changes.fChanges, changes.fCount, CLauncher::ButtonIndex(4, 2), copy, count);
+		CHECK(count == CPress::kButtonSettingCount);
+		CHECK(IsSameButton(copy, source));
+	}
+}
+
+void TestDuplicateModeSceneButtonDoesNothingElsewhere() {
+	// The source itself.
+	CHECK(IsNoChange(CPress::DuplicateModeSceneButton(CLauncher::SetupForSceneDestinationPicking(6), 6, true)));
+	// With a launch button as the source, scene buttons do nothing.
+	CHECK(IsNoChange(CPress::DuplicateModeSceneButton(CLauncher::SetupForClipDestinationPicking(3, 6), 2, true)));
+	const int steps[] = { kLaunchMode, kClipPicking, kClearMode };
+	for (int step : steps) {
+		CHECK(IsNoChange(CPress::DuplicateModeSceneButton(step, 2, true)));
+	}
+}
 } // namespace
 
 bool IsChanges(const CPress::TChanges& iChanges, int iCount) {
@@ -469,6 +680,16 @@ int main() {
 	TestClearModeLeavesAnEmptyLaunchButtonEmpty();
 	TestClearModeLaunchButtonDoesNothingElsewhere();
 	TestSceneButtonInClearModeEmptiesItsSceneAndReturns();
+	TestDuplicateButtonSwitchesBetweenLaunchModeAndDuplicateMode();
+	TestSetupAndBackButtonsLeaveDuplicateMode();
+	TestSourcePickingPicksALaunchButtonWithAClip();
+	TestClipDestinationPickingCopiesEverythingAndReturns();
+	TestClipDestinationPickingIgnoresTheSource();
+	TestDuplicateModeLaunchButtonDoesNothingElsewhere();
+	TestSourcePickingPicksASceneWithAClip();
+	TestSceneDestinationPickingReturnsToLaunchMode();
+	TestCopyButtonCopiesEverything();
+	TestDuplicateModeSceneButtonDoesNothingElsewhere();
 
 	TestSetupButtonLeavesFillInEditing();
 	TestForwardButtonGoesForwardOneStepWithAClip();

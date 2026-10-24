@@ -113,6 +113,22 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 	return changes;
 }
 
+// Appends what makes one kind of settings of a launch button exactly like
+// those of another.
+void AppendCopy(CPress::TChanges& ioChanges, const TSettingsProperties& iProperties, const CPress::TSettings& iSource, int iDestination) {
+	ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fPresent, iDestination, iSource.fPresent ? 1 : 0);
+	ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fColour, iDestination, iSource.fColour);
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fPattern, iDestination, iSource.fPatterns[output], output);
+		ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fUnipolar, iDestination, iSource.fUnipolar[output], output);
+		ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fBipolar, iDestination, iSource.fBipolar[output], output);
+		ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fTransition, iDestination, iSource.fTransitions[output], output);
+	}
+	if (iProperties.fOneBarPattern != CPress::kNothing) {
+		ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fOneBarPattern, iDestination, iSource.fOneBarPattern ? 1 : 0);
+	}
+}
+
 } // namespace
 
 CPress::TEdited CPress::Edited(bool iPresent) {
@@ -177,6 +193,45 @@ CPress::TChanges CPress::ClearModeLaunchButton(int iSetup, int iTrack, int iRow,
 		changes.fChanges[changes.fCount++] = MakeChange(kClipPresent, CLauncher::ButtonIndex(iTrack, iRow), 0);
 	}
 	changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+	return changes;
+}
+
+CPress::TChanges CPress::DuplicateModeLaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, const TButton& iSource) {
+	TChanges changes;
+	changes.fCount = 0;
+	if (iSetup == CLauncher::kSetupSourcePicking) {
+		if (iPressedHoldsClip) {
+			changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::SetupForClipDestinationPicking(iTrack, iRow));
+		}
+		return changes;
+	}
+	const int source = CLauncher::SourceButton(iSetup);
+	const int pressed = CLauncher::ButtonIndex(iTrack, iRow);
+	if (source < 0 || pressed == source) {
+		return changes;
+	}
+	changes = CopyButton(iSource, pressed);
+	changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+	return changes;
+}
+
+CPress::TChange CPress::DuplicateModeSceneButton(int iSetup, int iScene, bool iSceneHoldsClip) {
+	if (iSetup == CLauncher::kSetupSourcePicking) {
+		return iSceneHoldsClip ? MakeChange(kSetup, 0, CLauncher::SetupForSceneDestinationPicking(iScene)) : kNoChange;
+	}
+	const int source = CLauncher::SourceScene(iSetup);
+	if (source == 0 || iScene == source) {
+		return kNoChange;
+	}
+	return MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+}
+
+CPress::TChanges CPress::CopyButton(const TButton& iSource, int iDestination) {
+	TChanges changes;
+	changes.fCount = 0;
+	AppendCopy(changes, kClipProperties, iSource.fClip, iDestination);
+	AppendCopy(changes, kFillInProperties, iSource.fFillIn, iDestination);
+	AppendCopy(changes, kLandingProperties, iSource.fLanding, iDestination);
 	return changes;
 }
 
@@ -258,11 +313,21 @@ CPress::TChange CPress::ClearButton(int iSetup) {
 	return kNoChange;
 }
 
+CPress::TChange CPress::DuplicateButton(int iSetup) {
+	if (iSetup == CLauncher::kSetupLaunchMode) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupSourcePicking);
+	}
+	if (CLauncher::IsDuplicateMode(iSetup)) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
+	}
+	return kNoChange;
+}
+
 CPress::TChange CPress::BackButton(int iSetup) {
 	if (iSetup == CLauncher::kSetupLaunchMode) {
 		return kNoChange;
 	}
-	if (iSetup == CLauncher::kSetupClearMode) {
+	if (iSetup == CLauncher::kSetupClearMode || CLauncher::IsDuplicateMode(iSetup)) {
 		return MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
 	}
 	if (CLauncher::IsLandingEditing(iSetup)) {

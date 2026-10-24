@@ -18,6 +18,7 @@ format_version = "3.0"
 --   button and its labels:                 70, 71, 72, 73
 --   function:                              74
 --   film strip frames of the clear button and its caption: 84, 85
+--   film strip frames of the duplicate button and its caption: 86, 87
 --   film strip frame of the function select button of function f (0 = stop,
 --   1 = mute, 2 = solo):                   75 + f
 --   film strip frame of its caption:       80 + f
@@ -77,17 +78,20 @@ local BIPOLAR_ZERO = 3
 local OUTPUT_SETTINGS = { "pattern", "unipolar", "bipolar", "transition" }
 
 -- Launch mode, clip picking, then clip editing, fill-in editing and landing
--- editing for each of the launch buttons, then clear mode
-local SETUP_COUNT = 3 + 3 * TRACK_COUNT * ROW_COUNT
+-- editing for each of the launch buttons, then clear mode, then source
+-- picking, and destination picking for each launch button and each scene
+local SETUP_COUNT = 4 + 4 * TRACK_COUNT * ROW_COUNT + ROW_COUNT
 
 -- Unlit, then dim, vibrant and flashing for each colour
 local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
 -- Unlit, then dim and vibrant for each colour
 local LIGHT_FRAME_COUNT = 1 + 2 * COLOUR_COUNT
--- Unlit, then dim and vibrant for red, green, yellow, white, blue and orange
-local SCENE_LIGHT_FRAME_COUNT = 13
--- Unlit, then dim and vibrant for red, green, yellow, blue, white and orange
-local SIDE_LIGHT_FRAME_COUNT = 13
+-- Unlit, then dim and vibrant for red, green, yellow, white, blue, orange and
+-- fuchsia
+local SCENE_LIGHT_FRAME_COUNT = 15
+-- Unlit, then dim and vibrant for red, green, yellow, blue, white, orange and
+-- fuchsia
+local SIDE_LIGHT_FRAME_COUNT = 15
 -- Unlit, then dim and vibrant for red (stop), yellow (mute) and blue (solo)
 local FUNCTION_LIGHT_FRAME_COUNT = 7
 
@@ -191,7 +195,8 @@ local midi_cc_chart = {}
 
 -- 0 = launch mode, 1 = clip picking, 2..65 = clip editing, 66..129 = fill-in
 -- editing and 130..193 = landing editing for one launch button, 194 = clear
--- mode. Written by
+-- mode, 195 = source picking, 196..259 = destination picking for one launch
+-- button and 260..267 for one scene as the source. Written by
 -- the panel and by control surfaces, read by the realtime code (see
 -- docs/adr/0002). Not saved: a song opens in launch mode.
 document_properties.setup = jbox.number{
@@ -324,8 +329,9 @@ rt_properties.forward_label_frame = jbox.number{
 }
 
 -- The frames the front panel shows of the clear button, in the side buttons'
--- film strip, and of its caption: 0 = white, 1 = dark grey in setup mode.
--- Not Remote items: a codec can tell them from the setup state.
+-- film strip, and of its caption: 0 = white, 1 = dark grey in setup mode and
+-- duplicate mode, 2 = red in clear mode. Not Remote items: a codec can tell
+-- them from the setup state.
 rt_properties.clear_light_frame = jbox.number{
 	property_tag = 84,
 	default = 0,
@@ -337,13 +343,31 @@ rt_properties.clear_light_frame = jbox.number{
 rt_properties.clear_caption_frame = jbox.number{
 	property_tag = 85,
 	default = 0,
-	steps = 2,
+	steps = 3,
 	ui_name = jbox.ui_text("text_clear_caption"),
-	ui_type = plain_number(1),
+	ui_type = plain_number(2),
+}
+
+-- The same for the duplicate button: its caption is 0 = white, 1 = dark grey
+-- in setup mode and clear mode, 2 = fuchsia in duplicate mode.
+rt_properties.duplicate_light_frame = jbox.number{
+	property_tag = 86,
+	default = 0,
+	steps = SIDE_LIGHT_FRAME_COUNT,
+	ui_name = jbox.ui_text("text_duplicate_light"),
+	ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
+}
+
+rt_properties.duplicate_caption_frame = jbox.number{
+	property_tag = 87,
+	default = 0,
+	steps = 3,
+	ui_name = jbox.ui_text("text_duplicate_caption"),
+	ui_type = plain_number(2),
 }
 
 -- Whether the setup button is lit: in every step of setup mode, not in clear
--- mode.
+-- mode or duplicate mode.
 rt_properties.setup_lamp = jbox.boolean{
 	property_tag = 51,
 	default = false,
@@ -354,7 +378,7 @@ rt_properties.setup_lamp = jbox.boolean{
 -- The labels and the logo, computed by the realtime code. The logo shows the
 -- mode colour: 0 = white (launch mode), 1 = green (clip picking), 2 = yellow
 -- (clip editing), 3 = red (clear mode), 4 = blue (landing editing), 5 =
--- orange (fill-in editing). The labels of the launch buttons are lit only in
+-- orange (fill-in editing), 6 = fuchsia (duplicate mode). The labels of the launch buttons are lit only in
 -- clip editing, in yellow, in fill-in editing, in orange, and in landing
 -- editing, in blue: 0 = unlit, then SET/CLEAR and all in yellow (1, 2),
 -- orange (3, 4) and blue (5, 6); the colours
@@ -364,9 +388,9 @@ rt_properties.setup_lamp = jbox.boolean{
 rt_properties.logo_frame = jbox.number{
 	property_tag = 53,
 	default = 0,
-	steps = 6,
+	steps = 7,
 	ui_name = jbox.ui_text("text_logo"),
-	ui_type = plain_number(5),
+	ui_type = plain_number(6),
 }
 
 rt_properties.launch_labels_frame = jbox.number{
@@ -378,7 +402,8 @@ rt_properties.launch_labels_frame = jbox.number{
 }
 
 -- The back button's frame, computed by the realtime code: 0 = dark (launch
--- mode), 7 = vibrant white (clip picking and clear mode), 3 = vibrant green
+-- mode), 7 = vibrant white (clip picking, clear mode and duplicate mode), 3 =
+-- vibrant green
 -- (clip editing), 5 = vibrant yellow (fill-in editing), 1 = vibrant orange
 -- (landing editing). Not a Remote item: a codec can tell it from the setup
 -- state.

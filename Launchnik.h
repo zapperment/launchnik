@@ -40,6 +40,8 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenFillInLabelFrame;
 	private: TJBox_Int32 fWrittenClearLightFrame;
 	private: TJBox_Int32 fWrittenClearCaptionFrame;
+	private: TJBox_Int32 fWrittenDuplicateLightFrame;
+	private: TJBox_Int32 fWrittenDuplicateCaptionFrame;
 	private: TJBox_Int32 fWrittenForwardLight;
 	private: TJBox_Int32 fWrittenForwardLightFrame;
 	private: TJBox_Int32 fWrittenForwardLabelFrame;
