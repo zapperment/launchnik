@@ -22,7 +22,7 @@ local FUNCTION_HEIGHT = 75
 -- as the folded panel, so the logo sits at the same place on both. It is a
 -- lamp with one frame for each mode colour: light grey in launch mode, green
 -- in clip picking, yellow in clip editing, red in clear mode, blue in landing
--- editing, orange in fill-in editing.
+-- editing, orange in fill-in editing, fuchsia in duplicate mode.
 local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
@@ -56,7 +56,7 @@ front = {
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_4" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_6frames", frames = 6 },
+		{ path = "Logo_7frames", frames = 7 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -100,8 +100,9 @@ front.click_grid = {
 }
 
 -- The scene buttons stand 100 pixels to the right of the grid, each level with
--- its scene. They are lamps as well, showing one of thirteen frames (unlit,
--- then dim and vibrant for red, green, yellow, white, blue and orange), with
+-- its scene. They are lamps as well, showing one of fifteen frames (unlit,
+-- then dim and vibrant for red, green, yellow, white, blue, orange and
+-- fuchsia), with
 -- one transparent display on top of all eight.
 local SCENE_WIDTH = 130
 local SIDE_GAP = 100
@@ -109,7 +110,7 @@ local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH 
 for scene = 1, ROW_COUNT do
 	front["lamp_scene" .. scene] = {
 		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
-		{ path = "Scene_Button_13frames", frames = 13 },
+		{ path = "Scene_Button_15frames", frames = 15 },
 	}
 end
 front.click_scenes = {
@@ -234,7 +235,7 @@ front.label_back = {
 local FORWARD_LEFT = BACK_LEFT + TRACK_PITCH
 front.lamp_forward = {
 	offset = { FORWARD_LEFT, BACK_TOP },
-	{ path = "Scene_Button_13frames", frames = 13 },
+	{ path = "Scene_Button_15frames", frames = 15 },
 }
 front.click_forward = {
 	offset = { FORWARD_LEFT, BACK_TOP },
@@ -247,15 +248,15 @@ front.label_forward = {
 
 -- The fill-in button stands to the left of scene 6, as far from the grid as
 -- the scene buttons are on the right. It is a side button: like a scene button
--- but without an arrow, with one of thirteen frames (unlit, then dim and
--- vibrant for red, green, yellow, blue, white and orange). Its caption is
+-- but without an arrow, with one of fifteen frames (unlit, then dim and
+-- vibrant for red, green, yellow, blue, white, orange and fuchsia). Its caption is
 -- white or orange, centred below it like a label.
 local FILL_IN_LEFT = LAUNCH_LEFT - (SCENE_LEFT - (LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH)) - SCENE_WIDTH
 local FILL_IN_TOP = LAUNCH_TOP + ROW_PITCH * 5
 local CAPTION_WIDTH = 250
 front.lamp_fill_in = {
 	offset = { FILL_IN_LEFT, FILL_IN_TOP },
-	{ path = "Side_Button_13frames", frames = 13 },
+	{ path = "Side_Button_15frames", frames = 15 },
 }
 front.click_fill_in = {
 	offset = { FILL_IN_LEFT, FILL_IN_TOP },
@@ -267,11 +268,12 @@ front.caption_fill_in = {
 }
 
 -- The clear button is a side button like the fill-in button, above it, to
--- the left of scene 3. Its caption is white, or dark grey in setup mode.
+-- the left of scene 3. Its caption is white, dark grey in setup mode and
+-- duplicate mode, or red in clear mode.
 local CLEAR_TOP = LAUNCH_TOP + ROW_PITCH * 2
 front.lamp_clear = {
 	offset = { FILL_IN_LEFT, CLEAR_TOP },
-	{ path = "Side_Button_13frames", frames = 13 },
+	{ path = "Side_Button_15frames", frames = 15 },
 }
 front.click_clear = {
 	offset = { FILL_IN_LEFT, CLEAR_TOP },
@@ -279,7 +281,24 @@ front.click_clear = {
 }
 front.caption_clear = {
 	offset = { FILL_IN_LEFT + (SCENE_WIDTH - CAPTION_WIDTH) / 2, CLEAR_TOP + BUTTON_HEIGHT + LABEL_GAP },
-	{ path = "Caption_Clear_2frames", frames = 2 },
+	{ path = "Caption_Clear_3frames", frames = 3 },
+}
+
+-- The duplicate button is a side button like the clear button, below it, to
+-- the left of scene 4. Its caption is white, dark grey in setup mode and clear
+-- mode, or fuchsia in duplicate mode.
+local DUPLICATE_TOP = LAUNCH_TOP + ROW_PITCH * 3
+front.lamp_duplicate = {
+	offset = { FILL_IN_LEFT, DUPLICATE_TOP },
+	{ path = "Side_Button_15frames", frames = 15 },
+}
+front.click_duplicate = {
+	offset = { FILL_IN_LEFT, DUPLICATE_TOP },
+	{ size = { 130, 135 } },
+}
+front.caption_duplicate = {
+	offset = { FILL_IN_LEFT + (SCENE_WIDTH - CAPTION_WIDTH) / 2, DUPLICATE_TOP + BUTTON_HEIGHT + LABEL_GAP },
+	{ path = "Caption_Duplicate_3frames", frames = 3 },
 }
 
 -- The function select buttons are side buttons in a row below the function
@@ -294,7 +313,7 @@ for name, track in pairs(FUNCTION_SELECT_TRACKS) do
 	local left = LAUNCH_LEFT + TRACK_PITCH * (track - 1) + 38
 	front["lamp_function_select_" .. name] = {
 		offset = { left, FUNCTION_SELECT_TOP },
-		{ path = "Side_Button_13frames", frames = 13 },
+		{ path = "Side_Button_15frames", frames = 15 },
 	}
 	front["click_function_select_" .. name] = {
 		offset = { left, FUNCTION_SELECT_TOP },
@@ -375,7 +394,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_6frames", frames = 6 },
+		{ path = "Logo_7frames", frames = 7 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
