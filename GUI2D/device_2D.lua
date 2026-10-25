@@ -46,17 +46,13 @@ front = {
 	Bg = {
 		{ path = "Panel_Front_8U_dark" },
 	},
-	Labels = {
-		offset = { 0, 0 },
-		{ path = "Labels_Front" },
-	},
 	ScrewTopLeft = { offset = { SCREW_LEFT, SCREW_TOP }, { path = "Screw_17_1" } },
 	ScrewTopRight = { offset = { SCREW_RIGHT, SCREW_TOP }, { path = "Screw_17_2" } },
 	ScrewBottomLeft = { offset = { SCREW_LEFT, SCREW_BOTTOM }, { path = "Screw_17_3" } },
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_4" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_7frames", frames = 7 },
+		{ path = "Logo_14frames", frames = 14 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -100,17 +96,16 @@ front.click_grid = {
 }
 
 -- The scene buttons stand 100 pixels to the right of the grid, each level with
--- its scene. They are lamps as well, showing one of fifteen frames (unlit,
--- then dim and vibrant for red, green, yellow, white, blue, orange and
--- fuchsia), with
--- one transparent display on top of all eight.
+-- its scene. They are lamps as well, showing one frame of the forward
+-- buttons' film strip, laid out like the launch buttons', with one
+-- transparent display on top of all eight.
 local SCENE_WIDTH = 130
 local SIDE_GAP = 100
 local SCENE_LEFT = LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH + SIDE_GAP
 for scene = 1, ROW_COUNT do
 	front["lamp_scene" .. scene] = {
 		offset = { SCENE_LEFT, LAUNCH_TOP + ROW_PITCH * (scene - 1) },
-		{ path = "Scene_Button_15frames", frames = 15 },
+		{ path = "Forward_Button_29frames", frames = 29 },
 	}
 end
 front.click_scenes = {
@@ -190,13 +185,13 @@ for scene = 1, ROW_COUNT do
 	add_name_areas(front, "scene" .. scene .. "_name", SCENE_LEFT + (SCENE_WIDTH - SCENE_NAME_WIDTH) / 2, top, "Name_Area_Scene")
 end
 
--- A function button is a lamp showing one of seven frames (unlit, then dim and
--- vibrant for red, yellow and blue). One transparent display lies on top of
--- all eight; its width is rounded up to a multiple of 5 pixels.
+-- A function button is a lamp showing one frame of a film strip laid out like
+-- the launch buttons'. One transparent display lies on top of all eight; its
+-- width is rounded up to a multiple of 5 pixels.
 for track = 1, TRACK_COUNT do
 	front["lamp_track" .. track .. "_function"] = {
 		offset = { FUNCTION_LEFT + TRACK_PITCH * (track - 1), FUNCTION_TOP },
-		{ path = "Function_Button_7frames", frames = 7 },
+		{ path = "Function_Button_29frames", frames = 29 },
 	}
 end
 front.click_functions = {
@@ -207,13 +202,13 @@ front.click_functions = {
 -- The back button stands above the first track, centred in the width of a
 -- launch button, 20 pixels below the header, which leaves room for the track
 -- names and the clip names of scene 1 between it and the grid. It is a lamp
--- showing one of nine frames, with a transparent display of the same size on
--- top.
+-- showing one frame of a film strip laid out like the launch buttons', with a
+-- transparent display of the same size on top.
 local BACK_LEFT = LAUNCH_LEFT + 38
 local BACK_TOP = 180
 front.lamp_back = {
 	offset = { BACK_LEFT, BACK_TOP },
-	{ path = "Back_Button_9frames", frames = 9 },
+	{ path = "Back_Button_29frames", frames = 29 },
 }
 front.click_back = {
 	offset = { BACK_LEFT, BACK_TOP },
@@ -231,11 +226,12 @@ front.label_back = {
 }
 
 -- The forward button stands beside it, above the second track, and looks
--- like a scene button; its labels stand to its right, aligned on the left.
+-- like a scene button, which is the other way round; its labels stand to its
+-- right, aligned on the left.
 local FORWARD_LEFT = BACK_LEFT + TRACK_PITCH
 front.lamp_forward = {
 	offset = { FORWARD_LEFT, BACK_TOP },
-	{ path = "Scene_Button_15frames", frames = 15 },
+	{ path = "Forward_Button_29frames", frames = 29 },
 }
 front.click_forward = {
 	offset = { FORWARD_LEFT, BACK_TOP },
@@ -248,15 +244,14 @@ front.label_forward = {
 
 -- The fill-in button stands to the left of scene 6, as far from the grid as
 -- the scene buttons are on the right. It is a side button: like a scene button
--- but without an arrow, with one of fifteen frames (unlit, then dim and
--- vibrant for red, green, yellow, blue, white, orange and fuchsia). Its caption is
--- white or orange, centred below it like a label.
+-- but without an arrow, with a film strip laid out like the launch buttons'.
+-- Its caption is white or orange, centred below it like a label.
 local FILL_IN_LEFT = LAUNCH_LEFT - (SCENE_LEFT - (LAUNCH_LEFT + TRACK_PITCH * (TRACK_COUNT - 1) + BUTTON_WIDTH)) - SCENE_WIDTH
 local FILL_IN_TOP = LAUNCH_TOP + ROW_PITCH * 5
 local CAPTION_WIDTH = 250
 front.lamp_fill_in = {
 	offset = { FILL_IN_LEFT, FILL_IN_TOP },
-	{ path = "Side_Button_15frames", frames = 15 },
+	{ path = "Side_Button_29frames", frames = 29 },
 }
 front.click_fill_in = {
 	offset = { FILL_IN_LEFT, FILL_IN_TOP },
@@ -273,7 +268,7 @@ front.caption_fill_in = {
 local CLEAR_TOP = LAUNCH_TOP + ROW_PITCH * 2
 front.lamp_clear = {
 	offset = { FILL_IN_LEFT, CLEAR_TOP },
-	{ path = "Side_Button_15frames", frames = 15 },
+	{ path = "Side_Button_29frames", frames = 29 },
 }
 front.click_clear = {
 	offset = { FILL_IN_LEFT, CLEAR_TOP },
@@ -290,7 +285,7 @@ front.caption_clear = {
 local DUPLICATE_TOP = LAUNCH_TOP + ROW_PITCH * 3
 front.lamp_duplicate = {
 	offset = { FILL_IN_LEFT, DUPLICATE_TOP },
-	{ path = "Side_Button_15frames", frames = 15 },
+	{ path = "Side_Button_29frames", frames = 29 },
 }
 front.click_duplicate = {
 	offset = { FILL_IN_LEFT, DUPLICATE_TOP },
@@ -313,7 +308,7 @@ for name, track in pairs(FUNCTION_SELECT_TRACKS) do
 	local left = LAUNCH_LEFT + TRACK_PITCH * (track - 1) + 38
 	front["lamp_function_select_" .. name] = {
 		offset = { left, FUNCTION_SELECT_TOP },
-		{ path = "Side_Button_15frames", frames = 15 },
+		{ path = "Side_Button_29frames", frames = 29 },
 	}
 	front["click_function_select_" .. name] = {
 		offset = { left, FUNCTION_SELECT_TOP },
@@ -325,16 +320,24 @@ for name, track in pairs(FUNCTION_SELECT_TRACKS) do
 	}
 end
 
--- The setup button is a lamp with a transparent display on top, like the grid,
--- centred below the fill-in button.
+-- The setup button looks like a function button, a lamp with a transparent
+-- display on top, centred below the fill-in button. Its caption SETUP stands
+-- to its left, 8 pixels from it and 2 pixels above its vertical centre, in
+-- white, dark grey, green, yellow, orange or blue.
 local SETUP_LEFT = FILL_IN_LEFT + (SCENE_WIDTH - 70) / 2
+local SETUP_CAPTION_WIDTH = 125
+local SETUP_CAPTION_HEIGHT = 30
 front.lamp_setup = {
 	offset = { SETUP_LEFT, FUNCTION_TOP },
-	{ path = "Button_21_green_2frames", frames = 2 },
+	{ path = "Function_Button_29frames", frames = 29 },
 }
 front.click_setup = {
 	offset = { SETUP_LEFT, FUNCTION_TOP },
 	{ size = { 70, 75 } },
+}
+front.caption_setup = {
+	offset = { SETUP_LEFT - 8 - SETUP_CAPTION_WIDTH, FUNCTION_TOP + math.floor((75 - SETUP_CAPTION_HEIGHT) / 2) - 2 },
+	{ path = "Caption_Setup_6frames", frames = 6 },
 }
 
 back = {
@@ -394,7 +397,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_7frames", frames = 7 },
+		{ path = "Logo_14frames", frames = 14 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,

@@ -45,8 +45,8 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fTransport(JBox_GetMotherboardObjectRef("/transport")),
 	fSampleRate(iSampleRate),
 	fIsFirstBatch(true),
-	fSetupLampLit(false),
-	fWrittenSetupLamp(kNothingWritten),
+	fWrittenSetupLightFrame(kNothingWritten),
+	fWrittenSetupCaptionFrame(kNothingWritten),
 	fWrittenLogoFrame(kNothingWritten),
 	fWrittenLaunchLabelsFrame(kNothingWritten),
 	fWrittenBackButtonFrame(kNothingWritten),
@@ -145,8 +145,6 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 	if (iTag == kCustomPropsTag_Setup) {
 		const int setup = static_cast<int>(JBox_GetNumber(iValue));
 		fLauncher.SetSetup(setup);
-		// Clear mode and duplicate mode are not part of setup mode.
-		fSetupLampLit = CLauncher::IsSetupMode(setup);
 		return;
 	}
 	if (iTag == kCustomPropsTag_Length) {
@@ -267,13 +265,10 @@ void CLaunchnik::Write(TJBox_Tag iTag, TJBox_Int32 iValue, TJBox_Int32& ioWritte
 }
 
 void CLaunchnik::WriteOutputs() {
-	const TJBox_Int32 setupLamp = fSetupLampLit ? 1 : 0;
-	if (setupLamp != fWrittenSetupLamp) {
-		fWrittenSetupLamp = setupLamp;
-		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_SetupLamp, JBox_MakeBoolean(fSetupLampLit));
-	}
+	Write(kCustomPropsTag_SetupLightFrame, fLauncher.GetSetupLightFrame(), fWrittenSetupLightFrame);
+	Write(kCustomPropsTag_SetupCaptionFrame, fLauncher.GetSetupCaptionFrame(), fWrittenSetupCaptionFrame);
 
-	const TJBox_Int32 logoFrame = fLauncher.GetModeColour();
+	const TJBox_Int32 logoFrame = fLauncher.GetLogoFrame();
 	if (logoFrame != fWrittenLogoFrame) {
 		fWrittenLogoFrame = logoFrame;
 		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_LogoFrame, JBox_MakeNumber(logoFrame));

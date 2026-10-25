@@ -299,6 +299,9 @@ CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsCl
 }
 
 CPress::TChange CPress::SetupButton(int iSetup) {
+	if (iSetup == CLauncher::kSetupClearMode || CLauncher::IsDuplicateMode(iSetup)) {
+		return kNoChange;
+	}
 	const bool inSetupMode = iSetup != CLauncher::kSetupLaunchMode;
 	return MakeChange(kSetup, 0, inSetupMode ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);
 }

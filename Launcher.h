@@ -129,15 +129,6 @@ class CLauncher {
 	public: static const int kFunctionSolo = 2;
 	public: static const int kFunctionCount = 3;
 
-	// The film strip of the function buttons: frame 0 is unlit, then dim and
-	// vibrant for red (stop), yellow (mute) and blue (solo).
-	public: static const int kFunctionLightFrameCount = 7;
-
-	// The film strip of the fill-in button, the clear button, the duplicate
-	// button and the function select buttons: frame 0 is unlit, then dim and
-	// vibrant for red, green, yellow, blue, white, orange and fuchsia.
-	public: static const int kSideLightFrameCount = 15;
-
 	// A jump of the song position by more than this, between one batch and the
 	// next, is a locate or a loop rather than the song playing on.
 	public: static const long long kJumpTolerance = 3840;
@@ -168,14 +159,9 @@ class CLauncher {
 	// then dim, vibrant and flashing for each colour.
 	public: static const int kLightValueCount = 1 + 3 * kColourCount;
 
-	// The film strip of the launch buttons: frame 0 is unlit, then dim and
+	// The film strips of every kind of button: frame 0 is unlit, then dim and
 	// vibrant for each colour.
 	public: static const int kLightFrameCount = 1 + 2 * kColourCount;
-
-	// The film strip of the scene buttons and the forward button: frame 0 is
-	// unlit, then dim and vibrant for red, green, yellow, white, blue, orange
-	// and fuchsia.
-	public: static const int kSceneLightFrameCount = 15;
 
 	// What the host's transport looks like for one batch of audio.
 	public: struct TTransport {
@@ -344,8 +330,7 @@ class CLauncher {
 
 	// What a function select button shows: vibrant in the colour of its
 	// function (red for stop, yellow for mute, blue for solo) while that
-	// function is chosen, dim white otherwise. The frame is one of the side
-	// buttons' film strip.
+	// function is chosen, dim white otherwise.
 	public: TLight GetFunctionSelectLight(int iFunction) const;
 	public: int GetFunctionSelectLightFrame(int iFunction) const;
 	// The frame of its caption: 0 white, 1 in the colour of its function while
@@ -373,7 +358,7 @@ class CLauncher {
 	// The mode colour, worn by the logo and the lit labels: white in launch
 	// mode, green in clip picking, yellow in clip editing, orange in fill-in
 	// editing, blue in landing editing, red in clear mode, fuchsia in
-	// duplicate mode. Also the frame of the logo's film strip.
+	// duplicate mode.
 	public: enum EModeColour {
 		kModeWhite = 0,
 		kModeGreen = 1,
@@ -385,19 +370,25 @@ class CLauncher {
 	};
 	public: static const int kModeColourCount = 7;
 	public: EModeColour GetModeColour() const;
+	// The frame of the logo's film strip, which holds the lettering in each
+	// colour: the mode colour's.
+	public: int GetLogoFrame() const;
 
-	// The frame of the back button's film strip to show: dark in launch mode,
-	// vibrant white in clip picking, clear mode and duplicate mode, vibrant green in clip
-	// editing, vibrant yellow in fill-in editing, vibrant orange in landing
-	// editing. The strip has the frames of the scene button's source image,
-	// in its order, with orange in place of red.
-	public: static const int kBackButtonFrameCount = 9;
-	public: static const int kBackButtonDark = 0;
-	public: static const int kBackButtonVibrantOrange = 1;
-	public: static const int kBackButtonVibrantGreen = 3;
-	public: static const int kBackButtonVibrantYellow = 5;
-	public: static const int kBackButtonVibrantWhite = 7;
+	// What the back button shows: unlit in launch mode, vibrant white in clip
+	// picking, clear mode and duplicate mode, vibrant green in clip editing,
+	// vibrant yellow in fill-in editing, vibrant orange in landing editing.
+	public: TLight GetBackButtonLight() const;
 	public: int GetBackButtonFrame() const;
+
+	// What the setup button shows: dim green in launch mode, unlit in clear
+	// mode and duplicate mode, where it does nothing, and in setup mode vibrant
+	// in the mode colour of the step.
+	public: TLight GetSetupLight() const;
+	public: int GetSetupLightFrame() const;
+	// The frame of the SETUP caption: 0 white, 1 dark grey, then green,
+	// yellow, orange and blue (2 to 5), coloured like the light.
+	public: static const int kSetupCaptionFrameCount = 6;
+	public: int GetSetupCaptionFrame() const;
 
 	// The frame of the back button's labels to show, one line for each step
 	// it can go back to, lit in the colour of the button: 0 all unlit, 1
@@ -435,7 +426,7 @@ class CLauncher {
 
 	// What the fill-in button shows: dim white, or vibrant orange while a
 	// fill-in is playing. The value is encoded like the light of a launch
-	// button, the frame is one of the side buttons' film strip.
+	// button.
 	public: TLight GetFillInLight() const;
 	public: int GetFillInLightValue() const;
 	public: int GetFillInLightFrame() const;
@@ -445,7 +436,7 @@ class CLauncher {
 
 	// What the clear button shows: dim white in launch mode, vibrant red in
 	// clear mode, unlit in setup mode and duplicate mode, where it does
-	// nothing. The frame is one of the side buttons' film strip.
+	// nothing.
 	public: TLight GetClearLight() const;
 	public: int GetClearLightFrame() const;
 	// The frame of the CLEAR caption: 0 white, 1 dark grey in setup mode and
@@ -454,7 +445,7 @@ class CLauncher {
 
 	// What the duplicate button shows: dim white in launch mode, vibrant
 	// fuchsia in duplicate mode, unlit in setup mode and clear mode, where it
-	// does nothing. The frame is one of the side buttons' film strip.
+	// does nothing.
 	public: TLight GetDuplicateLight() const;
 	public: int GetDuplicateLightFrame() const;
 	// The frame of the DUPLICATE caption: 0 white, 1 dark grey in setup mode
@@ -463,8 +454,7 @@ class CLauncher {
 
 	// What the forward button shows: vibrant orange in clip editing and vibrant
 	// blue in fill-in editing of a launch button that holds a clip, unlit
-	// otherwise. Encoded like the fill-in button's light, framed like a scene
-	// button's.
+	// otherwise. Encoded like the fill-in button's light.
 	public: TLight GetForwardLight() const;
 	public: int GetForwardLightValue() const;
 	public: int GetForwardLightFrame() const;
@@ -606,12 +596,9 @@ class CLauncher {
 	// patterns: while it plays the landing, but with one-bar pattern only for
 	// the landing's first bar.
 	private: bool PlaysLandingPatterns(int iTrack) const;
-	// The frame of a film strip laid out like the scene buttons': unlit, then
-	// dim and vibrant for red, green, yellow, white, blue, orange and fuchsia.
-	private: int SceneStripFrame(const TLight& iLight) const;
-	// The frame of the side buttons' film strip: unlit, then dim and vibrant
-	// for red, green, yellow, blue, white, orange and fuchsia.
-	private: int SideStripFrame(const TLight& iLight) const;
+	// The frame of a button's film strip that shows a light right now; a
+	// flashing light alternates between dim and vibrant.
+	private: int LightFrame(const TLight& iLight) const;
 	// Whether a light shows vibrant right now, as opposed to dim.
 	private: bool ShowsVibrant(const TLight& iLight) const;
 	// Whether the song position has moved other than by playing on since the

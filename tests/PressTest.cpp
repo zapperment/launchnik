@@ -195,8 +195,8 @@ void TestClearButtonSwitchesBetweenLaunchModeAndClearMode() {
 	CHECK(IsNoChange(CPress::ClearButton(CLauncher::SetupForLandingEditing(3, 6))));
 }
 
-void TestSetupAndBackButtonsLeaveClearMode() {
-	CHECK(IsChange(CPress::SetupButton(kClearMode), CPress::kSetup, 0, kLaunchMode));
+void TestBackButtonLeavesClearMode() {
+	CHECK(IsNoChange(CPress::SetupButton(kClearMode)));
 	CHECK(IsChange(CPress::BackButton(kClearMode), CPress::kSetup, 0, kLaunchMode));
 	CHECK(IsNoChange(CPress::ForwardButton(kClearMode, true)));
 }
@@ -258,10 +258,10 @@ void TestDuplicateButtonSwitchesBetweenLaunchModeAndDuplicateMode() {
 	CHECK(IsNoChange(CPress::ClearButton(CLauncher::SetupForClipDestinationPicking(3, 6))));
 }
 
-void TestSetupAndBackButtonsLeaveDuplicateMode() {
+void TestBackButtonLeavesDuplicateMode() {
 	const int steps[] = { kSourcePicking, CLauncher::SetupForClipDestinationPicking(3, 6), CLauncher::SetupForSceneDestinationPicking(6) };
 	for (int step : steps) {
-		CHECK(IsChange(CPress::SetupButton(step), CPress::kSetup, 0, kLaunchMode));
+		CHECK(IsNoChange(CPress::SetupButton(step)));
 		CHECK(IsChange(CPress::BackButton(step), CPress::kSetup, 0, kLaunchMode));
 		CHECK(IsNoChange(CPress::ForwardButton(step, true)));
 		// And the ordinary rules do nothing, not even a relaunch.
@@ -675,13 +675,13 @@ int main() {
 	TestSceneButtonDoesNothingInClipEditing();
 	TestSceneButtonInClipPickingChoosesItsLengthAndLeavesSetupMode();
 	TestClearButtonSwitchesBetweenLaunchModeAndClearMode();
-	TestSetupAndBackButtonsLeaveClearMode();
+	TestBackButtonLeavesClearMode();
 	TestClearModeEmptiesThePressedLaunchButtonAndReturns();
 	TestClearModeLeavesAnEmptyLaunchButtonEmpty();
 	TestClearModeLaunchButtonDoesNothingElsewhere();
 	TestSceneButtonInClearModeEmptiesItsSceneAndReturns();
 	TestDuplicateButtonSwitchesBetweenLaunchModeAndDuplicateMode();
-	TestSetupAndBackButtonsLeaveDuplicateMode();
+	TestBackButtonLeavesDuplicateMode();
 	TestSourcePickingPicksALaunchButtonWithAClip();
 	TestClipDestinationPickingCopiesEverythingAndReturns();
 	TestClipDestinationPickingIgnoresTheSource();

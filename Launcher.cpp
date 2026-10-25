@@ -982,19 +982,7 @@ int CLauncher::GetFunctionLightValue(int iTrack) const {
 }
 
 int CLauncher::GetFunctionLightFrame(int iTrack) const {
-	const TLight light = GetFunctionLight(iTrack);
-	if (light.fBrightness == kUnlit) {
-		return 0;
-	}
-	// The film strip holds red, yellow and blue, in that order.
-	int stripColour = 0;
-	if (light.fColour == kColourYellow) {
-		stripColour = 1;
-	}
-	else if (light.fColour == kColourBlue) {
-		stripColour = 2;
-	}
-	return 1 + 2 * stripColour + (ShowsVibrant(light) ? 1 : 0);
+	return LightFrame(GetFunctionLight(iTrack));
 }
 
 CLauncher::TLight CLauncher::GetFunctionSelectLight(int iFunction) const {
@@ -1005,7 +993,7 @@ CLauncher::TLight CLauncher::GetFunctionSelectLight(int iFunction) const {
 }
 
 int CLauncher::GetFunctionSelectLightFrame(int iFunction) const {
-	return SideStripFrame(GetFunctionSelectLight(iFunction));
+	return LightFrame(GetFunctionSelectLight(iFunction));
 }
 
 int CLauncher::GetFunctionSelectCaptionFrame(int iFunction) const {
@@ -1014,6 +1002,13 @@ int CLauncher::GetFunctionSelectCaptionFrame(int iFunction) const {
 
 bool CLauncher::ShowsVibrant(const TLight& iLight) const {
 	return iLight.fBrightness == kVibrant || (iLight.fBrightness == kFlashing && fFlashLit);
+}
+
+int CLauncher::LightFrame(const TLight& iLight) const {
+	if (iLight.fBrightness == kUnlit) {
+		return 0;
+	}
+	return 1 + 2 * iLight.fColour + (ShowsVibrant(iLight) ? 1 : 0);
 }
 
 CLauncher::TLight CLauncher::GetLight(int iTrack, int iRow) const {
@@ -1175,12 +1170,7 @@ int CLauncher::GetLightValue(int iTrack, int iRow) const {
 }
 
 int CLauncher::GetLightFrame(int iTrack, int iRow) const {
-	const TLight light = GetLight(iTrack, iRow);
-	if (light.fBrightness == kUnlit) {
-		return 0;
-	}
-	const bool vibrant = light.fBrightness == kVibrant || (light.fBrightness == kFlashing && fFlashLit);
-	return 1 + 2 * light.fColour + (vibrant ? 1 : 0);
+	return LightFrame(GetLight(iTrack, iRow));
 }
 
 CLauncher::TLight CLauncher::GetSceneLight(int iScene) const {
@@ -1221,63 +1211,7 @@ int CLauncher::GetSceneLightValue(int iScene) const {
 }
 
 int CLauncher::GetSceneLightFrame(int iScene) const {
-	return SceneStripFrame(GetSceneLight(iScene));
-}
-
-int CLauncher::SceneStripFrame(const TLight& iLight) const {
-	if (iLight.fBrightness == kUnlit) {
-		return 0;
-	}
-	// The film strip holds red, green, yellow, white, blue, orange and
-	// fuchsia, in that order.
-	int stripColour = 3;
-	if (iLight.fColour == kColourRed) {
-		stripColour = 0;
-	}
-	else if (iLight.fColour == kColourGreen) {
-		stripColour = 1;
-	}
-	else if (iLight.fColour == kColourYellow) {
-		stripColour = 2;
-	}
-	else if (iLight.fColour == kColourBlue) {
-		stripColour = 4;
-	}
-	else if (iLight.fColour == kColourOrange) {
-		stripColour = 5;
-	}
-	else if (iLight.fColour == kColourFuchsia) {
-		stripColour = 6;
-	}
-	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
-}
-
-int CLauncher::SideStripFrame(const TLight& iLight) const {
-	if (iLight.fBrightness == kUnlit) {
-		return 0;
-	}
-	// The film strip holds red, green, yellow, blue, white, orange and
-	// fuchsia, in that order.
-	int stripColour = 4;
-	if (iLight.fColour == kColourRed) {
-		stripColour = 0;
-	}
-	else if (iLight.fColour == kColourGreen) {
-		stripColour = 1;
-	}
-	else if (iLight.fColour == kColourYellow) {
-		stripColour = 2;
-	}
-	else if (iLight.fColour == kColourBlue) {
-		stripColour = 3;
-	}
-	else if (iLight.fColour == kColourOrange) {
-		stripColour = 5;
-	}
-	else if (iLight.fColour == kColourFuchsia) {
-		stripColour = 6;
-	}
-	return 1 + 2 * stripColour + (ShowsVibrant(iLight) ? 1 : 0);
+	return LightFrame(GetSceneLight(iScene));
 }
 
 CLauncher::EModeColour CLauncher::GetModeColour() const {
@@ -1299,18 +1233,72 @@ CLauncher::EModeColour CLauncher::GetModeColour() const {
 	return IsLandingEditing(fSetup) ? kModeBlue : kModeYellow;
 }
 
+int CLauncher::GetLogoFrame() const {
+	switch (GetModeColour()) {
+		case kModeGreen: return kColourGreen;
+		case kModeYellow: return kColourYellow;
+		case kModeRed: return kColourRed;
+		case kModeBlue: return kColourBlue;
+		case kModeOrange: return kColourOrange;
+		case kModeFuchsia: return kColourFuchsia;
+		default: return kColourWhite;
+	}
+}
+
 // The back button shows the mode colour of the step it goes back to.
-int CLauncher::GetBackButtonFrame() const {
+CLauncher::TLight CLauncher::GetBackButtonLight() const {
 	if (fSetup == kSetupLaunchMode) {
-		return kBackButtonDark;
+		return kUnlitLight;
 	}
 	if (fSetup == kSetupClipPicking || fSetup == kSetupClearMode || IsDuplicateMode(fSetup)) {
-		return kBackButtonVibrantWhite;
+		return MakeLight(kVibrant, kColourWhite);
 	}
 	if (IsFillInEditing(fSetup)) {
-		return kBackButtonVibrantYellow;
+		return MakeLight(kVibrant, kColourYellow);
 	}
-	return IsLandingEditing(fSetup) ? kBackButtonVibrantOrange : kBackButtonVibrantGreen;
+	return MakeLight(kVibrant, IsLandingEditing(fSetup) ? kColourOrange : kColourGreen);
+}
+
+int CLauncher::GetBackButtonFrame() const {
+	return LightFrame(GetBackButtonLight());
+}
+
+// The setup button shows the mode colour of the step of setup mode it is in.
+CLauncher::TLight CLauncher::GetSetupLight() const {
+	if (fSetup == kSetupLaunchMode) {
+		return MakeLight(kDim, kColourGreen);
+	}
+	if (fSetup == kSetupClearMode || IsDuplicateMode(fSetup)) {
+		return kUnlitLight;
+	}
+	if (fSetup == kSetupClipPicking) {
+		return MakeLight(kVibrant, kColourGreen);
+	}
+	if (IsFillInEditing(fSetup)) {
+		return MakeLight(kVibrant, kColourOrange);
+	}
+	return MakeLight(kVibrant, IsLandingEditing(fSetup) ? kColourBlue : kColourYellow);
+}
+
+int CLauncher::GetSetupLightFrame() const {
+	return LightFrame(GetSetupLight());
+}
+
+int CLauncher::GetSetupCaptionFrame() const {
+	if (fSetup == kSetupLaunchMode) {
+		return 0;
+	}
+	const TLight light = GetSetupLight();
+	if (light.fBrightness == kUnlit) {
+		return 1;
+	}
+	if (light.fColour == kColourGreen) {
+		return 2;
+	}
+	if (light.fColour == kColourYellow) {
+		return 3;
+	}
+	return light.fColour == kColourOrange ? 4 : 5;
 }
 
 // The line of the step the back button goes back to: the one before the
@@ -1368,7 +1356,7 @@ int CLauncher::GetFillInLightValue() const {
 }
 
 int CLauncher::GetFillInLightFrame() const {
-	return SideStripFrame(GetFillInLight());
+	return LightFrame(GetFillInLight());
 }
 
 int CLauncher::GetFillInLabelFrame() const {
@@ -1383,7 +1371,7 @@ CLauncher::TLight CLauncher::GetClearLight() const {
 }
 
 int CLauncher::GetClearLightFrame() const {
-	return SideStripFrame(GetClearLight());
+	return LightFrame(GetClearLight());
 }
 
 int CLauncher::GetClearCaptionFrame() const {
@@ -1401,7 +1389,7 @@ CLauncher::TLight CLauncher::GetDuplicateLight() const {
 }
 
 int CLauncher::GetDuplicateLightFrame() const {
-	return SideStripFrame(GetDuplicateLight());
+	return LightFrame(GetDuplicateLight());
 }
 
 int CLauncher::GetDuplicateCaptionFrame() const {
@@ -1431,7 +1419,7 @@ int CLauncher::GetForwardLightValue() const {
 }
 
 int CLauncher::GetForwardLightFrame() const {
-	return SceneStripFrame(GetForwardLight());
+	return LightFrame(GetForwardLight());
 }
 
 int CLauncher::GetForwardLabelFrame() const {
