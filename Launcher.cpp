@@ -138,6 +138,24 @@ CLauncher::CLauncher()
 	}
 }
 
+int CLauncher::PackOutputSettings(const TOutputSettings& iSettings) {
+	return iSettings.fPattern + kPatternCount * (iSettings.fUnipolar + kValueCount * (iSettings.fBipolar + kValueCount * iSettings.fTransition));
+}
+
+CLauncher::TOutputSettings CLauncher::UnpackOutputSettings(int iPacked) {
+	if (iPacked < 0 || iPacked >= kOutputSettingsCount) {
+		iPacked = 0;
+	}
+	TOutputSettings settings;
+	settings.fPattern = iPacked % kPatternCount;
+	iPacked /= kPatternCount;
+	settings.fUnipolar = iPacked % kValueCount;
+	iPacked /= kValueCount;
+	settings.fBipolar = iPacked % kValueCount;
+	settings.fTransition = iPacked / kValueCount;
+	return settings;
+}
+
 int CLauncher::DefaultColour(int iTrack) {
 	return kDefaultColours[iTrack];
 }

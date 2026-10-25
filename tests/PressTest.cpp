@@ -67,8 +67,22 @@ void TestBackButtonGoesBackOneStep() {
 	CHECK(IsChange(CPress::BackButton(CLauncher::SetupForOutroEditing(3, 6)), CPress::kSetup, 0, CLauncher::SetupForIntroEditing(3, 6)));
 }
 
-bool IsOutputChange(const CPress::TChange& iChange, CPress::EProperty iProperty, int iIndex, int iOutput, int iValue) {
-	return IsChange(iChange, iProperty, iIndex, iValue) && iChange.fOutput == iOutput;
+// The four settings of a CV output that a change sets, all in one number.
+enum ESetting { kPatternSetting, kUnipolarSetting, kBipolarSetting, kTransitionSetting };
+
+int SettingOf(int iPacked, ESetting iSetting) {
+	const CLauncher::TOutputSettings settings = CLauncher::UnpackOutputSettings(iPacked);
+	switch (iSetting) {
+		case kPatternSetting: return settings.fPattern;
+		case kUnipolarSetting: return settings.fUnipolar;
+		case kBipolarSetting: return settings.fBipolar;
+		default: return settings.fTransition;
+	}
+}
+
+// Whether a change sets a CV output's settings, with one of them iValue.
+bool IsSettingChange(const CPress::TChange& iChange, CPress::EProperty iProperty, ESetting iSetting, int iIndex, int iOutput, int iValue) {
+	return iChange.fProperty == iProperty && iChange.fIndex == iIndex && iChange.fOutput == iOutput && SettingOf(iChange.fValue, iSetting) == iValue;
 }
 
 // Output A in pattern mode, B unipolar, C bipolar, the others as on a new
@@ -97,7 +111,7 @@ void TestClipEditingPatternMode() {
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	// Output A, in row 3, is in pattern mode: all eight columns are patterns.
 	for (int column = 0; column < 8; ++column) {
-		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 3, false, MixedModes(true)), CPress::kClipPattern, picked, 0, column));
+		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 3, false, MixedModes(true)), CPress::kClipOutput, kPatternSetting, picked, 0, column));
 	}
 }
 
@@ -105,19 +119,19 @@ void TestClipEditingUnipolarAndBipolarValues() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	for (int column = 0; column < 7; ++column) {
-		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 4, false, MixedModes(true)), CPress::kClipUnipolar, picked, 1, column));
-		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 5, false, MixedModes(true)), CPress::kClipBipolar, picked, 2, column));
-		CHECK(IsOutputChange(CPress::LaunchButton(editing, column, 8, false, MixedModes(true)), CPress::kClipUnipolar, picked, 5, column));
+		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 4, false, MixedModes(true)), CPress::kClipOutput, kUnipolarSetting, picked, 1, column));
+		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 5, false, MixedModes(true)), CPress::kClipOutput, kBipolarSetting, picked, 2, column));
+		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 8, false, MixedModes(true)), CPress::kClipOutput, kUnipolarSetting, picked, 5, column));
 	}
 }
 
 void TestClipEditingTransitionButtonGoesRound() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
-	CHECK(IsOutputChange(CPress::LaunchButton(editing, 7, 4, false, MixedModes(true)), CPress::kClipTransition, picked, 1, CLauncher::kTransitionA));
-	CHECK(IsOutputChange(CPress::LaunchButton(editing, 7, 5, false, MixedModes(true)), CPress::kClipTransition, picked, 2, CLauncher::kTransitionC));
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 7, 4, false, MixedModes(true)), CPress::kClipOutput, kTransitionSetting, picked, 1, CLauncher::kTransitionA));
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 7, 5, false, MixedModes(true)), CPress::kClipOutput, kTransitionSetting, picked, 2, CLauncher::kTransitionC));
 	// After D it is off again.
-	CHECK(IsOutputChange(CPress::LaunchButton(editing, 7, 6, false, MixedModes(true)), CPress::kClipTransition, picked, 3, CLauncher::kTransitionOff));
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 7, 6, false, MixedModes(true)), CPress::kClipOutput, kTransitionSetting, picked, 3, CLauncher::kTransitionOff));
 }
 
 void TestClipEditingUnusedLaunchButtonsDoNothing() {
@@ -303,6 +317,15 @@ CPress::TButton SomeButton(int iSeed) {
 	return button;
 }
 
+// Sets a CV output's settings from the number a change holds.
+void Unpack(int iPacked, CPress::TSettings& ioSettings, int iOutput) {
+	const CLauncher::TOutputSettings settings = CLauncher::UnpackOutputSettings(iPacked);
+	ioSettings.fPatterns[iOutput] = settings.fPattern;
+	ioSettings.fUnipolar[iOutput] = settings.fUnipolar;
+	ioSettings.fBipolar[iOutput] = settings.fBipolar;
+	ioSettings.fTransitions[iOutput] = settings.fTransition;
+}
+
 // Plays the changes to one launch button back onto a launch button whose
 // settings are all -1, and counts them.
 void Replay(const CPress::TChange iChanges[], int iCount, int iButtonIndex, CPress::TButton& oButton, int& oCount) {
@@ -332,37 +355,22 @@ void Replay(const CPress::TChange iChanges[], int iCount, int iButtonIndex, CPre
 		switch (change.fProperty) {
 			case CPress::kClipPresent: oButton.fClip.fPresent = change.fValue != 0; break;
 			case CPress::kClipColour: oButton.fClip.fColour = change.fValue; break;
-			case CPress::kClipPattern: oButton.fClip.fPatterns[output] = change.fValue; break;
-			case CPress::kClipUnipolar: oButton.fClip.fUnipolar[output] = change.fValue; break;
-			case CPress::kClipBipolar: oButton.fClip.fBipolar[output] = change.fValue; break;
-			case CPress::kClipTransition: oButton.fClip.fTransitions[output] = change.fValue; break;
+			case CPress::kClipOutput: Unpack(change.fValue, oButton.fClip, output); break;
 			case CPress::kFillInPresent: oButton.fFillIn.fPresent = change.fValue != 0; break;
 			case CPress::kFillInColour: oButton.fFillIn.fColour = change.fValue; break;
-			case CPress::kFillInPattern: oButton.fFillIn.fPatterns[output] = change.fValue; break;
-			case CPress::kFillInUnipolar: oButton.fFillIn.fUnipolar[output] = change.fValue; break;
-			case CPress::kFillInBipolar: oButton.fFillIn.fBipolar[output] = change.fValue; break;
-			case CPress::kFillInTransition: oButton.fFillIn.fTransitions[output] = change.fValue; break;
+			case CPress::kFillInOutput: Unpack(change.fValue, oButton.fFillIn, output); break;
 			case CPress::kFillInOneBarPattern: oButton.fFillIn.fOneBarPattern = change.fValue != 0; break;
 			case CPress::kLandingPresent: oButton.fLanding.fPresent = change.fValue != 0; break;
 			case CPress::kLandingColour: oButton.fLanding.fColour = change.fValue; break;
-			case CPress::kLandingPattern: oButton.fLanding.fPatterns[output] = change.fValue; break;
-			case CPress::kLandingUnipolar: oButton.fLanding.fUnipolar[output] = change.fValue; break;
-			case CPress::kLandingBipolar: oButton.fLanding.fBipolar[output] = change.fValue; break;
-			case CPress::kLandingTransition: oButton.fLanding.fTransitions[output] = change.fValue; break;
+			case CPress::kLandingOutput: Unpack(change.fValue, oButton.fLanding, output); break;
 			case CPress::kLandingOneBarPattern: oButton.fLanding.fOneBarPattern = change.fValue != 0; break;
 			case CPress::kIntroPresent: oButton.fIntro.fPresent = change.fValue != 0; break;
 			case CPress::kIntroColour: oButton.fIntro.fColour = change.fValue; break;
-			case CPress::kIntroPattern: oButton.fIntro.fPatterns[output] = change.fValue; break;
-			case CPress::kIntroUnipolar: oButton.fIntro.fUnipolar[output] = change.fValue; break;
-			case CPress::kIntroBipolar: oButton.fIntro.fBipolar[output] = change.fValue; break;
-			case CPress::kIntroTransition: oButton.fIntro.fTransitions[output] = change.fValue; break;
+			case CPress::kIntroOutput: Unpack(change.fValue, oButton.fIntro, output); break;
 			case CPress::kIntroOneBarPattern: oButton.fIntro.fOneBarPattern = change.fValue != 0; break;
 			case CPress::kOutroPresent: oButton.fOutro.fPresent = change.fValue != 0; break;
 			case CPress::kOutroColour: oButton.fOutro.fColour = change.fValue; break;
-			case CPress::kOutroPattern: oButton.fOutro.fPatterns[output] = change.fValue; break;
-			case CPress::kOutroUnipolar: oButton.fOutro.fUnipolar[output] = change.fValue; break;
-			case CPress::kOutroBipolar: oButton.fOutro.fBipolar[output] = change.fValue; break;
-			case CPress::kOutroTransition: oButton.fOutro.fTransitions[output] = change.fValue; break;
+			case CPress::kOutroOutput: Unpack(change.fValue, oButton.fOutro, output); break;
 			case CPress::kOutroOneBarPattern: oButton.fOutro.fOneBarPattern = change.fValue != 0; break;
 			default: --oCount; break;
 		}
@@ -536,16 +544,16 @@ void TestFillInEditingToggleSetsUpANewFillIn() {
 	// A new fill-in is a copy of its clip's values, with every transition
 	// off, in white.
 	const CPress::TChanges set = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(set, 3 + 4 * CLauncher::kOutputCount));
-	CHECK(IsChange(set.fChanges[2 + 4 * CLauncher::kOutputCount], CPress::kFillInOneBarPattern, picked, 0));
+	CHECK(IsChanges(set, 3 + CLauncher::kOutputCount));
+	CHECK(IsChange(set.fChanges[2 + CLauncher::kOutputCount], CPress::kFillInOneBarPattern, picked, 0));
 	CHECK(IsChange(set.fChanges[0], CPress::kFillInPresent, picked, 1));
 	CHECK(IsChange(set.fChanges[1], CPress::kFillInColour, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
-		const CPress::TChange* changes = set.fChanges + 2 + 4 * output;
-		CHECK(IsOutputChange(changes[0], CPress::kFillInPattern, picked, output, output));
-		CHECK(IsOutputChange(changes[1], CPress::kFillInUnipolar, picked, output, 6 - output));
-		CHECK(IsOutputChange(changes[2], CPress::kFillInBipolar, picked, output, output % 7));
-		CHECK(IsOutputChange(changes[3], CPress::kFillInTransition, picked, output, CLauncher::kTransitionOff));
+		const CPress::TChange* changes = set.fChanges + 2 + output;
+		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kPatternSetting, picked, output, output));
+		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kUnipolarSetting, picked, output, 6 - output));
+		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kBipolarSetting, picked, output, output % 7));
+		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kTransitionSetting, picked, output, CLauncher::kTransitionOff));
 	}
 
 	const CPress::TChanges clear = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(true), SomeClipValues());
@@ -562,16 +570,16 @@ void TestFillInEditingColourAndCVRows() {
 		const CPress::TChanges second = CPress::FillInEditingLaunchButton(editing, column, 2, MixedModes(true), SomeClipValues());
 		CHECK(IsChanges(second, 1) && IsChange(second.fChanges[0], CPress::kFillInColour, picked, 7 + column));
 		const CPress::TChanges unipolar = CPress::FillInEditingLaunchButton(editing, column, 4, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(unipolar, 1) && IsOutputChange(unipolar.fChanges[0], CPress::kFillInUnipolar, picked, 1, column));
+		CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kFillInOutput, kUnipolarSetting, picked, 1, column));
 		const CPress::TChanges bipolar = CPress::FillInEditingLaunchButton(editing, column, 5, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(bipolar, 1) && IsOutputChange(bipolar.fChanges[0], CPress::kFillInBipolar, picked, 2, column));
+		CHECK(IsChanges(bipolar, 1) && IsSettingChange(bipolar.fChanges[0], CPress::kFillInOutput, kBipolarSetting, picked, 2, column));
 	}
 	for (int column = 0; column < 8; ++column) {
 		const CPress::TChanges pattern = CPress::FillInEditingLaunchButton(editing, column, 3, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(pattern, 1) && IsOutputChange(pattern.fChanges[0], CPress::kFillInPattern, picked, 0, column));
+		CHECK(IsChanges(pattern, 1) && IsSettingChange(pattern.fChanges[0], CPress::kFillInOutput, kPatternSetting, picked, 0, column));
 	}
 	const CPress::TChanges transition = CPress::FillInEditingLaunchButton(editing, 7, 5, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(transition, 1) && IsOutputChange(transition.fChanges[0], CPress::kFillInTransition, picked, 2, CLauncher::kTransitionC));
+	CHECK(IsChanges(transition, 1) && IsSettingChange(transition.fChanges[0], CPress::kFillInOutput, kTransitionSetting, picked, 2, CLauncher::kTransitionC));
 	// The last track of the second colour row is the one-bar pattern switch.
 	const CPress::TChanges oneBar = CPress::FillInEditingLaunchButton(editing, 7, 2, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(oneBar, 1) && IsChange(oneBar.fChanges[0], CPress::kFillInOneBarPattern, picked, 1));
@@ -598,16 +606,16 @@ void TestLandingEditingToggleSetsUpANewLanding() {
 	// A new landing is a copy of its clip's values, with every transition
 	// off, in white, like a new fill-in.
 	const CPress::TChanges set = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(set, 3 + 4 * CLauncher::kOutputCount));
-	CHECK(IsChange(set.fChanges[2 + 4 * CLauncher::kOutputCount], CPress::kLandingOneBarPattern, picked, 0));
+	CHECK(IsChanges(set, 3 + CLauncher::kOutputCount));
+	CHECK(IsChange(set.fChanges[2 + CLauncher::kOutputCount], CPress::kLandingOneBarPattern, picked, 0));
 	CHECK(IsChange(set.fChanges[0], CPress::kLandingPresent, picked, 1));
 	CHECK(IsChange(set.fChanges[1], CPress::kLandingColour, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
-		const CPress::TChange* changes = set.fChanges + 2 + 4 * output;
-		CHECK(IsOutputChange(changes[0], CPress::kLandingPattern, picked, output, output));
-		CHECK(IsOutputChange(changes[1], CPress::kLandingUnipolar, picked, output, 6 - output));
-		CHECK(IsOutputChange(changes[2], CPress::kLandingBipolar, picked, output, output % 7));
-		CHECK(IsOutputChange(changes[3], CPress::kLandingTransition, picked, output, CLauncher::kTransitionOff));
+		const CPress::TChange* changes = set.fChanges + 2 + output;
+		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kPatternSetting, picked, output, output));
+		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kUnipolarSetting, picked, output, 6 - output));
+		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kBipolarSetting, picked, output, output % 7));
+		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kTransitionSetting, picked, output, CLauncher::kTransitionOff));
 	}
 
 	const CPress::TChanges clear = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(true), SomeClipValues());
@@ -621,13 +629,13 @@ void TestLandingEditingColourAndCVRows() {
 	const CPress::TChanges colour = CPress::LandingEditingLaunchButton(editing, 2, 2, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(colour, 1) && IsChange(colour.fChanges[0], CPress::kLandingColour, picked, 9));
 	const CPress::TChanges pattern = CPress::LandingEditingLaunchButton(editing, 5, 3, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(pattern, 1) && IsOutputChange(pattern.fChanges[0], CPress::kLandingPattern, picked, 0, 5));
+	CHECK(IsChanges(pattern, 1) && IsSettingChange(pattern.fChanges[0], CPress::kLandingOutput, kPatternSetting, picked, 0, 5));
 	const CPress::TChanges unipolar = CPress::LandingEditingLaunchButton(editing, 4, 4, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(unipolar, 1) && IsOutputChange(unipolar.fChanges[0], CPress::kLandingUnipolar, picked, 1, 4));
+	CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kLandingOutput, kUnipolarSetting, picked, 1, 4));
 	const CPress::TChanges bipolar = CPress::LandingEditingLaunchButton(editing, 0, 5, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(bipolar, 1) && IsOutputChange(bipolar.fChanges[0], CPress::kLandingBipolar, picked, 2, 0));
+	CHECK(IsChanges(bipolar, 1) && IsSettingChange(bipolar.fChanges[0], CPress::kLandingOutput, kBipolarSetting, picked, 2, 0));
 	const CPress::TChanges transition = CPress::LandingEditingLaunchButton(editing, 7, 6, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(transition, 1) && IsOutputChange(transition.fChanges[0], CPress::kLandingTransition, picked, 3, CLauncher::kTransitionOff));
+	CHECK(IsChanges(transition, 1) && IsSettingChange(transition.fChanges[0], CPress::kLandingOutput, kTransitionSetting, picked, 3, CLauncher::kTransitionOff));
 	// Without a landing there is nothing but the toggle.
 	CHECK(IsChanges(CPress::LandingEditingLaunchButton(editing, 2, 2, MixedModes(false), SomeClipValues()), 0));
 }
@@ -698,16 +706,16 @@ void TestIntroAndOutroEditing() {
 	// A new intro or outro is a copy of its clip's values, with every
 	// transition off and one-bar pattern off, in white.
 	const CPress::TChanges setIntro = CPress::IntroEditingLaunchButton(intro, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(setIntro, 3 + 4 * CLauncher::kOutputCount));
+	CHECK(IsChanges(setIntro, 3 + CLauncher::kOutputCount));
 	CHECK(IsChange(setIntro.fChanges[0], CPress::kIntroPresent, picked, 1));
 	CHECK(IsChange(setIntro.fChanges[1], CPress::kIntroColour, picked, CLauncher::kColourWhite));
-	CHECK(IsOutputChange(setIntro.fChanges[2], CPress::kIntroPattern, picked, 0, 0));
-	CHECK(IsOutputChange(setIntro.fChanges[5], CPress::kIntroTransition, picked, 0, CLauncher::kTransitionOff));
-	CHECK(IsChange(setIntro.fChanges[2 + 4 * CLauncher::kOutputCount], CPress::kIntroOneBarPattern, picked, 0));
+	CHECK(IsSettingChange(setIntro.fChanges[2], CPress::kIntroOutput, kPatternSetting, picked, 0, 0));
+	CHECK(IsSettingChange(setIntro.fChanges[2], CPress::kIntroOutput, kTransitionSetting, picked, 0, CLauncher::kTransitionOff));
+	CHECK(IsChange(setIntro.fChanges[2 + CLauncher::kOutputCount], CPress::kIntroOneBarPattern, picked, 0));
 	const CPress::TChanges setOutro = CPress::OutroEditingLaunchButton(outro, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(setOutro, 3 + 4 * CLauncher::kOutputCount));
+	CHECK(IsChanges(setOutro, 3 + CLauncher::kOutputCount));
 	CHECK(IsChange(setOutro.fChanges[0], CPress::kOutroPresent, picked, 1));
-	CHECK(IsChange(setOutro.fChanges[2 + 4 * CLauncher::kOutputCount], CPress::kOutroOneBarPattern, picked, 0));
+	CHECK(IsChange(setOutro.fChanges[2 + CLauncher::kOutputCount], CPress::kOutroOneBarPattern, picked, 0));
 	const CPress::TChanges clearOutro = CPress::OutroEditingLaunchButton(outro, 7, 1, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(clearOutro, 1) && IsChange(clearOutro.fChanges[0], CPress::kOutroPresent, picked, 0));
 
@@ -715,12 +723,35 @@ void TestIntroAndOutroEditing() {
 	const CPress::TChanges colour = CPress::IntroEditingLaunchButton(intro, 2, 2, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(colour, 1) && IsChange(colour.fChanges[0], CPress::kIntroColour, picked, 9));
 	const CPress::TChanges unipolar = CPress::OutroEditingLaunchButton(outro, 4, 4, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(unipolar, 1) && IsOutputChange(unipolar.fChanges[0], CPress::kOutroUnipolar, picked, 1, 4));
+	CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kOutroOutput, kUnipolarSetting, picked, 1, 4));
 	const CPress::TChanges transition = CPress::IntroEditingLaunchButton(intro, 7, 6, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(transition, 1) && IsOutputChange(transition.fChanges[0], CPress::kIntroTransition, picked, 3, CLauncher::kTransitionOff));
+	CHECK(IsChanges(transition, 1) && IsSettingChange(transition.fChanges[0], CPress::kIntroOutput, kTransitionSetting, picked, 3, CLauncher::kTransitionOff));
 	const CPress::TChanges oneBar = CPress::OutroEditingLaunchButton(outro, 7, 2, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(oneBar, 1) && IsChange(oneBar.fChanges[0], CPress::kOutroOneBarPattern, picked, 1));
 	CHECK(IsChanges(CPress::IntroEditingLaunchButton(intro, 2, 2, MixedModes(false), SomeClipValues()), 0));
+}
+
+// A press changes one setting of a CV output and hands on the other three,
+// since all four are one property.
+void TestEditingKeepsTheOtherSettingsOfTheOutput() {
+	const int editing = CLauncher::SetupForClipEditing(3, 6);
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	CPress::TEdited edited = MixedModes(true);
+	edited.fPatterns[1] = 5;
+	edited.fUnipolar[1] = 2;
+	edited.fBipolar[1] = 6;
+	edited.fTransitions[1] = CLauncher::kTransitionB;
+	// Output B is unipolar: column 4 sets the unipolar value 3.
+	const CPress::TChange unipolar = CPress::LaunchButton(editing, 3, 4, false, edited);
+	CHECK(IsSettingChange(unipolar, CPress::kClipOutput, kUnipolarSetting, picked, 1, 3));
+	CHECK(SettingOf(unipolar.fValue, kPatternSetting) == 5);
+	CHECK(SettingOf(unipolar.fValue, kBipolarSetting) == 6);
+	CHECK(SettingOf(unipolar.fValue, kTransitionSetting) == CLauncher::kTransitionB);
+	// The transition button moves the transition on and keeps the values.
+	const CPress::TChange transition = CPress::LaunchButton(editing, 7, 4, false, edited);
+	CHECK(IsSettingChange(transition, CPress::kClipOutput, kTransitionSetting, picked, 1, CLauncher::kTransitionC));
+	CHECK(SettingOf(transition.fValue, kUnipolarSetting) == 2);
+	CHECK(SettingOf(transition.fValue, kPatternSetting) == 5);
 }
 
 int main() {
@@ -779,6 +810,7 @@ int main() {
 	TestFunctionButtonOfATrackWithoutClipsDoesNothing();
 	TestFunctionSelectButtonChoosesItsFunction();
 	TestIntroAndOutroEditing();
+	TestEditingKeepsTheOtherSettingsOfTheOutput();
 
 	return ReportChecks("Press");
 }

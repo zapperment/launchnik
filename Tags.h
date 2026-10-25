@@ -122,7 +122,8 @@ inline TJBox_Tag LandingColourTag(int iTrack, int iRow) {
 	return 9000 + 10 * (iTrack + 1) + iRow;
 }
 
-// After the settings of the CV outputs below, whose tags end at 21999.
+// After the settings of the CV outputs of the clips, fill-ins and landings
+// below.
 inline TJBox_Tag LandingOneBarPatternTag(int iTrack, int iRow) {
 	return 22000 + 10 * (iTrack + 1) + iRow;
 }
@@ -157,29 +158,15 @@ inline TJBox_Tag OutroOneBarPatternTag(int iTrack, int iRow) {
 }
 
 // The settings of a clip's CV outputs, and of its fill-in's, its landing's,
-// its intro's and its outro's: a base of its own for each kind of setting,
-// plus 100 for each track, 10 for each row and the output.
+// its intro's and its outro's, all four of an output in one property (see
+// docs/adr/0008): a base of its own for each kind, plus 100 for each track,
+// 10 for each row and the output.
 const TJBox_Tag kOutputSettingTagSpan = 1000;
-const TJBox_Tag kClipPatternBase = 10000;
-const TJBox_Tag kClipUnipolarBase = 11000;
-const TJBox_Tag kClipBipolarBase = 12000;
-const TJBox_Tag kClipTransitionBase = 13000;
-const TJBox_Tag kFillInPatternBase = 14000;
-const TJBox_Tag kFillInUnipolarBase = 15000;
-const TJBox_Tag kFillInBipolarBase = 16000;
-const TJBox_Tag kFillInTransitionBase = 17000;
-const TJBox_Tag kLandingPatternBase = 18000;
-const TJBox_Tag kLandingUnipolarBase = 19000;
-const TJBox_Tag kLandingBipolarBase = 20000;
-const TJBox_Tag kLandingTransitionBase = 21000;
-const TJBox_Tag kIntroPatternBase = 30000;
-const TJBox_Tag kIntroUnipolarBase = 31000;
-const TJBox_Tag kIntroBipolarBase = 32000;
-const TJBox_Tag kIntroTransitionBase = 33000;
-const TJBox_Tag kOutroPatternBase = 34000;
-const TJBox_Tag kOutroUnipolarBase = 35000;
-const TJBox_Tag kOutroBipolarBase = 36000;
-const TJBox_Tag kOutroTransitionBase = 37000;
+const TJBox_Tag kClipOutputBase = 10000;
+const TJBox_Tag kFillInOutputBase = 14000;
+const TJBox_Tag kLandingOutputBase = 18000;
+const TJBox_Tag kIntroOutputBase = 30000;
+const TJBox_Tag kOutroOutputBase = 34000;
 
 inline TJBox_Tag OutputSettingTag(TJBox_Tag iBase, int iTrack, int iRow, int iOutput) {
 	return iBase + 100 * (iTrack + 1) + 10 * iRow + (iOutput + 1);

@@ -12,11 +12,15 @@ local TRANSITIONS = { "Off", "A", "B", "C", "D" }
 
 -- The settings of a CV output: long name, the letters of the short name and
 -- the letter of the shortest.
-local OUTPUT_SETTINGS = {
-	{ "pattern", "Pattern", "Pt", "P" },
-	{ "unipolar", "Unipolar", "Un", "U" },
-	{ "bipolar", "Bipolar", "Bi", "B" },
-	{ "transition", "Transition", "Tr", "T" },
+-- The kinds of settings a launch button holds: the clip's, the fill-in's,
+-- the landing's, the intro's and the outro's, with the infix of their
+-- properties, the word in their long names and the letter in their short ones.
+local KINDS = {
+	{ "", "", "" },
+	{ "_fill_in", " Fill-In", "F" },
+	{ "_landing", " Landing", "L" },
+	{ "_intro", " Intro", "I" },
+	{ "_outro", " Outro", "O" },
 }
 
 texts = {
@@ -237,35 +241,17 @@ for track = 1, 8 do
 			texts[key .. "_one_bar_shortest"] = initial .. "B" .. digits
 		end
 
-		-- The settings of the CV outputs, for example "T1C1 APt" and "11AP"
-		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in, "T1C1LAPt" and
-		-- "11Ap" for the landing, "T1C1IAPt" and "11aP" for the intro,
-		-- "T1C1OAPt" and "11GP" for the outro, whose outputs are lettered G to
-		-- L in the shortest names, since four characters allow no more.
-		for output, letter in ipairs(OUTPUT_LETTERS) do
+		-- The settings of the CV outputs, all four of an output in one item,
+		-- for example "T1C1 A" and "11A" for the clip, "T1C1 FA" and "11AF"
+		-- for the fill-in, and likewise L, I and O for the landing, the intro
+		-- and the outro.
+		for _, letter in ipairs(OUTPUT_LETTERS) do
 			local upper = string.upper(letter)
-			for _, setting in ipairs(OUTPUT_SETTINGS) do
-				local name, short_letters, shortest_letter = setting[2], setting[3], setting[4]
-				local property = clip .. "_" .. letter .. "_" .. setting[1]
-				texts[property] = long .. " Output " .. upper .. " " .. name
-				texts[property .. "_short"] = short .. " " .. upper .. short_letters
-				texts[property .. "_shortest"] = digits .. upper .. shortest_letter
-				local fill_in = clip .. "_fill_in_" .. letter .. "_" .. setting[1]
-				texts[fill_in] = long .. " Fill-In Output " .. upper .. " " .. name
-				texts[fill_in .. "_short"] = short .. "F" .. upper .. short_letters
-				texts[fill_in .. "_shortest"] = digits .. letter .. string.lower(shortest_letter)
-				local landing = clip .. "_landing_" .. letter .. "_" .. setting[1]
-				texts[landing] = long .. " Landing Output " .. upper .. " " .. name
-				texts[landing .. "_short"] = short .. "L" .. upper .. short_letters
-				texts[landing .. "_shortest"] = digits .. upper .. string.lower(shortest_letter)
-				local intro = clip .. "_intro_" .. letter .. "_" .. setting[1]
-				texts[intro] = long .. " Intro Output " .. upper .. " " .. name
-				texts[intro .. "_short"] = short .. "I" .. upper .. short_letters
-				texts[intro .. "_shortest"] = digits .. letter .. shortest_letter
-				local outro = clip .. "_outro_" .. letter .. "_" .. setting[1]
-				texts[outro] = long .. " Outro Output " .. upper .. " " .. name
-				texts[outro .. "_short"] = short .. "O" .. upper .. short_letters
-				texts[outro .. "_shortest"] = digits .. string.char(string.byte("G") + output - 1) .. shortest_letter
+			for _, kind in ipairs(KINDS) do
+				local property = clip .. kind[1] .. "_" .. letter
+				texts[property] = long .. kind[2] .. " Output " .. upper
+				texts[property .. "_short"] = short .. " " .. kind[3] .. upper
+				texts[property .. "_shortest"] = digits .. upper .. kind[3]
 			end
 		end
 

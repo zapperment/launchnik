@@ -277,22 +277,19 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green, in clip picking 3 = flashing white, 18 = flashing green, in clear mode 6 = flashing red, and in duplicate mode 39 = flashing fuchsia, 38 = vibrant fuchsia |
 | `Track N Clip M Present` (64 items) | Input and output | 0 = empty, 1 = holds a clip |
 | `Track N Clip M Colour` (64 items) | Input and output | 0–13 for white to pink |
-| `Track N Clip M Output X Pattern` (384 items, X = A–F) | Input and output | 0–7 for patterns 1–8 |
-| `Track N Clip M Output X Unipolar` (384 items) | Input and output | 0–6 for 0 to 100 |
-| `Track N Clip M Output X Bipolar` (384 items) | Input and output | 0–6 for −100 to +100 |
-| `Track N Clip M Output X Transition` (384 items) | Input and output | 0 = off, 1–4 = A–D |
+| `Track N Clip M Output X` (384 items, X = A–F) | Input and output | The pattern (0–7 for patterns 1–8) + 8 × the unipolar value (0–6 for 0 to 100) + 56 × the bipolar value (0–6 for −100 to +100) + 392 × the transition (0 = off, 1–4 = A–D), 0–1959; see [0008](docs/adr/0008-a-cv-output-setting-is-one-property.md) |
 | `Track N Clip M Fill-In Present` (64 items) | Input and output | 0 = no fill-in, 1 = holds one |
 | `Track N Clip M Fill-In Colour` (64 items) | Input and output | 0–13 for white to pink |
 | `Track N Clip M Fill-In One-Bar Pattern` (64 items) | Input and output | 0 = off, 1 = the fill-in's patterns play in the last bar only |
-| `Track N Clip M Fill-In Output X Pattern`, `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
+| `Track N Clip M Fill-In Output X` (384 items) | Input and output | As for the clip |
 | `Track N Clip M Landing Present` (64 items) | Input and output | 0 = no landing, 1 = holds one |
 | `Track N Clip M Landing Colour` (64 items) | Input and output | 0–13 for white to pink |
 | `Track N Clip M Landing One-Bar Pattern` (64 items) | Input and output | 0 = off, 1 = the landing's patterns play for one bar only |
-| `Track N Clip M Landing Output X Pattern`, `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
+| `Track N Clip M Landing Output X` (384 items) | Input and output | As for the clip |
 | `Track N Clip M Intro Present`, `… Outro Present` (64 items each) | Input and output | 0 = no intro or outro, 1 = holds one |
 | `Track N Clip M Intro Colour`, `… Outro Colour` (64 items each) | Input and output | 0–13 for white to pink |
 | `Track N Clip M Intro One-Bar Pattern`, `… Outro One-Bar Pattern` (64 items each) | Input and output | 0 = off, 1 = the intro's patterns play in the last bar only, the outro's in the first bar only |
-| `Track N Clip M Intro Output X Pattern`, `… Outro Output X Pattern`, and likewise `… Unipolar`, `… Bipolar`, `… Transition` (384 items each) | Input and output | As for the clip |
+| `Track N Clip M Intro Output X`, `… Outro Output X` (384 items each) | Input and output | As for the clip |
 | `Track N Output X CV Mode` (48 items) | Output only | 0 = bipolar, 1 = unipolar, 2 = pattern; a copy of the switch on the back panel, which only the mouse can change |
 | `Fill-In` | Input and output | 1 while the fill-in button is held down, 0 otherwise |
 | `Fill-In Light` | Output only | As for a launch button: 1 = dim white, 8 = vibrant orange |

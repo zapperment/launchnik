@@ -28,16 +28,16 @@ const TJBox_Tag kOutroOneBarPatternBase = 29000;
 const TJBox_Tag kClipTagSpan = 1000;
 
 const TJBox_Tag kOutputSettingBases[] = {
-	kClipPatternBase, kClipUnipolarBase, kClipBipolarBase, kClipTransitionBase,
-	kFillInPatternBase, kFillInUnipolarBase, kFillInBipolarBase, kFillInTransitionBase,
-	kLandingPatternBase, kLandingUnipolarBase, kLandingBipolarBase, kLandingTransitionBase,
-	kIntroPatternBase, kIntroUnipolarBase, kIntroBipolarBase, kIntroTransitionBase,
-	kOutroPatternBase, kOutroUnipolarBase, kOutroBipolarBase, kOutroTransitionBase,
+	kClipOutputBase, kFillInOutputBase, kLandingOutputBase, kIntroOutputBase, kOutroOutputBase,
 };
 
 bool IsOutputSettingTag(TJBox_Tag iTag) {
-	return (iTag >= kClipPatternBase && iTag < kLandingTransitionBase + kOutputSettingTagSpan)
-		|| (iTag >= kIntroPatternBase && iTag < kOutroTransitionBase + kOutputSettingTagSpan);
+	for (TJBox_Tag base : kOutputSettingBases) {
+		if (iTag >= base && iTag < base + kOutputSettingTagSpan) {
+			return true;
+		}
+	}
+	return false;
 }
 
 // The names of the CV outputs in motherboard_def.lua, by track and output.
@@ -261,27 +261,38 @@ void CLaunchnik::HandleOutputSettingChange(TJBox_Tag iTag, int iValue) {
 	const int track = offset / 100 - 1;
 	const int row = (offset / 10) % 10;
 	const int output = offset % 10 - 1;
+	const CLauncher::TOutputSettings settings = CLauncher::UnpackOutputSettings(iValue);
 	switch (base) {
-		case kClipPatternBase: fLauncher.SetClipPattern(track, row, output, iValue); break;
-		case kClipUnipolarBase: fLauncher.SetClipUnipolar(track, row, output, iValue); break;
-		case kClipBipolarBase: fLauncher.SetClipBipolar(track, row, output, iValue); break;
-		case kClipTransitionBase: fLauncher.SetClipTransition(track, row, output, iValue); break;
-		case kFillInPatternBase: fLauncher.SetFillInPattern(track, row, output, iValue); break;
-		case kFillInUnipolarBase: fLauncher.SetFillInUnipolar(track, row, output, iValue); break;
-		case kFillInBipolarBase: fLauncher.SetFillInBipolar(track, row, output, iValue); break;
-		case kFillInTransitionBase: fLauncher.SetFillInTransition(track, row, output, iValue); break;
-		case kLandingPatternBase: fLauncher.SetLandingPattern(track, row, output, iValue); break;
-		case kLandingUnipolarBase: fLauncher.SetLandingUnipolar(track, row, output, iValue); break;
-		case kLandingBipolarBase: fLauncher.SetLandingBipolar(track, row, output, iValue); break;
-		case kLandingTransitionBase: fLauncher.SetLandingTransition(track, row, output, iValue); break;
-		case kIntroPatternBase: fLauncher.SetIntroPattern(track, row, output, iValue); break;
-		case kIntroUnipolarBase: fLauncher.SetIntroUnipolar(track, row, output, iValue); break;
-		case kIntroBipolarBase: fLauncher.SetIntroBipolar(track, row, output, iValue); break;
-		case kIntroTransitionBase: fLauncher.SetIntroTransition(track, row, output, iValue); break;
-		case kOutroPatternBase: fLauncher.SetOutroPattern(track, row, output, iValue); break;
-		case kOutroUnipolarBase: fLauncher.SetOutroUnipolar(track, row, output, iValue); break;
-		case kOutroBipolarBase: fLauncher.SetOutroBipolar(track, row, output, iValue); break;
-		case kOutroTransitionBase: fLauncher.SetOutroTransition(track, row, output, iValue); break;
+		case kClipOutputBase:
+			fLauncher.SetClipPattern(track, row, output, settings.fPattern);
+			fLauncher.SetClipUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetClipBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetClipTransition(track, row, output, settings.fTransition);
+			break;
+		case kFillInOutputBase:
+			fLauncher.SetFillInPattern(track, row, output, settings.fPattern);
+			fLauncher.SetFillInUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetFillInBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetFillInTransition(track, row, output, settings.fTransition);
+			break;
+		case kLandingOutputBase:
+			fLauncher.SetLandingPattern(track, row, output, settings.fPattern);
+			fLauncher.SetLandingUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetLandingBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetLandingTransition(track, row, output, settings.fTransition);
+			break;
+		case kIntroOutputBase:
+			fLauncher.SetIntroPattern(track, row, output, settings.fPattern);
+			fLauncher.SetIntroUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetIntroBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetIntroTransition(track, row, output, settings.fTransition);
+			break;
+		case kOutroOutputBase:
+			fLauncher.SetOutroPattern(track, row, output, settings.fPattern);
+			fLauncher.SetOutroUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetOutroBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetOutroTransition(track, row, output, settings.fTransition);
+			break;
 		default: break;
 	}
 }

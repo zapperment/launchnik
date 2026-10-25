@@ -117,6 +117,12 @@ int LoadNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag) {
 	return static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(iCustomProps, iTag)));
 }
 
+// The settings of a CV output of one kind: a clip's, a fill-in's, a
+// landing's, an intro's or an outro's, as iBase says.
+CLauncher::TOutputSettings LoadOutputSettings(TJBox_ObjectRef iCustomProps, TJBox_Tag iBase, int iTrack, int iRow, int iOutput) {
+	return CLauncher::UnpackOutputSettings(LoadNumber(iCustomProps, OutputSettingTag(iBase, iTrack, iRow, iOutput)));
+}
+
 // What a press in clip editing, fill-in editing, landing editing, intro
 // editing or outro editing needs to know of the settings being edited, the
 // clip's, its fill-in's, its landing's, its intro's or its outro's.
@@ -124,31 +130,35 @@ CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, int i
 	const int track = iButtonIndex / CLauncher::kRowCount;
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
 	CPress::TEdited edited = CPress::Edited(false);
-	TJBox_Tag transitionBase = kClipTransitionBase;
+	TJBox_Tag outputBase = kClipOutputBase;
 	edited.fPresent = HoldsClip(iCustomProps, iButtonIndex);
 	if (CLauncher::IsFillInEditing(iSetup)) {
-		transitionBase = kFillInTransitionBase;
+		outputBase = kFillInOutputBase;
 		edited.fPresent = HoldsFillIn(iCustomProps, iButtonIndex);
 		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row)));
 	}
 	else if (CLauncher::IsLandingEditing(iSetup)) {
-		transitionBase = kLandingTransitionBase;
+		outputBase = kLandingOutputBase;
 		edited.fPresent = HoldsLanding(iCustomProps, iButtonIndex);
 		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row)));
 	}
 	else if (CLauncher::IsIntroEditing(iSetup)) {
-		transitionBase = kIntroTransitionBase;
+		outputBase = kIntroOutputBase;
 		edited.fPresent = HoldsIntro(iCustomProps, iButtonIndex);
 		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, IntroOneBarPatternTag(track, row)));
 	}
 	else if (CLauncher::IsOutroEditing(iSetup)) {
-		transitionBase = kOutroTransitionBase;
+		outputBase = kOutroOutputBase;
 		edited.fPresent = HoldsOutro(iCustomProps, iButtonIndex);
 		edited.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, OutroOneBarPatternTag(track, row)));
 	}
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		edited.fCVModes[output] = LoadNumber(iCustomProps, CVModeTag(track, output));
-		edited.fTransitions[output] = LoadNumber(iCustomProps, OutputSettingTag(transitionBase, track, row, output));
+		const CLauncher::TOutputSettings settings = LoadOutputSettings(iCustomProps, outputBase, track, row, output);
+		edited.fPatterns[output] = settings.fPattern;
+		edited.fUnipolar[output] = settings.fUnipolar;
+		edited.fBipolar[output] = settings.fBipolar;
+		edited.fTransitions[output] = settings.fTransition;
 	}
 	return edited;
 }
@@ -158,23 +168,25 @@ CPress::TClipValues LoadClipValues(TJBox_ObjectRef iCustomProps, int iButtonInde
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
 	CPress::TClipValues values;
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
-		values.fPatterns[output] = LoadNumber(iCustomProps, OutputSettingTag(kClipPatternBase, track, row, output));
-		values.fUnipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(kClipUnipolarBase, track, row, output));
-		values.fBipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(kClipBipolarBase, track, row, output));
+		const CLauncher::TOutputSettings settings = LoadOutputSettings(iCustomProps, kClipOutputBase, track, row, output);
+		values.fPatterns[output] = settings.fPattern;
+		values.fUnipolar[output] = settings.fUnipolar;
+		values.fBipolar[output] = settings.fBipolar;
 	}
 	return values;
 }
 
 // One kind of settings of a launch button, whose properties have these tags.
-CPress::TSettings LoadSettings(TJBox_ObjectRef iCustomProps, int iTrack, int iRow, TJBox_Tag iPresentTag, TJBox_Tag iColourTag, TJBox_Tag iPatternBase, TJBox_Tag iUnipolarBase, TJBox_Tag iBipolarBase, TJBox_Tag iTransitionBase) {
+CPress::TSettings LoadSettings(TJBox_ObjectRef iCustomProps, int iTrack, int iRow, TJBox_Tag iPresentTag, TJBox_Tag iColourTag, TJBox_Tag iOutputBase) {
 	CPress::TSettings settings;
 	settings.fPresent = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, iPresentTag));
 	settings.fColour = LoadNumber(iCustomProps, iColourTag);
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
-		settings.fPatterns[output] = LoadNumber(iCustomProps, OutputSettingTag(iPatternBase, iTrack, iRow, output));
-		settings.fUnipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(iUnipolarBase, iTrack, iRow, output));
-		settings.fBipolar[output] = LoadNumber(iCustomProps, OutputSettingTag(iBipolarBase, iTrack, iRow, output));
-		settings.fTransitions[output] = LoadNumber(iCustomProps, OutputSettingTag(iTransitionBase, iTrack, iRow, output));
+		const CLauncher::TOutputSettings outputSettings = LoadOutputSettings(iCustomProps, iOutputBase, iTrack, iRow, output);
+		settings.fPatterns[output] = outputSettings.fPattern;
+		settings.fUnipolar[output] = outputSettings.fUnipolar;
+		settings.fBipolar[output] = outputSettings.fBipolar;
+		settings.fTransitions[output] = outputSettings.fTransition;
 	}
 	settings.fOneBarPattern = false;
 	return settings;
@@ -186,24 +198,55 @@ CPress::TButton LoadButton(TJBox_ObjectRef iCustomProps, int iButtonIndex) {
 	const int row = iButtonIndex % CLauncher::kRowCount + 1;
 	CPress::TButton button;
 	button.fClip = LoadSettings(iCustomProps, track, row, ClipPresentTag(track, row), ClipColourTag(track, row),
-		kClipPatternBase, kClipUnipolarBase, kClipBipolarBase, kClipTransitionBase);
+		kClipOutputBase);
 	button.fFillIn = LoadSettings(iCustomProps, track, row, FillInPresentTag(track, row), FillInColourTag(track, row),
-		kFillInPatternBase, kFillInUnipolarBase, kFillInBipolarBase, kFillInTransitionBase);
+		kFillInOutputBase);
 	button.fFillIn.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row)));
 	button.fLanding = LoadSettings(iCustomProps, track, row, LandingPresentTag(track, row), LandingColourTag(track, row),
-		kLandingPatternBase, kLandingUnipolarBase, kLandingBipolarBase, kLandingTransitionBase);
+		kLandingOutputBase);
 	button.fLanding.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, LandingOneBarPatternTag(track, row)));
 	button.fIntro = LoadSettings(iCustomProps, track, row, IntroPresentTag(track, row), IntroColourTag(track, row),
-		kIntroPatternBase, kIntroUnipolarBase, kIntroBipolarBase, kIntroTransitionBase);
+		kIntroOutputBase);
 	button.fIntro.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, IntroOneBarPatternTag(track, row)));
 	button.fOutro = LoadSettings(iCustomProps, track, row, OutroPresentTag(track, row), OutroColourTag(track, row),
-		kOutroPatternBase, kOutroUnipolarBase, kOutroBipolarBase, kOutroTransitionBase);
+		kOutroOutputBase);
 	button.fOutro.fOneBarPattern = JBox_GetBoolean(JBox_LoadMOMPropertyByTag(iCustomProps, OutroOneBarPatternTag(track, row)));
 	return button;
 }
 
-void StoreNumber(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag, int iValue) {
-	JBox_StoreMOMPropertyByTag(iCustomProps, iTag, JBox_MakeNumber(iValue));
+// The kinds of settings a launch button holds, in the order of
+// kOutputSettingKeys.
+enum ESettingsKind { kClipKind, kFillInKind, kLandingKind, kIntroKind, kOutroKind };
+
+// The names of the changes of a CV output's settings, by kind and by the
+// setting changed: pattern, unipolar value, bipolar value, transition.
+const char* const kOutputSettingKeys[5][4] = {
+	{ "gesture_clip_pattern", "gesture_clip_unipolar", "gesture_clip_bipolar", "gesture_clip_transition" },
+	{ "gesture_fill_in_pattern", "gesture_fill_in_unipolar", "gesture_fill_in_bipolar", "gesture_fill_in_transition" },
+	{ "gesture_landing_pattern", "gesture_landing_unipolar", "gesture_landing_bipolar", "gesture_landing_transition" },
+	{ "gesture_intro_pattern", "gesture_intro_unipolar", "gesture_intro_bipolar", "gesture_intro_transition" },
+	{ "gesture_outro_pattern", "gesture_outro_unipolar", "gesture_outro_bipolar", "gesture_outro_transition" },
+};
+
+// Writes the settings of a CV output, all four in one property (see
+// docs/adr/0008), and names the change after the setting it changes; a
+// change of several at once, such as a duplicate, has its name from the
+// caller.
+void StoreOutputSettings(TJBox_ObjectRef iCustomProps, TJBox_Tag iBase, ESettingsKind iKind, int iTrack, int iRow, const CPress::TChange& iChange, TJBox_GestureArgs& ioArgs) {
+	const CLauncher::TOutputSettings before = LoadOutputSettings(iCustomProps, iBase, iTrack, iRow, iChange.fOutput);
+	const CLauncher::TOutputSettings after = CLauncher::UnpackOutputSettings(iChange.fValue);
+	JBox_StoreMOMPropertyByTag(iCustomProps, OutputSettingTag(iBase, iTrack, iRow, iChange.fOutput), JBox_MakeNumber(iChange.fValue));
+	int setting = 3;
+	if (after.fPattern != before.fPattern) {
+		setting = 0;
+	}
+	else if (after.fUnipolar != before.fUnipolar) {
+		setting = 1;
+	}
+	else if (after.fBipolar != before.fBipolar) {
+		setting = 2;
+	}
+	ioArgs.fGestureNameKey = kOutputSettingKeys[iKind][setting];
 }
 
 // Writes the one property a press changes. The names of the changes are keys
@@ -229,21 +272,8 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, ClipPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_clip_present";
 			break;
-		case CPress::kClipPattern:
-			StoreNumber(iCustomProps, OutputSettingTag(kClipPatternBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_clip_pattern";
-			break;
-		case CPress::kClipUnipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kClipUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_clip_unipolar";
-			break;
-		case CPress::kClipBipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kClipBipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_clip_bipolar";
-			break;
-		case CPress::kClipTransition:
-			StoreNumber(iCustomProps, OutputSettingTag(kClipTransitionBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_clip_transition";
+		case CPress::kClipOutput:
+			StoreOutputSettings(iCustomProps, kClipOutputBase, kClipKind, track, row, iChange, iArgs);
 			break;
 		case CPress::kClipColour:
 			JBox_StoreMOMPropertyByTag(iCustomProps, ClipColourTag(track, row), JBox_MakeNumber(iChange.fValue));
@@ -253,21 +283,8 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, FillInPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_fill_in_present";
 			break;
-		case CPress::kFillInPattern:
-			StoreNumber(iCustomProps, OutputSettingTag(kFillInPatternBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_fill_in_pattern";
-			break;
-		case CPress::kFillInUnipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kFillInUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_fill_in_unipolar";
-			break;
-		case CPress::kFillInBipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kFillInBipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_fill_in_bipolar";
-			break;
-		case CPress::kFillInTransition:
-			StoreNumber(iCustomProps, OutputSettingTag(kFillInTransitionBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_fill_in_transition";
+		case CPress::kFillInOutput:
+			StoreOutputSettings(iCustomProps, kFillInOutputBase, kFillInKind, track, row, iChange, iArgs);
 			break;
 		case CPress::kFillInColour:
 			JBox_StoreMOMPropertyByTag(iCustomProps, FillInColourTag(track, row), JBox_MakeNumber(iChange.fValue));
@@ -277,21 +294,8 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, LandingPresentTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_landing_present";
 			break;
-		case CPress::kLandingPattern:
-			StoreNumber(iCustomProps, OutputSettingTag(kLandingPatternBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_landing_pattern";
-			break;
-		case CPress::kLandingUnipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kLandingUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_landing_unipolar";
-			break;
-		case CPress::kLandingBipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kLandingBipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_landing_bipolar";
-			break;
-		case CPress::kLandingTransition:
-			StoreNumber(iCustomProps, OutputSettingTag(kLandingTransitionBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_landing_transition";
+		case CPress::kLandingOutput:
+			StoreOutputSettings(iCustomProps, kLandingOutputBase, kLandingKind, track, row, iChange, iArgs);
 			break;
 		case CPress::kFillInOneBarPattern:
 			JBox_StoreMOMPropertyByTag(iCustomProps, FillInOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
@@ -313,21 +317,8 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, IntroColourTag(track, row), JBox_MakeNumber(iChange.fValue));
 			iArgs.fGestureNameKey = "gesture_intro_colour";
 			break;
-		case CPress::kIntroPattern:
-			StoreNumber(iCustomProps, OutputSettingTag(kIntroPatternBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_intro_pattern";
-			break;
-		case CPress::kIntroUnipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kIntroUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_intro_unipolar";
-			break;
-		case CPress::kIntroBipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kIntroBipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_intro_bipolar";
-			break;
-		case CPress::kIntroTransition:
-			StoreNumber(iCustomProps, OutputSettingTag(kIntroTransitionBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_intro_transition";
+		case CPress::kIntroOutput:
+			StoreOutputSettings(iCustomProps, kIntroOutputBase, kIntroKind, track, row, iChange, iArgs);
 			break;
 		case CPress::kIntroOneBarPattern:
 			JBox_StoreMOMPropertyByTag(iCustomProps, IntroOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));
@@ -341,21 +332,8 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, OutroColourTag(track, row), JBox_MakeNumber(iChange.fValue));
 			iArgs.fGestureNameKey = "gesture_outro_colour";
 			break;
-		case CPress::kOutroPattern:
-			StoreNumber(iCustomProps, OutputSettingTag(kOutroPatternBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_outro_pattern";
-			break;
-		case CPress::kOutroUnipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kOutroUnipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_outro_unipolar";
-			break;
-		case CPress::kOutroBipolar:
-			StoreNumber(iCustomProps, OutputSettingTag(kOutroBipolarBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_outro_bipolar";
-			break;
-		case CPress::kOutroTransition:
-			StoreNumber(iCustomProps, OutputSettingTag(kOutroTransitionBase, track, row, iChange.fOutput), iChange.fValue);
-			iArgs.fGestureNameKey = "gesture_outro_transition";
+		case CPress::kOutroOutput:
+			StoreOutputSettings(iCustomProps, kOutroOutputBase, kOutroKind, track, row, iChange, iArgs);
 			break;
 		case CPress::kOutroOneBarPattern:
 			JBox_StoreMOMPropertyByTag(iCustomProps, OutroOneBarPatternTag(track, row), JBox_MakeBoolean(iChange.fValue != 0));

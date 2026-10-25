@@ -8,7 +8,7 @@ Each **clip**, and each **fill-in**, holds four saved settings for every one of 
 
 ## Consequences
 
-- Every setting is a Remote item, because only the panel and a codec can write saved properties ([0002](0002-realtime-computes-lights-writers-change-clips.md)): 64 launch buttons × 6 outputs × 4 settings × clip and fill-in = 3,072 items, about twice what one value per output would need. Remote documents no limit; whether Reason copes with a map that size has to be seen. If it does not, the fallback is one value per output, with the problems above.
+- Every setting is a Remote item, because only the panel and a codec can write saved properties ([0002](0002-realtime-computes-lights-writers-change-clips.md)): 64 launch buttons × 6 outputs × 4 settings × clip and fill-in = 3,072 items, about twice what one value per output would need. Remote documents no limit; whether Reason copes with a map that size has to be seen. If it does not, the fallback is one value per output, with the problems above. It did not cope well: with landings, intros and outros loading became too slow, and the four settings of an output became one property instead, keeping every value ([0008](0008-a-cv-output-setting-is-one-property.md)).
 - The Remote map and the codec's item list are too long to keep by hand and are generated.
 - Changing a CV mode loses nothing: switching back brings the old values back. A patch carries the values of all three modes, whichever are in use.
 - Once patches have been shared, the four settings per output are fixed, like the rest of a patch ([0003](0003-patch-holds-clips-not-selections.md)).

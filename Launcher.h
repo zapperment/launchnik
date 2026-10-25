@@ -60,6 +60,20 @@ class CLauncher {
 	public: static const int kTransitionD = 4;
 	public: static const int kTransitionCount = 5;
 
+	// The four settings of a CV output, as one number, the way the patch,
+	// the panel and control surfaces keep them (see docs/adr/0008): the
+	// pattern, plus 8 times the unipolar value, plus 56 times the bipolar
+	// value, plus 392 times the transition.
+	public: struct TOutputSettings {
+		int fPattern;
+		int fUnipolar;
+		int fBipolar;
+		int fTransition;
+	};
+	public: static const int kOutputSettingsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount;
+	public: static int PackOutputSettings(const TOutputSettings& iSettings);
+	public: static TOutputSettings UnpackOutputSettings(int iPacked);
+
 	public: static const int kColourCount = 14;
 	public: static const int kColourWhite = 0;
 	public: static const int kColourRed = 1;

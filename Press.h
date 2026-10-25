@@ -18,40 +18,26 @@ class CPress {
 		// fValue is the length of the switch interval.
 		kLength,
 		// fIndex is the number of the launch button, see CLauncher::ButtonIndex;
-		// for the settings of a CV output, fOutput is the output.
+		// for the settings of a CV output, fOutput is the output and fValue
+		// all four of them as one number, see CLauncher::PackOutputSettings.
 		kClipPresent,
 		kClipColour,
-		kClipPattern,
-		kClipUnipolar,
-		kClipBipolar,
-		kClipTransition,
+		kClipOutput,
 		kFillInPresent,
 		kFillInColour,
-		kFillInPattern,
-		kFillInUnipolar,
-		kFillInBipolar,
-		kFillInTransition,
+		kFillInOutput,
 		kFillInOneBarPattern,
 		kLandingPresent,
 		kLandingColour,
-		kLandingPattern,
-		kLandingUnipolar,
-		kLandingBipolar,
-		kLandingTransition,
+		kLandingOutput,
 		kLandingOneBarPattern,
 		kIntroPresent,
 		kIntroColour,
-		kIntroPattern,
-		kIntroUnipolar,
-		kIntroBipolar,
-		kIntroTransition,
+		kIntroOutput,
 		kIntroOneBarPattern,
 		kOutroPresent,
 		kOutroColour,
-		kOutroPattern,
-		kOutroUnipolar,
-		kOutroBipolar,
-		kOutroTransition,
+		kOutroOutput,
 		kOutroOneBarPattern,
 		// fValue is 1 while the fill-in button is held down, 0 once it is let go.
 		kFillIn,
@@ -81,9 +67,9 @@ class CPress {
 
 	// How many properties a launch button holds: of its clip, its fill-in,
 	// its landing, its intro and its outro, whether there is one, the colour
-	// and the four settings of every CV output, and of all but the clip
-	// one-bar pattern.
-	public: static const int kButtonSettingCount = 5 * (2 + 4 * CLauncher::kOutputCount) + 4;
+	// and the settings of every CV output, and of all but the clip one-bar
+	// pattern.
+	public: static const int kButtonSettingCount = 5 * (2 + CLauncher::kOutputCount) + 4;
 
 	// What a press of a scene button changes: the selection and the relaunch
 	// press of every track, the length and the setup state, what every track
@@ -96,7 +82,7 @@ class CPress {
 	// state.
 	public: static const int kMaxChangeCount = kButtonSettingCount + 1;
 	static_assert(kMaxChangeCount >= 2 * CLauncher::kTrackCount, "a scene press changes two properties of every track");
-	static_assert(kMaxChangeCount >= 3 + 4 * CLauncher::kOutputCount, "a press in fill-in editing sets up a whole fill-in");
+	static_assert(kMaxChangeCount >= 3 + CLauncher::kOutputCount, "a press in fill-in editing sets up a whole fill-in");
 	public: struct TChanges {
 		int fCount;
 		TChange fChanges[kMaxChangeCount];
@@ -106,17 +92,21 @@ class CPress {
 	// editing or outro editing needs to know of the settings being edited:
 	// whether there are any (the picked launch button holds a clip, or in
 	// fill-in editing a fill-in, and so on), the CV modes of the picked launch
-	// button's track, and the transitions, which a press moves on to the
-	// next; of a fill-in, a landing, an intro or an outro also whether
-	// one-bar pattern is on, which a press switches.
+	// button's track, and the settings of every CV output, which a press
+	// changes one of, keeping the others, and of which it moves the
+	// transition on to the next; of a fill-in, a landing, an intro or an
+	// outro also whether one-bar pattern is on, which a press switches.
 	public: struct TEdited {
 		bool fPresent;
 		int fCVModes[CLauncher::kOutputCount];
+		int fPatterns[CLauncher::kOutputCount];
+		int fUnipolar[CLauncher::kOutputCount];
+		int fBipolar[CLauncher::kOutputCount];
 		int fTransitions[CLauncher::kOutputCount];
 		bool fOneBarPattern;
 	};
-	// Settings with a new device's CV modes, every transition off and
-	// one-bar pattern off.
+	// Settings with a new device's CV modes, pattern 1, unipolar and bipolar
+	// 0, every transition off and one-bar pattern off.
 	public: static TEdited Edited(bool iPresent);
 
 	// A clip's values, which a new fill-in, landing, intro or outro starts as

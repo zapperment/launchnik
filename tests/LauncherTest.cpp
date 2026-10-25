@@ -3716,6 +3716,32 @@ void TestOutroLiesOverAFillInAndALanding() {
 	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
 }
 
+// The four settings of a CV output are one number, every combination its own.
+void TestOutputSettingsPackIntoOneNumber() {
+	CHECK(CLauncher::kOutputSettingsCount == 1960);
+	bool seen[CLauncher::kOutputSettingsCount] = {};
+	for (int pattern = 0; pattern < CLauncher::kPatternCount; ++pattern) {
+		for (int unipolar = 0; unipolar < CLauncher::kValueCount; ++unipolar) {
+			for (int bipolar = 0; bipolar < CLauncher::kValueCount; ++bipolar) {
+				for (int transition = 0; transition < CLauncher::kTransitionCount; ++transition) {
+					const CLauncher::TOutputSettings settings = { pattern, unipolar, bipolar, transition };
+					const int packed = CLauncher::PackOutputSettings(settings);
+					CHECK(packed >= 0 && packed < CLauncher::kOutputSettingsCount && !seen[packed]);
+					seen[packed] = true;
+					const CLauncher::TOutputSettings unpacked = CLauncher::UnpackOutputSettings(packed);
+					CHECK(unpacked.fPattern == pattern && unpacked.fUnipolar == unipolar && unpacked.fBipolar == bipolar && unpacked.fTransition == transition);
+				}
+			}
+		}
+	}
+	// What a new clip has in row 1, as motherboard_def.lua defaults it.
+	const CLauncher::TOutputSettings fresh = { 0, 0, CLauncher::kBipolarZero, CLauncher::kTransitionOff };
+	CHECK(CLauncher::PackOutputSettings(fresh) == 168);
+	// A number out of range counts as 0.
+	CHECK(CLauncher::UnpackOutputSettings(-1).fPattern == 0);
+	CHECK(CLauncher::UnpackOutputSettings(CLauncher::kOutputSettingsCount).fTransition == 0);
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -3907,6 +3933,7 @@ int main() {
 	TestLaunchingDuringAnOutro();
 	TestJumpingDropsTheOutro();
 	TestOutroLiesOverAFillInAndALanding();
+	TestOutputSettingsPackIntoOneNumber();
 
 	return ReportChecks("Launcher");
 }

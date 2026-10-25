@@ -81,8 +81,14 @@ local CV_MODE_PATTERN = 2
 local CV_MODE_UNIPOLAR = 1
 -- A new clip's bipolar value is 0, in the middle.
 local BIPOLAR_ZERO = 3
--- The settings of a CV output, in the order of their tag bases.
-local OUTPUT_SETTINGS = { "pattern", "unipolar", "bipolar", "transition" }
+-- The four settings of a CV output, its pattern, unipolar value, bipolar
+-- value and transition, are one number (see docs/adr/0008): the pattern, plus
+-- 8 times the unipolar value, plus 56 times the bipolar value, plus 392 times
+-- the transition, as CLauncher::PackOutputSettings has it.
+local OUTPUT_SETTINGS_COUNT = PATTERN_COUNT * VALUE_COUNT * VALUE_COUNT * TRANSITION_COUNT
+local function pack_output_settings(pattern, unipolar, bipolar, transition)
+	return pattern + PATTERN_COUNT * (unipolar + VALUE_COUNT * (bipolar + VALUE_COUNT * transition))
+end
 
 -- Launch mode, clip picking, then clip editing, fill-in editing, landing
 -- editing, intro editing and outro editing for each of the launch buttons,
@@ -108,11 +114,6 @@ for row = 1, ROW_COUNT do
 	table.insert(selection_texts, jbox.ui_text("text_clip" .. row))
 end
 
-local pattern_texts = {}
-for pattern = 1, PATTERN_COUNT do
-	table.insert(pattern_texts, jbox.ui_text("text_pattern" .. pattern))
-end
-
 local length_texts = {}
 for length = 1, LENGTH_COUNT do
 	table.insert(length_texts, jbox.ui_text("text_length" .. length))
@@ -123,30 +124,10 @@ for colour = 1, COLOUR_COUNT do
 	table.insert(colour_texts, jbox.ui_text("text_colour" .. colour))
 end
 
-local unipolar_texts = {}
-local bipolar_texts = {}
-for value = 1, VALUE_COUNT do
-	table.insert(unipolar_texts, jbox.ui_text("text_unipolar" .. value))
-	table.insert(bipolar_texts, jbox.ui_text("text_bipolar" .. value))
-end
-
-local transition_texts = {}
-for transition = 1, TRANSITION_COUNT do
-	table.insert(transition_texts, jbox.ui_text("text_transition" .. transition))
-end
-
 local cv_mode_texts = {
 	jbox.ui_text("text_cv_mode_bipolar"),
 	jbox.ui_text("text_cv_mode_unipolar"),
 	jbox.ui_text("text_cv_mode_pattern"),
-}
-
--- How each setting of a CV output is shown, and what a new clip has.
-local OUTPUT_SETTING_TYPES = {
-	pattern = { steps = PATTERN_COUNT, texts = pattern_texts },
-	unipolar = { steps = VALUE_COUNT, texts = unipolar_texts, default = 0 },
-	bipolar = { steps = VALUE_COUNT, texts = bipolar_texts, default = BIPOLAR_ZERO },
-	transition = { steps = TRANSITION_COUNT, texts = transition_texts, default = 0 },
 }
 
 -- A track, clip, scene or CV output name: text the user types on the panel. Saved with
@@ -704,29 +685,26 @@ for track = 1, TRACK_COUNT do
 			add_remote_item(clip .. "_" .. name .. "_one_bar", remote_name .. " " .. remote .. " One-Bar Pattern")
 		end
 
-		-- For each CV output, a pattern, a unipolar value, a bipolar value and
-		-- a transition, of the clip, of its fill-in, of its landing, of its
-		-- intro and of its outro (see docs/adr/0006). A new clip plays the
-		-- pattern of its row, at unipolar and bipolar 0, with every transition
-		-- off. The tags of the intro's and the outro's start at 30000, after
-		-- the one-bar pattern switches.
+		-- For each CV output, the settings of the clip, of its fill-in, of its
+		-- landing, of its intro and of its outro, a pattern, a unipolar value,
+		-- a bipolar value and a transition (see docs/adr/0006), all four in
+		-- one property (see docs/adr/0008). A new clip plays the pattern of
+		-- its row, at unipolar and bipolar 0, with every transition off. The
+		-- tags of the intro's and the outro's start at 30000, after the
+		-- one-bar pattern switches.
 		local remote_kinds = { [""] = "", ["_fill_in"] = " Fill-In", ["_landing"] = " Landing", ["_intro"] = " Intro", ["_outro"] = " Outro" }
 		local kind_bases = { 10000, 14000, 18000, 30000, 34000 }
 		for kind_index, kind in ipairs({ "", "_fill_in", "_landing", "_intro", "_outro" }) do
-			for setting_index, setting in ipairs(OUTPUT_SETTINGS) do
-				local setting_type = OUTPUT_SETTING_TYPES[setting]
-				local base = kind_bases[kind_index] + 1000 * (setting_index - 1)
-				for output, letter in ipairs(OUTPUT_LETTERS) do
-					local property = clip .. kind .. "_" .. letter .. "_" .. setting
-					document_properties[property] = jbox.number{
-						property_tag = base + 100 * track + 10 * row + output,
-						default = setting_type.default or row - 1,
-						steps = setting_type.steps,
-						ui_name = jbox.ui_text("text_" .. property),
-						ui_type = jbox.ui_selector(setting_type.texts),
-					}
-					add_remote_item(property, remote_name .. remote_kinds[kind] .. " Output " .. string.upper(letter) .. " " .. setting:gsub("^%l", string.upper))
-				end
+			for output, letter in ipairs(OUTPUT_LETTERS) do
+				local property = clip .. kind .. "_" .. letter
+				document_properties[property] = jbox.number{
+					property_tag = kind_bases[kind_index] + 100 * track + 10 * row + output,
+					default = pack_output_settings(row - 1, 0, BIPOLAR_ZERO, 0),
+					steps = OUTPUT_SETTINGS_COUNT,
+					ui_name = jbox.ui_text("text_" .. property),
+					ui_type = plain_number(OUTPUT_SETTINGS_COUNT - 1),
+				}
+				add_remote_item(property, remote_name .. remote_kinds[kind] .. " Output " .. string.upper(letter))
 			end
 		end
 
