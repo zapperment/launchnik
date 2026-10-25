@@ -83,13 +83,13 @@ def modulation(source_hex, target_hex):
 def make_strip(button, work):
 	source = SOURCES / f"Launchnik_{button}_Button_3frames.png"
 	width, height = (int(size) for size in subprocess.check_output(["magick", "identify", "-format", "%w %h", source], text=True).split())
+	# RE2DRender wants sizes in multiples of 5 pixels.
+	if width % 5 or height % 3 or height // 3 % 5:
+		raise SystemExit(f"{source.relative_to(ROOT)}: {width}x{height} is not three frames of a multiple of 5 pixels")
 	frame = f"{width}x{height // 3}"
-	# RE2DRender wants sizes in multiples of 5 pixels, so each frame is
-	# centred in the next larger one.
-	padded = f"{-(-width // 5) * 5}x{-(-height // 3 // 5) * 5}"
 
 	def crop(row):
-		return [source, "-crop", f"{frame}+0+{row * height // 3}", "+repage", "-background", "none", "-gravity", "center", "-extent", padded]
+		return [source, "-crop", f"{frame}+0+{row * height // 3}", "+repage"]
 
 	frames = []
 
