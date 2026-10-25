@@ -55,6 +55,10 @@ front = {
 		offset = LOGO_OFFSET,
 		{ path = "Logo_14frames", frames = 14 },
 	},
+	click_logo = {
+		offset = LOGO_OFFSET,
+		{ size = { 285, 110 } },
+	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
 		{ path = "TapeHorz" },
@@ -401,6 +405,10 @@ folded_front = {
 	Logo = {
 		offset = LOGO_OFFSET,
 		{ path = "Logo_14frames", frames = 14 },
+	},
+	click_logo = {
+		offset = LOGO_OFFSET,
+		{ size = { 285, 110 } },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,

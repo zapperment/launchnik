@@ -22,6 +22,9 @@ const TJBox_DisplayID kDisplayID_FunctionButtons = 7;
 const TJBox_DisplayID kDisplayID_FirstFunctionSelectButton = 8;
 const TJBox_DisplayID kDisplayID_ClearButton = 11;
 const TJBox_DisplayID kDisplayID_DuplicateButton = 12;
+// The logo, on the front panel and on the folded front panel.
+const TJBox_DisplayID kDisplayID_Logo = 13;
+const TJBox_DisplayID kDisplayID_FoldedLogo = 14;
 
 void HandlePanelGesture(TJBox_GestureArgs& iArgs);
 

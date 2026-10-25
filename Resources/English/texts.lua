@@ -86,6 +86,7 @@ texts = {
 	["gesture_scene"] = "Launch scene",
 	["gesture_length"] = "Change switch interval",
 	["gesture_setup"] = "Change setup mode",
+	["gesture_underscore_names"] = "Underscore default names",
 	["gesture_clip_present"] = "Switch clip on or off",
 	["gesture_clip_pattern"] = "Change clip pattern",
 	["gesture_clip_unipolar"] = "Change clip unipolar value",

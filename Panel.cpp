@@ -433,7 +433,43 @@ void HandleBackAndForwardGesture(TJBox_GestureArgs& iArgs) {
 	Apply(CPress::ForwardButton(setup, pickedHoldsClip), customProps, iArgs);
 }
 
+// Gives every name that stands for its default (see docs/adr/0007) a single
+// underscore instead; names the user typed are left as they are.
+void UnderscoreDefaultName(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag) {
+	if (JBox_GetStringLength(JBox_LoadMOMPropertyByTag(iCustomProps, iTag)) == 0) {
+		const TJBox_UInt8 underscore[] = { '_' };
+		JBox_StoreMOMPropertyStringTag(iCustomProps, iTag, 1, underscore);
+	}
+}
+
+// A double-click on the logo underscores every default name at once, one
+// step of the undo history; a single click does nothing.
+void HandleLogoGesture(TJBox_GestureArgs& iArgs) {
+	if (iArgs.fCall != kJBox_OnTap || iArgs.fTap != kJBox_TapRegular || !iArgs.fTapDouble) {
+		return;
+	}
+	iArgs.fConsumeFlag = true;
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		UnderscoreDefaultName(customProps, TrackNameTag(track));
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			UnderscoreDefaultName(customProps, ClipNameTag(track, row));
+		}
+		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+			UnderscoreDefaultName(customProps, OutputNameTag(track, output));
+		}
+	}
+	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
+		UnderscoreDefaultName(customProps, SceneNameTag(scene));
+	}
+	iArgs.fGestureNameKey = "gesture_underscore_names";
+}
+
 void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
+	if (iArgs.fDisplayInfo.fID == kDisplayID_Logo || iArgs.fDisplayInfo.fID == kDisplayID_FoldedLogo) {
+		HandleLogoGesture(iArgs);
+		return;
+	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_BackButton || iArgs.fDisplayInfo.fID == kDisplayID_ForwardButton) {
 		HandleBackAndForwardGesture(iArgs);
 		return;

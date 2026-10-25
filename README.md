@@ -62,6 +62,8 @@ Every track, launch button, scene and CV output has a name, so that you can tell
 
 Double-click a name to change it: a text field opens with the name selected. Type the new name and press Return, or press Escape to leave it as it was. Clear the field and press Return to give the name back its default, such as "Track 3". Changing a track name on one panel changes it on the other.
 
+If you would rather see nothing much than "Track 3" or "Clip 5", double-click the Launchnik logo: every name that still shows its default, on tracks, launch buttons, scenes and CV outputs, becomes a single underscore. Names you have typed stay as they are. It is one step in the undo history, and an underscore is a name like any other, so clearing it gives the default back.
+
 About twelve characters fit; a longer name is kept in full, but shown cut off at both ends. Names are not in capitals, unlike the labels.
 
 Track names and clip names are shown in launch mode, clear mode, duplicate mode and clip picking. In clip editing, fill-in editing, landing editing, intro editing and outro editing, where the launch buttons stand for a clip's settings, only the name of the clip being set up and of its track stay visible, so you can see which one it is. Scene names are shown in launch mode, clear mode and duplicate mode only, since in clip picking the scene buttons stand for the lengths of the switch interval. On the back panel the track names and CV output names are always shown.

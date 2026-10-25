@@ -99,6 +99,24 @@ inline TJBox_Tag SceneLightFrameTag(int iScene) {
 	return 2090 + iScene;
 }
 
+// Names, empty while they stand for the default (see docs/adr/0007). Scenes
+// are numbered from 1, like rows; CV outputs from 0, as in Launcher.h.
+inline TJBox_Tag TrackNameTag(int iTrack) {
+	return 400 + (iTrack + 1);
+}
+
+inline TJBox_Tag SceneNameTag(int iScene) {
+	return 410 + iScene;
+}
+
+inline TJBox_Tag OutputNameTag(int iTrack, int iOutput) {
+	return 500 + 10 * (iTrack + 1) + (iOutput + 1);
+}
+
+inline TJBox_Tag ClipNameTag(int iTrack, int iRow) {
+	return 4000 + 10 * (iTrack + 1) + iRow;
+}
+
 // Whether a launch button holds a clip, its colour and one-bar pattern, all
 // in one property (see docs/adr/0008), and the same of its fill-in, landing,
 // intro and outro.
