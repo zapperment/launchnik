@@ -98,13 +98,16 @@ class CPress {
 		int fBipolar[CLauncher::kOutputCount];
 		int fTransitions[CLauncher::kOutputCount];
 		bool fOneBarPattern;
+		// Whether a fill-in, landing, intro or outro has been set up before:
+		// switched on again, it keeps its settings.
+		bool fSetUp;
 	};
 	// Settings in white with a new device's CV modes, pattern 1, unipolar and
-	// bipolar 0, every transition off and one-bar pattern off.
+	// bipolar 0, every transition off, one-bar pattern off and never set up.
 	public: static TEdited Edited(bool iPresent);
 
-	// A clip's values, which a new fill-in, landing, intro or outro starts as
-	// a copy of.
+	// A clip's values, which a fill-in, landing, intro or outro that has never
+	// been set up starts as a copy of.
 	public: struct TClipValues {
 		int fPatterns[CLauncher::kOutputCount];
 		int fUnipolar[CLauncher::kOutputCount];
@@ -114,7 +117,7 @@ class CPress {
 	// Everything a launch button holds, which a duplicate copies: the
 	// settings of its clip, its fill-in, its landing, its intro and its
 	// outro, whether or not they are there. Only the clip's one-bar pattern
-	// means nothing.
+	// and whether it has been set up mean nothing.
 	public: struct TSettings {
 		bool fPresent;
 		int fColour;
@@ -123,6 +126,7 @@ class CPress {
 		int fBipolar[CLauncher::kOutputCount];
 		int fTransitions[CLauncher::kOutputCount];
 		bool fOneBarPattern;
+		bool fSetUp;
 	};
 	public: struct TButton {
 		TSettings fClip;
@@ -141,9 +145,11 @@ class CPress {
 	// ClearModeLaunchButton().
 	public: static TChange LaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, const TEdited& iPicked);
 	// A press of a launch button in fill-in editing. iFillIn describes the
-	// fill-in being edited, iClip the values of its clip, which a new fill-in
-	// starts as a copy of, with every transition off and one-bar pattern
-	// off, in white. Outside fill-in editing a press changes nothing here.
+	// fill-in being edited, iClip the values of its clip. SET/CLEAR switches
+	// the fill-in off and on, keeping its settings; one that has never been
+	// set up starts as a copy of its clip's values, with every transition off
+	// and one-bar pattern off, in white. Outside fill-in editing a press
+	// changes nothing here.
 	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip);
 	// The same in landing editing, for the landing, in intro editing, for the
 	// intro, and in outro editing, for the outro.

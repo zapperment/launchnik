@@ -157,7 +157,7 @@ CLauncher::TOutputSettings CLauncher::UnpackOutputSettings(int iPacked) {
 }
 
 int CLauncher::PackSwitches(const TSwitches& iSwitches) {
-	return (iSwitches.fPresent ? 1 : 0) + 2 * iSwitches.fColour + (iSwitches.fOneBarPattern ? 2 * kColourCount : 0);
+	return (iSwitches.fPresent ? 1 : 0) + 2 * iSwitches.fColour + (iSwitches.fOneBarPattern ? 2 * kColourCount : 0) + (iSwitches.fSetUp ? 4 * kColourCount : 0);
 }
 
 CLauncher::TSwitches CLauncher::UnpackSwitches(int iPacked) {
@@ -167,7 +167,8 @@ CLauncher::TSwitches CLauncher::UnpackSwitches(int iPacked) {
 	TSwitches switches;
 	switches.fPresent = iPacked % 2 == 1;
 	switches.fColour = (iPacked / 2) % kColourCount;
-	switches.fOneBarPattern = iPacked >= 2 * kColourCount;
+	switches.fOneBarPattern = (iPacked / (2 * kColourCount)) % 2 == 1;
+	switches.fSetUp = iPacked >= 4 * kColourCount;
 	return switches;
 }
 

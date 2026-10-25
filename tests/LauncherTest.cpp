@@ -3742,26 +3742,31 @@ void TestOutputSettingsPackIntoOneNumber() {
 	CHECK(CLauncher::UnpackOutputSettings(CLauncher::kOutputSettingsCount).fTransition == 0);
 }
 
-// Whether there is a clip, fill-in, landing, intro or outro, its colour and
-// its one-bar pattern are one number, every combination its own.
+// Whether there is a clip, fill-in, landing, intro or outro, its colour, its
+// one-bar pattern and whether it has been set up before are one number,
+// every combination its own.
 void TestSwitchesPackIntoOneNumber() {
-	CHECK(CLauncher::kSwitchesCount == 56);
+	CHECK(CLauncher::kSwitchesCount == 112);
 	bool seen[CLauncher::kSwitchesCount] = {};
 	for (int present = 0; present < 2; ++present) {
 		for (int colour = 0; colour < CLauncher::kColourCount; ++colour) {
 			for (int oneBar = 0; oneBar < 2; ++oneBar) {
-				const CLauncher::TSwitches switches = { present == 1, colour, oneBar == 1 };
-				const int packed = CLauncher::PackSwitches(switches);
-				CHECK(packed >= 0 && packed < CLauncher::kSwitchesCount && !seen[packed]);
-				seen[packed] = true;
-				const CLauncher::TSwitches unpacked = CLauncher::UnpackSwitches(packed);
-				CHECK(unpacked.fPresent == (present == 1) && unpacked.fColour == colour && unpacked.fOneBarPattern == (oneBar == 1));
+				for (int setUp = 0; setUp < 2; ++setUp) {
+					const CLauncher::TSwitches switches = { present == 1, colour, oneBar == 1, setUp == 1 };
+					const int packed = CLauncher::PackSwitches(switches);
+					CHECK(packed >= 0 && packed < CLauncher::kSwitchesCount && !seen[packed]);
+					seen[packed] = true;
+					const CLauncher::TSwitches unpacked = CLauncher::UnpackSwitches(packed);
+					CHECK(unpacked.fPresent == (present == 1) && unpacked.fColour == colour && unpacked.fOneBarPattern == (oneBar == 1) && unpacked.fSetUp == (setUp == 1));
+				}
 			}
 		}
 	}
+	// What 1.0.0d21 saved, without the flag, reads as never set up.
+	CHECK(!CLauncher::UnpackSwitches(55).fSetUp && CLauncher::UnpackSwitches(55).fOneBarPattern);
 	// An empty launch button of track 1, in red, as motherboard_def.lua
 	// defaults it.
-	const CLauncher::TSwitches fresh = { false, CLauncher::DefaultColour(0), false };
+	const CLauncher::TSwitches fresh = { false, CLauncher::DefaultColour(0), false, false };
 	CHECK(CLauncher::PackSwitches(fresh) == 2);
 }
 

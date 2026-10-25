@@ -30,13 +30,14 @@ const TSettingsProperties kLandingProperties = { CPress::kLandingSwitches, CPres
 const TSettingsProperties kIntroProperties = { CPress::kIntroSwitches, CPress::kIntroOutput, true };
 const TSettingsProperties kOutroProperties = { CPress::kOutroSwitches, CPress::kOutroOutput, true };
 
-// Whether there is a clip, fill-in, landing, intro or outro, its colour and
-// its one-bar pattern as one number.
-int Switches(bool iPresent, int iColour, bool iOneBarPattern) {
+// Whether there is a clip, fill-in, landing, intro or outro, its colour, its
+// one-bar pattern and whether it has been set up before as one number.
+int Switches(bool iPresent, int iColour, bool iOneBarPattern, bool iSetUp) {
 	CLauncher::TSwitches switches;
 	switches.fPresent = iPresent;
 	switches.fColour = iColour;
 	switches.fOneBarPattern = iOneBarPattern;
+	switches.fSetUp = iSetUp;
 	return CLauncher::PackSwitches(switches);
 }
 
@@ -57,10 +58,10 @@ CPress::TChange EditSetting(const TSettingsProperties& iProperties, int iPicked,
 	const bool isColourRow = iRow == CLauncher::kEditingFirstColourRow || iRow == CLauncher::kEditingFirstColourRow + 1;
 	if (isColourRow && iTrack < CLauncher::kEditingColoursPerRow) {
 		const int colour = (iRow - CLauncher::kEditingFirstColourRow) * CLauncher::kEditingColoursPerRow + iTrack;
-		return MakeChange(iProperties.fSwitches, iPicked, Switches(iEdited.fPresent, colour, iEdited.fOneBarPattern));
+		return MakeChange(iProperties.fSwitches, iPicked, Switches(iEdited.fPresent, colour, iEdited.fOneBarPattern, iEdited.fSetUp));
 	}
 	if (iProperties.fHasOneBarPattern && iTrack == CLauncher::kEditingOneBarPatternTrack && iRow == CLauncher::kEditingOneBarPatternRow) {
-		return MakeChange(iProperties.fSwitches, iPicked, Switches(iEdited.fPresent, iEdited.fColour, !iEdited.fOneBarPattern));
+		return MakeChange(iProperties.fSwitches, iPicked, Switches(iEdited.fPresent, iEdited.fColour, !iEdited.fOneBarPattern, iEdited.fSetUp));
 	}
 	const int output = iRow - CLauncher::kEditingFirstOutputRow;
 	if (output < 0 || output >= CLauncher::kOutputCount || iTrack < 0 || iTrack >= CLauncher::kTrackCount) {
@@ -96,13 +97,15 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 	changes.fCount = 0;
 	const int picked = CLauncher::PickedButton(iSetup);
 	if (iTrack == CLauncher::kEditingToggleTrack && iRow == CLauncher::kEditingToggleRow) {
-		if (iEdited.fPresent) {
-			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fSwitches, picked, Switches(false, iEdited.fColour, iEdited.fOneBarPattern));
+		// Switched off and on again, it keeps its settings, like a clip.
+		if (iEdited.fPresent || iEdited.fSetUp) {
+			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fSwitches, picked, Switches(!iEdited.fPresent, iEdited.fColour, iEdited.fOneBarPattern, true));
 			return changes;
 		}
-		// A new fill-in, landing, intro or outro starts as a copy of its clip's
-		// values, with every transition off and one-bar pattern off, in white.
-		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fSwitches, picked, Switches(true, CLauncher::kColourWhite, false));
+		// The first time, a fill-in, landing, intro or outro starts as a copy
+		// of its clip's values, with every transition off and one-bar pattern
+		// off, in white.
+		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fSwitches, picked, Switches(true, CLauncher::kColourWhite, false, true));
 		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 			const int settings = Pack(iClip.fPatterns[output], iClip.fUnipolar[output], iClip.fBipolar[output], CLauncher::kTransitionOff);
 			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fOutput, picked, settings, output);
@@ -125,7 +128,8 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 // those of another.
 void AppendCopy(CPress::TChanges& ioChanges, const TSettingsProperties& iProperties, const CPress::TSettings& iSource, int iDestination) {
 	const bool oneBarPattern = iProperties.fHasOneBarPattern && iSource.fOneBarPattern;
-	ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fSwitches, iDestination, Switches(iSource.fPresent, iSource.fColour, oneBarPattern));
+	const bool setUp = iProperties.fHasOneBarPattern && iSource.fSetUp;
+	ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fSwitches, iDestination, Switches(iSource.fPresent, iSource.fColour, oneBarPattern, setUp));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		const int settings = Pack(iSource.fPatterns[output], iSource.fUnipolar[output], iSource.fBipolar[output], iSource.fTransitions[output]);
 		ioChanges.fChanges[ioChanges.fCount++] = MakeChange(iProperties.fOutput, iDestination, settings, output);
@@ -146,6 +150,7 @@ CPress::TEdited CPress::Edited(bool iPresent) {
 		edited.fTransitions[output] = CLauncher::kTransitionOff;
 	}
 	edited.fOneBarPattern = false;
+	edited.fSetUp = false;
 	return edited;
 }
 
@@ -163,7 +168,7 @@ CPress::TChange CPress::LaunchButton(int iSetup, int iTrack, int iRow, bool iPre
 
 	const int picked = CLauncher::PickedButton(iSetup);
 	if (iTrack == CLauncher::kEditingToggleTrack && iRow == CLauncher::kEditingToggleRow) {
-		return MakeChange(kClipSwitches, picked, Switches(!iPicked.fPresent, iPicked.fColour, false));
+		return MakeChange(kClipSwitches, picked, Switches(!iPicked.fPresent, iPicked.fColour, false, false));
 	}
 	// The colour and CV controls are not there without a clip.
 	if (!iPicked.fPresent) {
@@ -215,7 +220,7 @@ CPress::TChanges CPress::ClearModeLaunchButton(int iSetup, int iTrack, int iRow,
 		return changes;
 	}
 	if (iPressedHoldsClip) {
-		changes.fChanges[changes.fCount++] = MakeChange(kClipSwitches, CLauncher::ButtonIndex(iTrack, iRow), Switches(false, iPressedColour, false));
+		changes.fChanges[changes.fCount++] = MakeChange(kClipSwitches, CLauncher::ButtonIndex(iTrack, iRow), Switches(false, iPressedColour, false, false));
 	}
 	changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
 	return changes;
@@ -307,7 +312,7 @@ CPress::TChanges CPress::SceneButton(int iSetup, int iScene, const bool iHoldsCl
 	if (iSetup == CLauncher::kSetupClearMode) {
 		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
 			if (iHoldsClip[track]) {
-				changes.fChanges[changes.fCount++] = MakeChange(kClipSwitches, CLauncher::ButtonIndex(track, iScene), Switches(false, iColours[track], false));
+				changes.fChanges[changes.fCount++] = MakeChange(kClipSwitches, CLauncher::ButtonIndex(track, iScene), Switches(false, iColours[track], false, false));
 			}
 		}
 		changes.fChanges[changes.fCount++] = MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);

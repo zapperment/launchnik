@@ -324,6 +324,7 @@ CPress::TSettings SomeSettings(int iSeed) {
 		settings.fTransitions[output] = (iSeed + output) % CLauncher::kTransitionCount;
 	}
 	settings.fOneBarPattern = iSeed % 3 == 0;
+	settings.fSetUp = iSeed % 4 < 2;
 	return settings;
 }
 
@@ -331,6 +332,7 @@ CPress::TButton SomeButton(int iSeed) {
 	CPress::TButton button;
 	button.fClip = SomeSettings(iSeed);
 	button.fClip.fOneBarPattern = false;
+	button.fClip.fSetUp = false;
 	button.fFillIn = SomeSettings(iSeed + 5);
 	button.fLanding = SomeSettings(iSeed + 10);
 	button.fIntro = SomeSettings(iSeed + 15);
@@ -345,6 +347,7 @@ void UnpackSwitches(int iPacked, CPress::TSettings& ioSettings) {
 	ioSettings.fPresent = switches.fPresent;
 	ioSettings.fColour = switches.fColour;
 	ioSettings.fOneBarPattern = switches.fOneBarPattern;
+	ioSettings.fSetUp = switches.fSetUp;
 }
 
 // Sets a CV output's settings from the number a change holds.
@@ -369,6 +372,7 @@ void Replay(const CPress::TChange iChanges[], int iCount, int iButtonIndex, CPre
 		blank.fTransitions[output] = -1;
 	}
 	blank.fOneBarPattern = false;
+	blank.fSetUp = false;
 	oButton.fClip = blank;
 	oButton.fFillIn = blank;
 	oButton.fLanding = blank;
@@ -399,7 +403,7 @@ void Replay(const CPress::TChange iChanges[], int iCount, int iButtonIndex, CPre
 }
 
 bool IsSameSettings(const CPress::TSettings& iA, const CPress::TSettings& iB) {
-	if (iA.fPresent != iB.fPresent || iA.fColour != iB.fColour || iA.fOneBarPattern != iB.fOneBarPattern) {
+	if (iA.fPresent != iB.fPresent || iA.fColour != iB.fColour || iA.fOneBarPattern != iB.fOneBarPattern || iA.fSetUp != iB.fSetUp) {
 		return false;
 	}
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
@@ -807,6 +811,40 @@ void TestSwitchesKeepEachOther() {
 	CHECK(IsSwitchChange(clearScene.fChanges[0], CPress::kClipSwitches, kColourSwitch, CLauncher::ButtonIndex(1, 4), kColours[1]));
 }
 
+// A fill-in, landing, intro or outro switched off and on again keeps its
+// settings, like a clip; only the first time does it start as a copy of its
+// clip.
+void TestSwitchingAnOverlayOnAgainKeepsItsSettings() {
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	const int editing = CLauncher::SetupForFillInEditing(3, 6);
+	CPress::TEdited fillIn = CPress::Edited(true);
+	fillIn.fColour = 9;
+	fillIn.fOneBarPattern = true;
+	fillIn.fSetUp = true;
+	// Off: everything stays, and it has been set up.
+	const CPress::TChanges off = CPress::FillInEditingLaunchButton(editing, 7, 1, fillIn, SomeClipValues());
+	CHECK(IsChanges(off, 1) && IsSwitchChange(off.fChanges[0], CPress::kFillInSwitches, kPresentSwitch, picked, 0));
+	const CLauncher::TSwitches offSwitches = CLauncher::UnpackSwitches(off.fChanges[0].fValue);
+	CHECK(offSwitches.fColour == 9 && offSwitches.fOneBarPattern && offSwitches.fSetUp);
+	// On again: only the switch, nothing copied.
+	fillIn.fPresent = false;
+	const CPress::TChanges on = CPress::FillInEditingLaunchButton(editing, 7, 1, fillIn, SomeClipValues());
+	CHECK(IsChanges(on, 1) && IsSwitchChange(on.fChanges[0], CPress::kFillInSwitches, kPresentSwitch, picked, 1));
+	const CLauncher::TSwitches onSwitches = CLauncher::UnpackSwitches(on.fChanges[0].fValue);
+	CHECK(onSwitches.fColour == 9 && onSwitches.fOneBarPattern && onSwitches.fSetUp);
+	// The first time it is a copy, in white, and set up from then on.
+	fillIn.fSetUp = false;
+	const CPress::TChanges first = CPress::FillInEditingLaunchButton(editing, 7, 1, fillIn, SomeClipValues());
+	CHECK(IsChanges(first, 1 + CLauncher::kOutputCount));
+	const CLauncher::TSwitches firstSwitches = CLauncher::UnpackSwitches(first.fChanges[0].fValue);
+	CHECK(firstSwitches.fPresent && firstSwitches.fColour == CLauncher::kColourWhite && !firstSwitches.fOneBarPattern && firstSwitches.fSetUp);
+	// Editing keeps the flag, and so does a duplicate.
+	fillIn.fPresent = true;
+	fillIn.fSetUp = true;
+	const CPress::TChanges colour = CPress::FillInEditingLaunchButton(editing, 2, 1, fillIn, SomeClipValues());
+	CHECK(CLauncher::UnpackSwitches(colour.fChanges[0].fValue).fSetUp);
+}
+
 int main() {
 	TestLaunchModeSelectsTheClip();
 	TestLaunchModeEmptyLaunchButtonSelectsStop();
@@ -865,6 +903,7 @@ int main() {
 	TestIntroAndOutroEditing();
 	TestEditingKeepsTheOtherSettingsOfTheOutput();
 	TestSwitchesKeepEachOther();
+	TestSwitchingAnOverlayOnAgainKeepsItsSettings();
 
 	return ReportChecks("Press");
 }

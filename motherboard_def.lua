@@ -74,9 +74,10 @@ local BIPOLAR_ZERO = 3
 -- value and transition, are one number (see docs/adr/0008): the pattern, plus
 -- 8 times the unipolar value, plus 56 times the bipolar value, plus 392 times
 -- the transition, as CLauncher::PackOutputSettings has it.
--- Whether a clip, fill-in, landing, intro or outro is there, its colour and
--- its one-bar pattern, as one number (see docs/adr/0008).
-local SWITCHES_COUNT = 2 * COLOUR_COUNT * 2
+-- Whether a clip, fill-in, landing, intro or outro is there, its colour, its
+-- one-bar pattern and whether it has been set up before, as one number (see
+-- docs/adr/0008).
+local SWITCHES_COUNT = 2 * COLOUR_COUNT * 2 * 2
 local OUTPUT_SETTINGS_COUNT = PATTERN_COUNT * VALUE_COUNT * VALUE_COUNT * TRANSITION_COUNT
 local function pack_output_settings(pattern, unipolar, bipolar, transition)
 	return pattern + PATTERN_COUNT * (unipolar + VALUE_COUNT * (bipolar + VALUE_COUNT * transition))
@@ -563,15 +564,18 @@ for track = 1, TRACK_COUNT do
 		-- and outro are kept while it is empty, so that a clip comes back as
 		-- it was. All of them make up a patch.
 		--
-		-- Of each, whether it is there, its colour and one-bar pattern are one
-		-- number (see docs/adr/0008): 1 if it is there, plus 2 times the
-		-- colour, plus 28 if one-bar pattern is on; a clip's is always off.
-		-- While on, a fill-in's and an intro's patterns play in the last bar
-		-- before the switch point only, a landing's and an outro's for their
-		-- first bar only. A new fill-in, landing, intro or outro is a copy of
-		-- its clip's values, with every transition off, in white: whoever
-		-- sets one up writes all of them (see Press.h), so their defaults only
-		-- matter for one set up some other way.
+		-- Of each, whether it is there, its colour, its one-bar pattern and
+		-- whether it has been set up before are one number (see
+		-- docs/adr/0008): 1 if it is there, plus 2 times the colour, plus 28
+		-- if one-bar pattern is on, plus 56 if it has been set up; a clip's
+		-- one-bar pattern is always off, and whether it has been set up means
+		-- nothing. While on, a fill-in's and an intro's patterns play in the
+		-- last bar before the switch point only, a landing's and an outro's
+		-- for their first bar only. A fill-in, landing, intro or outro that
+		-- is switched on for the first time is a copy of its clip's values,
+		-- with every transition off, in white: whoever sets one up writes all
+		-- of them (see Press.h), so their defaults only matter for one set up
+		-- some other way. Switched off and on again, it keeps its settings.
 		local switch_kinds = {
 			{ "", "", 3000, DEFAULT_COLOURS[track] },
 			{ "_fill_in", " Fill-In", 6000, 0 },

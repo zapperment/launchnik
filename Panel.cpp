@@ -140,6 +140,7 @@ CPress::TEdited LoadEdited(TJBox_ObjectRef iCustomProps, int iButtonIndex, int i
 	edited.fPresent = switches.fPresent;
 	edited.fColour = switches.fColour;
 	edited.fOneBarPattern = switches.fOneBarPattern;
+	edited.fSetUp = switches.fSetUp;
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		edited.fCVModes[output] = LoadNumber(iCustomProps, CVModeTag(track, output));
 		const CLauncher::TOutputSettings settings = LoadOutputSettings(iCustomProps, outputBase, track, row, output);
@@ -178,6 +179,7 @@ CPress::TSettings LoadSettings(TJBox_ObjectRef iCustomProps, int iTrack, int iRo
 		settings.fTransitions[output] = outputSettings.fTransition;
 	}
 	settings.fOneBarPattern = switches.fOneBarPattern;
+	settings.fSetUp = switches.fSetUp;
 	return settings;
 }
 
