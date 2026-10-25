@@ -42,26 +42,15 @@ format_version = "3.0"
 --   film strip frame of that light:          2090 + r
 --   film strip frame of that light: 2000 + 10 * t
 --   film strip frame of a light:    2000 + 10 * t + r
---   whether a launch button holds a clip: 3000 + 10 * t + r
---   colour of its clip:             5000 + 10 * t + r
---   whether the clip holds a fill-in:  6000 + 10 * t + r
---   whether the clip holds a landing:  7000 + 10 * t + r
---   colour of the fill-in:             8000 + 10 * t + r
---   colour of the landing:             9000 + 10 * t + r
---   one-bar pattern of the landing:    22000 + 10 * t + r
---   one-bar pattern of the fill-in:    23000 + 10 * t + r
---   whether the clip holds an intro, its colour and one-bar pattern:
---                                      24000, 25000, 26000 + 10 * t + r
---   the same of the outro:             27000, 28000, 29000 + 10 * t + r
---   and for CV output o, from 1 for A to 6 for F, of the clip, of the
---   fill-in, of the landing, of the intro and of the outro, each + 100 * t +
---   10 * r + o:
---     pattern, unipolar value, bipolar value, transition of the clip:
---                                      10000, 11000, 12000, 13000
---     the same of the fill-in:         14000, 15000, 16000, 17000
---     the same of the landing:         18000, 19000, 20000, 21000
---     the same of the intro:           30000, 31000, 32000, 33000
---     the same of the outro:           34000, 35000, 36000, 37000
+--   switches of a launch button's clip, whether it holds one, its colour
+--   and one-bar pattern:            3000 + 10 * t + r
+--   the same of the fill-in:        6000 + 10 * t + r
+--   the same of the landing:        7000 + 10 * t + r
+--   the same of the intro:          24000 + 10 * t + r
+--   the same of the outro:          27000 + 10 * t + r
+--   and for CV output o, from 1 for A to 6 for F, the settings of the clip,
+--   of the fill-in, of the landing, of the intro and of the outro, each +
+--   100 * t + 10 * r + o:           10000, 14000, 18000, 30000, 34000
 
 local TRACK_COUNT = 8
 local ROW_COUNT = 8
@@ -85,6 +74,9 @@ local BIPOLAR_ZERO = 3
 -- value and transition, are one number (see docs/adr/0008): the pattern, plus
 -- 8 times the unipolar value, plus 56 times the bipolar value, plus 392 times
 -- the transition, as CLauncher::PackOutputSettings has it.
+-- Whether a clip, fill-in, landing, intro or outro is there, its colour and
+-- its one-bar pattern, as one number (see docs/adr/0008).
+local SWITCHES_COUNT = 2 * COLOUR_COUNT * 2
 local OUTPUT_SETTINGS_COUNT = PATTERN_COUNT * VALUE_COUNT * VALUE_COUNT * TRANSITION_COUNT
 local function pack_output_settings(pattern, unipolar, bipolar, transition)
 	return pattern + PATTERN_COUNT * (unipolar + VALUE_COUNT * (bipolar + VALUE_COUNT * transition))
@@ -117,11 +109,6 @@ end
 local length_texts = {}
 for length = 1, LENGTH_COUNT do
 	table.insert(length_texts, jbox.ui_text("text_length" .. length))
-end
-
-local colour_texts = {}
-for colour = 1, COLOUR_COUNT do
-	table.insert(colour_texts, jbox.ui_text("text_colour" .. colour))
 end
 
 local cv_mode_texts = {
@@ -575,115 +562,38 @@ for track = 1, TRACK_COUNT do
 		-- What the launch button holds. Its settings, fill-in, landing, intro
 		-- and outro are kept while it is empty, so that a clip comes back as
 		-- it was. All of them make up a patch.
-		document_properties[clip .. "_present"] = jbox.boolean{
-			property_tag = 3000 + 10 * track + row,
-			default = false,
-			ui_name = jbox.ui_text("text_" .. clip .. "_present"),
-			ui_type = plain_number(1),
+		--
+		-- Of each, whether it is there, its colour and one-bar pattern are one
+		-- number (see docs/adr/0008): 1 if it is there, plus 2 times the
+		-- colour, plus 28 if one-bar pattern is on; a clip's is always off.
+		-- While on, a fill-in's and an intro's patterns play in the last bar
+		-- before the switch point only, a landing's and an outro's for their
+		-- first bar only. A new fill-in, landing, intro or outro is a copy of
+		-- its clip's values, with every transition off, in white: whoever
+		-- sets one up writes all of them (see Press.h), so their defaults only
+		-- matter for one set up some other way.
+		local switch_kinds = {
+			{ "", "", 3000, DEFAULT_COLOURS[track] },
+			{ "_fill_in", " Fill-In", 6000, 0 },
+			{ "_landing", " Landing", 7000, 0 },
+			{ "_intro", " Intro", 24000, 0 },
+			{ "_outro", " Outro", 27000, 0 },
 		}
-		add_remote_item(clip .. "_present", remote_name .. " Present")
-
-		document_properties[clip .. "_colour"] = jbox.number{
-			property_tag = 5000 + 10 * track + row,
-			default = DEFAULT_COLOURS[track],
-			steps = COLOUR_COUNT,
-			ui_name = jbox.ui_text("text_" .. clip .. "_colour"),
-			ui_type = jbox.ui_selector(colour_texts),
-		}
-		add_remote_item(clip .. "_colour", remote_name .. " Colour")
+		for _, kind in ipairs(switch_kinds) do
+			local property = clip .. kind[1] .. "_switches"
+			document_properties[property] = jbox.number{
+				property_tag = kind[3] + 10 * track + row,
+				default = 2 * kind[4],
+				steps = SWITCHES_COUNT,
+				ui_name = jbox.ui_text("text_" .. property),
+				ui_type = plain_number(SWITCHES_COUNT - 1),
+			}
+			add_remote_item(property, remote_name .. kind[2] .. " Switches")
+		end
 
 		-- The clip name belongs to the launch button and is kept while it is
 		-- empty, like the clip's settings.
 		document_properties[clip .. "_name"] = name_property(4000 + 10 * track + row, "text_" .. clip .. "_name")
-
-		-- The clip's fill-in. A new one is a copy of its clip's values, with
-		-- every transition off, in white: whoever sets one up writes all of
-		-- them (see Press.h), so these defaults only matter for a fill-in set
-		-- up some other way.
-		document_properties[clip .. "_fill_in_present"] = jbox.boolean{
-			property_tag = 6000 + 10 * track + row,
-			default = false,
-			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_present"),
-			ui_type = plain_number(1),
-		}
-		add_remote_item(clip .. "_fill_in_present", remote_name .. " Fill-In Present")
-
-		document_properties[clip .. "_fill_in_colour"] = jbox.number{
-			property_tag = 8000 + 10 * track + row,
-			default = 0,
-			steps = COLOUR_COUNT,
-			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_colour"),
-			ui_type = jbox.ui_selector(colour_texts),
-		}
-		add_remote_item(clip .. "_fill_in_colour", remote_name .. " Fill-In Colour")
-
-		-- While on, the fill-in's patterns play in the last bar before the
-		-- switch point only.
-		document_properties[clip .. "_fill_in_one_bar"] = jbox.boolean{
-			property_tag = 23000 + 10 * track + row,
-			default = false,
-			ui_name = jbox.ui_text("text_" .. clip .. "_fill_in_one_bar"),
-			ui_type = plain_number(1),
-		}
-		add_remote_item(clip .. "_fill_in_one_bar", remote_name .. " Fill-In One-Bar Pattern")
-
-		-- The clip's landing, set up like its fill-in.
-		document_properties[clip .. "_landing_present"] = jbox.boolean{
-			property_tag = 7000 + 10 * track + row,
-			default = false,
-			ui_name = jbox.ui_text("text_" .. clip .. "_landing_present"),
-			ui_type = plain_number(1),
-		}
-		add_remote_item(clip .. "_landing_present", remote_name .. " Landing Present")
-
-		document_properties[clip .. "_landing_colour"] = jbox.number{
-			property_tag = 9000 + 10 * track + row,
-			default = 0,
-			steps = COLOUR_COUNT,
-			ui_name = jbox.ui_text("text_" .. clip .. "_landing_colour"),
-			ui_type = jbox.ui_selector(colour_texts),
-		}
-		add_remote_item(clip .. "_landing_colour", remote_name .. " Landing Colour")
-
-		-- While on, the landing's patterns play for its first bar only.
-		document_properties[clip .. "_landing_one_bar"] = jbox.boolean{
-			property_tag = 22000 + 10 * track + row,
-			default = false,
-			ui_name = jbox.ui_text("text_" .. clip .. "_landing_one_bar"),
-			ui_type = plain_number(1),
-		}
-		add_remote_item(clip .. "_landing_one_bar", remote_name .. " Landing One-Bar Pattern")
-
-		-- The clip's intro and outro, set up like its fill-in. While on, an
-		-- intro's patterns play in the last bar before the switch point only,
-		-- an outro's for its first bar only.
-		for _, overlay in ipairs({ { "intro", "Intro", 24000 }, { "outro", "Outro", 27000 } }) do
-			local name, remote, base = overlay[1], overlay[2], overlay[3]
-			document_properties[clip .. "_" .. name .. "_present"] = jbox.boolean{
-				property_tag = base + 10 * track + row,
-				default = false,
-				ui_name = jbox.ui_text("text_" .. clip .. "_" .. name .. "_present"),
-				ui_type = plain_number(1),
-			}
-			add_remote_item(clip .. "_" .. name .. "_present", remote_name .. " " .. remote .. " Present")
-
-			document_properties[clip .. "_" .. name .. "_colour"] = jbox.number{
-				property_tag = base + 1000 + 10 * track + row,
-				default = 0,
-				steps = COLOUR_COUNT,
-				ui_name = jbox.ui_text("text_" .. clip .. "_" .. name .. "_colour"),
-				ui_type = jbox.ui_selector(colour_texts),
-			}
-			add_remote_item(clip .. "_" .. name .. "_colour", remote_name .. " " .. remote .. " Colour")
-
-			document_properties[clip .. "_" .. name .. "_one_bar"] = jbox.boolean{
-				property_tag = base + 2000 + 10 * track + row,
-				default = false,
-				ui_name = jbox.ui_text("text_" .. clip .. "_" .. name .. "_one_bar"),
-				ui_type = plain_number(1),
-			}
-			add_remote_item(clip .. "_" .. name .. "_one_bar", remote_name .. " " .. remote .. " One-Bar Pattern")
-		end
 
 		-- For each CV output, the settings of the clip, of its fill-in, of its
 		-- landing, of its intro and of its outro, a pattern, a unipolar value,

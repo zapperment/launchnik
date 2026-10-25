@@ -17,28 +17,21 @@ class CPress {
 		kSetup,
 		// fValue is the length of the switch interval.
 		kLength,
-		// fIndex is the number of the launch button, see CLauncher::ButtonIndex;
-		// for the settings of a CV output, fOutput is the output and fValue
-		// all four of them as one number, see CLauncher::PackOutputSettings.
-		kClipPresent,
-		kClipColour,
+		// fIndex is the number of the launch button, see CLauncher::ButtonIndex.
+		// For its switches fValue is whether it is there, its colour and
+		// one-bar pattern as one number, see CLauncher::PackSwitches; for the
+		// settings of a CV output, fOutput is the output and fValue all four of
+		// them as one number, see CLauncher::PackOutputSettings.
+		kClipSwitches,
 		kClipOutput,
-		kFillInPresent,
-		kFillInColour,
+		kFillInSwitches,
 		kFillInOutput,
-		kFillInOneBarPattern,
-		kLandingPresent,
-		kLandingColour,
+		kLandingSwitches,
 		kLandingOutput,
-		kLandingOneBarPattern,
-		kIntroPresent,
-		kIntroColour,
+		kIntroSwitches,
 		kIntroOutput,
-		kIntroOneBarPattern,
-		kOutroPresent,
-		kOutroColour,
+		kOutroSwitches,
 		kOutroOutput,
-		kOutroOneBarPattern,
 		// fValue is 1 while the fill-in button is held down, 0 once it is let go.
 		kFillIn,
 		// fValue is the function.
@@ -66,10 +59,9 @@ class CPress {
 	};
 
 	// How many properties a launch button holds: of its clip, its fill-in,
-	// its landing, its intro and its outro, whether there is one, the colour
-	// and the settings of every CV output, and of all but the clip one-bar
-	// pattern.
-	public: static const int kButtonSettingCount = 5 * (2 + CLauncher::kOutputCount) + 4;
+	// its landing, its intro and its outro, the switches and the settings of
+	// every CV output.
+	public: static const int kButtonSettingCount = 5 * (1 + CLauncher::kOutputCount);
 
 	// What a press of a scene button changes: the selection and the relaunch
 	// press of every track, the length and the setup state, what every track
@@ -82,7 +74,7 @@ class CPress {
 	// state.
 	public: static const int kMaxChangeCount = kButtonSettingCount + 1;
 	static_assert(kMaxChangeCount >= 2 * CLauncher::kTrackCount, "a scene press changes two properties of every track");
-	static_assert(kMaxChangeCount >= 3 + CLauncher::kOutputCount, "a press in fill-in editing sets up a whole fill-in");
+	static_assert(kMaxChangeCount >= 1 + CLauncher::kOutputCount, "a press in fill-in editing sets up a whole fill-in");
 	public: struct TChanges {
 		int fCount;
 		TChange fChanges[kMaxChangeCount];
@@ -98,6 +90,8 @@ class CPress {
 	// outro also whether one-bar pattern is on, which a press switches.
 	public: struct TEdited {
 		bool fPresent;
+		// Kept by a press that changes another switch.
+		int fColour;
 		int fCVModes[CLauncher::kOutputCount];
 		int fPatterns[CLauncher::kOutputCount];
 		int fUnipolar[CLauncher::kOutputCount];
@@ -105,8 +99,8 @@ class CPress {
 		int fTransitions[CLauncher::kOutputCount];
 		bool fOneBarPattern;
 	};
-	// Settings with a new device's CV modes, pattern 1, unipolar and bipolar
-	// 0, every transition off and one-bar pattern off.
+	// Settings in white with a new device's CV modes, pattern 1, unipolar and
+	// bipolar 0, every transition off and one-bar pattern off.
 	public: static TEdited Edited(bool iPresent);
 
 	// A clip's values, which a new fill-in, landing, intro or outro starts as
@@ -157,9 +151,10 @@ class CPress {
 	public: static TChanges IntroEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iIntro, const TClipValues& iClip);
 	public: static TChanges OutroEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iOutro, const TClipValues& iClip);
 	// A press of a launch button in clear mode empties it, if it holds a
-	// clip, as SET/CLEAR does in clip editing, and returns to launch mode.
-	// Outside clear mode a press changes nothing here.
-	public: static TChanges ClearModeLaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip);
+	// clip, as SET/CLEAR does in clip editing, keeping its colour,
+	// iPressedColour, and returns to launch mode. Outside clear mode a press
+	// changes nothing here.
+	public: static TChanges ClearModeLaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, int iPressedColour);
 	// A press of a launch button in duplicate mode. In source picking it picks
 	// the launch button as the source, if it holds a clip. In destination
 	// picking for a launch button it makes the pressed one exactly like the
@@ -236,6 +231,6 @@ class CPress {
 	// In clip editing it does nothing, and in duplicate mode nothing here; see
 	// DuplicateModeSceneButton().
 	// iHoldsClip says of each track whether its launch button in the scene
-	// holds a clip.
-	public: static TChanges SceneButton(int iSetup, int iScene, const bool iHoldsClip[]);
+	// holds a clip, and iColours its clip's colour, which clearing keeps.
+	public: static TChanges SceneButton(int iSetup, int iScene, const bool iHoldsClip[], const int iColours[]);
 };

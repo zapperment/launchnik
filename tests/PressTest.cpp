@@ -13,6 +13,27 @@ bool IsChange(const CPress::TChange& iChange, CPress::EProperty iProperty, int i
 	return iChange.fProperty == iProperty && iChange.fIndex == iIndex && iChange.fValue == iValue;
 }
 
+// The switches that a change sets, all in one number: whether there is a
+// clip, fill-in, landing, intro or outro, its colour and one-bar pattern.
+enum ESwitch { kPresentSwitch, kColourSwitch, kOneBarPatternSwitch };
+
+int SwitchOf(int iPacked, ESwitch iSwitch) {
+	const CLauncher::TSwitches switches = CLauncher::UnpackSwitches(iPacked);
+	switch (iSwitch) {
+		case kPresentSwitch: return switches.fPresent ? 1 : 0;
+		case kColourSwitch: return switches.fColour;
+		default: return switches.fOneBarPattern ? 1 : 0;
+	}
+}
+
+// Whether a change sets the switches, with one of them iValue.
+bool IsSwitchChange(const CPress::TChange& iChange, CPress::EProperty iProperty, ESwitch iSwitch, int iIndex, int iValue) {
+	return iChange.fProperty == iProperty && iChange.fIndex == iIndex && SwitchOf(iChange.fValue, iSwitch) == iValue;
+}
+
+// The colours of the clips of a scene, by track, which clearing keeps.
+const int kColours[CLauncher::kTrackCount] = { 1, 2, 3, 5, 7, 9, 11, 13 };
+
 bool IsNoChange(const CPress::TChange& iChange) {
 	return iChange.fProperty == CPress::kNothing;
 }
@@ -49,8 +70,8 @@ void TestClipPickingOpensThePressedLaunchButton() {
 void TestClipEditingToggleSwitchesThePickedClip() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
-	CHECK(IsChange(CPress::LaunchButton(editing, 7, 1, false, CPress::Edited(false)), CPress::kClipPresent, picked, 1));
-	CHECK(IsChange(CPress::LaunchButton(editing, 7, 1, false, CPress::Edited(true)), CPress::kClipPresent, picked, 0));
+	CHECK(IsSwitchChange(CPress::LaunchButton(editing, 7, 1, false, CPress::Edited(false)), CPress::kClipSwitches, kPresentSwitch, picked, 1));
+	CHECK(IsSwitchChange(CPress::LaunchButton(editing, 7, 1, false, CPress::Edited(true)), CPress::kClipSwitches, kPresentSwitch, picked, 0));
 }
 
 void TestBackButtonGoesBackOneStep() {
@@ -99,8 +120,8 @@ void TestClipEditingColourRows() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	for (int column = 0; column < 7; ++column) {
-		CHECK(IsChange(CPress::LaunchButton(editing, column, 1, false, CPress::Edited(true)), CPress::kClipColour, picked, column));
-		CHECK(IsChange(CPress::LaunchButton(editing, column, 2, false, CPress::Edited(true)), CPress::kClipColour, picked, 7 + column));
+		CHECK(IsSwitchChange(CPress::LaunchButton(editing, column, 1, false, CPress::Edited(true)), CPress::kClipSwitches, kColourSwitch, picked, column));
+		CHECK(IsSwitchChange(CPress::LaunchButton(editing, column, 2, false, CPress::Edited(true)), CPress::kClipSwitches, kColourSwitch, picked, 7 + column));
 	}
 	// Column 8 of the second colour row is not a control.
 	CHECK(IsNoChange(CPress::LaunchButton(editing, 7, 2, false, CPress::Edited(true))));
@@ -158,7 +179,7 @@ void TestLaunchHoldsTheRelaunchPressInLaunchModeOnly() {
 
 void TestSceneButtonSelectsItsRowOnEveryTrack() {
 	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
-	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 3, holdsClip);
+	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 3, holdsClip, kColours);
 	CHECK(changes.fCount == 16);
 	for (int track = 0; track < 8; ++track) {
 		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, 3));
@@ -169,7 +190,7 @@ void TestSceneButtonSelectsItsRowOnEveryTrack() {
 
 void TestSceneButtonStopsTracksWithAnEmptyLaunchButton() {
 	const bool holdsClip[8] = { true, false, false, true, false, false, false, true };
-	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 8, holdsClip);
+	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 8, holdsClip, kColours);
 	CHECK(changes.fCount == 16);
 	for (int track = 0; track < 8; ++track) {
 		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, holdsClip[track] ? 8 : CLauncher::kSelectionStop));
@@ -178,7 +199,7 @@ void TestSceneButtonStopsTracksWithAnEmptyLaunchButton() {
 
 void TestSceneButtonOfAnEmptySceneStopsEveryTrack() {
 	const bool holdsClip[8] = { false, false, false, false, false, false, false, false };
-	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 1, holdsClip);
+	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 1, holdsClip, kColours);
 	CHECK(changes.fCount == 16);
 	for (int track = 0; track < 8; ++track) {
 		CHECK(IsChange(changes.fChanges[track], CPress::kSelection, track, CLauncher::kSelectionStop));
@@ -187,14 +208,14 @@ void TestSceneButtonOfAnEmptySceneStopsEveryTrack() {
 
 void TestSceneButtonDoesNothingInClipEditing() {
 	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
-	CHECK(CPress::SceneButton(CLauncher::SetupForClipEditing(3, 6), 3, holdsClip).fCount == 0);
+	CHECK(CPress::SceneButton(CLauncher::SetupForClipEditing(3, 6), 3, holdsClip, kColours).fCount == 0);
 }
 
 void TestSceneButtonInClipPickingChoosesItsLengthAndLeavesSetupMode() {
 	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
 	// From the bottom: immediate, one beat, half a bar, 1, 2, 4, 8 and 16 bars.
 	for (int scene = 1; scene <= 8; ++scene) {
-		const CPress::TChanges changes = CPress::SceneButton(kClipPicking, scene, holdsClip);
+		const CPress::TChanges changes = CPress::SceneButton(kClipPicking, scene, holdsClip, kColours);
 		CHECK(changes.fCount == 2);
 		CHECK(IsChange(changes.fChanges[0], CPress::kLength, 0, 8 - scene));
 		CHECK(IsChange(changes.fChanges[1], CPress::kSetup, 0, kLaunchMode));
@@ -220,22 +241,22 @@ void TestBackButtonLeavesClearMode() {
 }
 
 void TestClearModeEmptiesThePressedLaunchButtonAndReturns() {
-	const CPress::TChanges changes = CPress::ClearModeLaunchButton(kClearMode, 3, 6, true);
+	const CPress::TChanges changes = CPress::ClearModeLaunchButton(kClearMode, 3, 6, true, 4);
 	CHECK(changes.fCount == 2);
-	CHECK(IsChange(changes.fChanges[0], CPress::kClipPresent, CLauncher::ButtonIndex(3, 6), 0));
+	CHECK(IsSwitchChange(changes.fChanges[0], CPress::kClipSwitches, kPresentSwitch, CLauncher::ButtonIndex(3, 6), 0));
 	CHECK(IsChange(changes.fChanges[1], CPress::kSetup, 0, kLaunchMode));
 }
 
 void TestClearModeLeavesAnEmptyLaunchButtonEmpty() {
-	const CPress::TChanges changes = CPress::ClearModeLaunchButton(kClearMode, 3, 6, false);
+	const CPress::TChanges changes = CPress::ClearModeLaunchButton(kClearMode, 3, 6, false, 4);
 	CHECK(changes.fCount == 1);
 	CHECK(IsChange(changes.fChanges[0], CPress::kSetup, 0, kLaunchMode));
 }
 
 void TestClearModeLaunchButtonDoesNothingElsewhere() {
-	CHECK(CPress::ClearModeLaunchButton(kLaunchMode, 3, 6, true).fCount == 0);
-	CHECK(CPress::ClearModeLaunchButton(kClipPicking, 3, 6, true).fCount == 0);
-	CHECK(CPress::ClearModeLaunchButton(CLauncher::SetupForClipEditing(3, 6), 3, 6, true).fCount == 0);
+	CHECK(CPress::ClearModeLaunchButton(kLaunchMode, 3, 6, true, 4).fCount == 0);
+	CHECK(CPress::ClearModeLaunchButton(kClipPicking, 3, 6, true, 4).fCount == 0);
+	CHECK(CPress::ClearModeLaunchButton(CLauncher::SetupForClipEditing(3, 6), 3, 6, true, 4).fCount == 0);
 	// And the ordinary rules do nothing in clear mode, not even a relaunch.
 	CHECK(IsNoChange(CPress::LaunchButton(kClearMode, 3, 6, true, CPress::Edited(false))));
 	CHECK(IsNoChange(CPress::RelaunchButton(kClearMode, 3, true)));
@@ -243,16 +264,16 @@ void TestClearModeLaunchButtonDoesNothingElsewhere() {
 
 void TestSceneButtonInClearModeEmptiesItsSceneAndReturns() {
 	const bool holdsClip[8] = { true, false, true, false, false, false, false, true };
-	const CPress::TChanges changes = CPress::SceneButton(kClearMode, 5, holdsClip);
+	const CPress::TChanges changes = CPress::SceneButton(kClearMode, 5, holdsClip, kColours);
 	CHECK(changes.fCount == 4);
-	CHECK(IsChange(changes.fChanges[0], CPress::kClipPresent, CLauncher::ButtonIndex(0, 5), 0));
-	CHECK(IsChange(changes.fChanges[1], CPress::kClipPresent, CLauncher::ButtonIndex(2, 5), 0));
-	CHECK(IsChange(changes.fChanges[2], CPress::kClipPresent, CLauncher::ButtonIndex(7, 5), 0));
+	CHECK(IsSwitchChange(changes.fChanges[0], CPress::kClipSwitches, kPresentSwitch, CLauncher::ButtonIndex(0, 5), 0));
+	CHECK(IsSwitchChange(changes.fChanges[1], CPress::kClipSwitches, kPresentSwitch, CLauncher::ButtonIndex(2, 5), 0));
+	CHECK(IsSwitchChange(changes.fChanges[2], CPress::kClipSwitches, kPresentSwitch, CLauncher::ButtonIndex(7, 5), 0));
 	CHECK(IsChange(changes.fChanges[3], CPress::kSetup, 0, kLaunchMode));
 
 	// A scene without clips only returns to launch mode.
 	const bool none[8] = { false, false, false, false, false, false, false, false };
-	const CPress::TChanges nothing = CPress::SceneButton(kClearMode, 5, none);
+	const CPress::TChanges nothing = CPress::SceneButton(kClearMode, 5, none, kColours);
 	CHECK(nothing.fCount == 1);
 	CHECK(IsChange(nothing.fChanges[0], CPress::kSetup, 0, kLaunchMode));
 }
@@ -286,7 +307,7 @@ void TestBackButtonLeavesDuplicateMode() {
 		CHECK(IsNoChange(CPress::LaunchButton(step, 3, 6, true, CPress::Edited(false))));
 		CHECK(IsNoChange(CPress::RelaunchButton(step, 3, true)));
 		const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
-		CHECK(CPress::SceneButton(step, 6, holdsClip).fCount == 0);
+		CHECK(CPress::SceneButton(step, 6, holdsClip, kColours).fCount == 0);
 	}
 }
 
@@ -315,6 +336,15 @@ CPress::TButton SomeButton(int iSeed) {
 	button.fIntro = SomeSettings(iSeed + 15);
 	button.fOutro = SomeSettings(iSeed + 20);
 	return button;
+}
+
+// Sets whether there is a clip, fill-in, landing, intro or outro, its colour
+// and one-bar pattern from the number a change holds.
+void UnpackSwitches(int iPacked, CPress::TSettings& ioSettings) {
+	const CLauncher::TSwitches switches = CLauncher::UnpackSwitches(iPacked);
+	ioSettings.fPresent = switches.fPresent;
+	ioSettings.fColour = switches.fColour;
+	ioSettings.fOneBarPattern = switches.fOneBarPattern;
 }
 
 // Sets a CV output's settings from the number a change holds.
@@ -353,25 +383,16 @@ void Replay(const CPress::TChange iChanges[], int iCount, int iButtonIndex, CPre
 		++oCount;
 		const int output = change.fOutput;
 		switch (change.fProperty) {
-			case CPress::kClipPresent: oButton.fClip.fPresent = change.fValue != 0; break;
-			case CPress::kClipColour: oButton.fClip.fColour = change.fValue; break;
+			case CPress::kClipSwitches: UnpackSwitches(change.fValue, oButton.fClip); break;
 			case CPress::kClipOutput: Unpack(change.fValue, oButton.fClip, output); break;
-			case CPress::kFillInPresent: oButton.fFillIn.fPresent = change.fValue != 0; break;
-			case CPress::kFillInColour: oButton.fFillIn.fColour = change.fValue; break;
+			case CPress::kFillInSwitches: UnpackSwitches(change.fValue, oButton.fFillIn); break;
 			case CPress::kFillInOutput: Unpack(change.fValue, oButton.fFillIn, output); break;
-			case CPress::kFillInOneBarPattern: oButton.fFillIn.fOneBarPattern = change.fValue != 0; break;
-			case CPress::kLandingPresent: oButton.fLanding.fPresent = change.fValue != 0; break;
-			case CPress::kLandingColour: oButton.fLanding.fColour = change.fValue; break;
+			case CPress::kLandingSwitches: UnpackSwitches(change.fValue, oButton.fLanding); break;
 			case CPress::kLandingOutput: Unpack(change.fValue, oButton.fLanding, output); break;
-			case CPress::kLandingOneBarPattern: oButton.fLanding.fOneBarPattern = change.fValue != 0; break;
-			case CPress::kIntroPresent: oButton.fIntro.fPresent = change.fValue != 0; break;
-			case CPress::kIntroColour: oButton.fIntro.fColour = change.fValue; break;
+			case CPress::kIntroSwitches: UnpackSwitches(change.fValue, oButton.fIntro); break;
 			case CPress::kIntroOutput: Unpack(change.fValue, oButton.fIntro, output); break;
-			case CPress::kIntroOneBarPattern: oButton.fIntro.fOneBarPattern = change.fValue != 0; break;
-			case CPress::kOutroPresent: oButton.fOutro.fPresent = change.fValue != 0; break;
-			case CPress::kOutroColour: oButton.fOutro.fColour = change.fValue; break;
+			case CPress::kOutroSwitches: UnpackSwitches(change.fValue, oButton.fOutro); break;
 			case CPress::kOutroOutput: Unpack(change.fValue, oButton.fOutro, output); break;
-			case CPress::kOutroOneBarPattern: oButton.fOutro.fOneBarPattern = change.fValue != 0; break;
 			default: --oCount; break;
 		}
 	}
@@ -544,12 +565,12 @@ void TestFillInEditingToggleSetsUpANewFillIn() {
 	// A new fill-in is a copy of its clip's values, with every transition
 	// off, in white.
 	const CPress::TChanges set = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(set, 3 + CLauncher::kOutputCount));
-	CHECK(IsChange(set.fChanges[2 + CLauncher::kOutputCount], CPress::kFillInOneBarPattern, picked, 0));
-	CHECK(IsChange(set.fChanges[0], CPress::kFillInPresent, picked, 1));
-	CHECK(IsChange(set.fChanges[1], CPress::kFillInColour, picked, CLauncher::kColourWhite));
+	CHECK(IsChanges(set, 1 + CLauncher::kOutputCount));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kFillInSwitches, kOneBarPatternSwitch, picked, 0));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kFillInSwitches, kPresentSwitch, picked, 1));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kFillInSwitches, kColourSwitch, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
-		const CPress::TChange* changes = set.fChanges + 2 + output;
+		const CPress::TChange* changes = set.fChanges + 1 + output;
 		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kPatternSetting, picked, output, output));
 		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kUnipolarSetting, picked, output, 6 - output));
 		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kBipolarSetting, picked, output, output % 7));
@@ -558,7 +579,7 @@ void TestFillInEditingToggleSetsUpANewFillIn() {
 
 	const CPress::TChanges clear = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(clear, 1));
-	CHECK(IsChange(clear.fChanges[0], CPress::kFillInPresent, picked, 0));
+	CHECK(IsSwitchChange(clear.fChanges[0], CPress::kFillInSwitches, kPresentSwitch, picked, 0));
 }
 
 void TestFillInEditingColourAndCVRows() {
@@ -566,9 +587,9 @@ void TestFillInEditingColourAndCVRows() {
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	for (int column = 0; column < 7; ++column) {
 		const CPress::TChanges first = CPress::FillInEditingLaunchButton(editing, column, 1, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(first, 1) && IsChange(first.fChanges[0], CPress::kFillInColour, picked, column));
+		CHECK(IsChanges(first, 1) && IsSwitchChange(first.fChanges[0], CPress::kFillInSwitches, kColourSwitch, picked, column));
 		const CPress::TChanges second = CPress::FillInEditingLaunchButton(editing, column, 2, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(second, 1) && IsChange(second.fChanges[0], CPress::kFillInColour, picked, 7 + column));
+		CHECK(IsChanges(second, 1) && IsSwitchChange(second.fChanges[0], CPress::kFillInSwitches, kColourSwitch, picked, 7 + column));
 		const CPress::TChanges unipolar = CPress::FillInEditingLaunchButton(editing, column, 4, MixedModes(true), SomeClipValues());
 		CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kFillInOutput, kUnipolarSetting, picked, 1, column));
 		const CPress::TChanges bipolar = CPress::FillInEditingLaunchButton(editing, column, 5, MixedModes(true), SomeClipValues());
@@ -582,7 +603,7 @@ void TestFillInEditingColourAndCVRows() {
 	CHECK(IsChanges(transition, 1) && IsSettingChange(transition.fChanges[0], CPress::kFillInOutput, kTransitionSetting, picked, 2, CLauncher::kTransitionC));
 	// The last track of the second colour row is the one-bar pattern switch.
 	const CPress::TChanges oneBar = CPress::FillInEditingLaunchButton(editing, 7, 2, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(oneBar, 1) && IsChange(oneBar.fChanges[0], CPress::kFillInOneBarPattern, picked, 1));
+	CHECK(IsChanges(oneBar, 1) && IsSwitchChange(oneBar.fChanges[0], CPress::kFillInSwitches, kOneBarPatternSwitch, picked, 1));
 }
 
 void TestFillInEditingWithoutFillInHasNoColourOrCVControls() {
@@ -606,12 +627,12 @@ void TestLandingEditingToggleSetsUpANewLanding() {
 	// A new landing is a copy of its clip's values, with every transition
 	// off, in white, like a new fill-in.
 	const CPress::TChanges set = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(set, 3 + CLauncher::kOutputCount));
-	CHECK(IsChange(set.fChanges[2 + CLauncher::kOutputCount], CPress::kLandingOneBarPattern, picked, 0));
-	CHECK(IsChange(set.fChanges[0], CPress::kLandingPresent, picked, 1));
-	CHECK(IsChange(set.fChanges[1], CPress::kLandingColour, picked, CLauncher::kColourWhite));
+	CHECK(IsChanges(set, 1 + CLauncher::kOutputCount));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kLandingSwitches, kOneBarPatternSwitch, picked, 0));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kLandingSwitches, kPresentSwitch, picked, 1));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kLandingSwitches, kColourSwitch, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
-		const CPress::TChange* changes = set.fChanges + 2 + output;
+		const CPress::TChange* changes = set.fChanges + 1 + output;
 		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kPatternSetting, picked, output, output));
 		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kUnipolarSetting, picked, output, 6 - output));
 		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kBipolarSetting, picked, output, output % 7));
@@ -620,14 +641,14 @@ void TestLandingEditingToggleSetsUpANewLanding() {
 
 	const CPress::TChanges clear = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(clear, 1));
-	CHECK(IsChange(clear.fChanges[0], CPress::kLandingPresent, picked, 0));
+	CHECK(IsSwitchChange(clear.fChanges[0], CPress::kLandingSwitches, kPresentSwitch, picked, 0));
 }
 
 void TestLandingEditingColourAndCVRows() {
 	const int editing = CLauncher::SetupForLandingEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	const CPress::TChanges colour = CPress::LandingEditingLaunchButton(editing, 2, 2, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(colour, 1) && IsChange(colour.fChanges[0], CPress::kLandingColour, picked, 9));
+	CHECK(IsChanges(colour, 1) && IsSwitchChange(colour.fChanges[0], CPress::kLandingSwitches, kColourSwitch, picked, 9));
 	const CPress::TChanges pattern = CPress::LandingEditingLaunchButton(editing, 5, 3, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(pattern, 1) && IsSettingChange(pattern.fChanges[0], CPress::kLandingOutput, kPatternSetting, picked, 0, 5));
 	const CPress::TChanges unipolar = CPress::LandingEditingLaunchButton(editing, 4, 4, MixedModes(true), SomeClipValues());
@@ -645,23 +666,23 @@ void TestOneBarPatternSwitchGoesOnAndOff() {
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	CPress::TEdited landing = MixedModes(true);
 	const CPress::TChanges on = CPress::LandingEditingLaunchButton(editing, 7, 2, landing, SomeClipValues());
-	CHECK(IsChanges(on, 1) && IsChange(on.fChanges[0], CPress::kLandingOneBarPattern, picked, 1));
+	CHECK(IsChanges(on, 1) && IsSwitchChange(on.fChanges[0], CPress::kLandingSwitches, kOneBarPatternSwitch, picked, 1));
 	landing.fOneBarPattern = true;
 	const CPress::TChanges off = CPress::LandingEditingLaunchButton(editing, 7, 2, landing, SomeClipValues());
-	CHECK(IsChanges(off, 1) && IsChange(off.fChanges[0], CPress::kLandingOneBarPattern, picked, 0));
+	CHECK(IsChanges(off, 1) && IsSwitchChange(off.fChanges[0], CPress::kLandingSwitches, kOneBarPatternSwitch, picked, 0));
 	// Not there without a landing.
 	CHECK(IsChanges(CPress::LandingEditingLaunchButton(editing, 7, 2, MixedModes(false), SomeClipValues()), 0));
 	// In fill-in editing it is the fill-in's.
 	const int fillInEditing = CLauncher::SetupForFillInEditing(3, 6);
 	const CPress::TChanges fillIn = CPress::FillInEditingLaunchButton(fillInEditing, 7, 2, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(fillIn, 1) && IsChange(fillIn.fChanges[0], CPress::kFillInOneBarPattern, picked, 1));
+	CHECK(IsChanges(fillIn, 1) && IsSwitchChange(fillIn.fChanges[0], CPress::kFillInSwitches, kOneBarPatternSwitch, picked, 1));
 	CHECK(IsChanges(CPress::FillInEditingLaunchButton(fillInEditing, 7, 2, MixedModes(false), SomeClipValues()), 0));
 }
 
 void TestSceneButtonDoesNothingInFillInEditing() {
 	const bool holdsClip[CLauncher::kTrackCount] = { true, true, true, true, true, true, true, true };
-	CHECK(CPress::SceneButton(CLauncher::SetupForFillInEditing(0, 1), 3, holdsClip).fCount == 0);
-	CHECK(CPress::SceneButton(CLauncher::SetupForLandingEditing(0, 1), 3, holdsClip).fCount == 0);
+	CHECK(CPress::SceneButton(CLauncher::SetupForFillInEditing(0, 1), 3, holdsClip, kColours).fCount == 0);
+	CHECK(CPress::SceneButton(CLauncher::SetupForLandingEditing(0, 1), 3, holdsClip, kColours).fCount == 0);
 }
 
 void TestFunctionButtonInStopFunctionSelectsStop() {
@@ -706,28 +727,28 @@ void TestIntroAndOutroEditing() {
 	// A new intro or outro is a copy of its clip's values, with every
 	// transition off and one-bar pattern off, in white.
 	const CPress::TChanges setIntro = CPress::IntroEditingLaunchButton(intro, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(setIntro, 3 + CLauncher::kOutputCount));
-	CHECK(IsChange(setIntro.fChanges[0], CPress::kIntroPresent, picked, 1));
-	CHECK(IsChange(setIntro.fChanges[1], CPress::kIntroColour, picked, CLauncher::kColourWhite));
-	CHECK(IsSettingChange(setIntro.fChanges[2], CPress::kIntroOutput, kPatternSetting, picked, 0, 0));
-	CHECK(IsSettingChange(setIntro.fChanges[2], CPress::kIntroOutput, kTransitionSetting, picked, 0, CLauncher::kTransitionOff));
-	CHECK(IsChange(setIntro.fChanges[2 + CLauncher::kOutputCount], CPress::kIntroOneBarPattern, picked, 0));
+	CHECK(IsChanges(setIntro, 1 + CLauncher::kOutputCount));
+	CHECK(IsSwitchChange(setIntro.fChanges[0], CPress::kIntroSwitches, kPresentSwitch, picked, 1));
+	CHECK(IsSwitchChange(setIntro.fChanges[0], CPress::kIntroSwitches, kColourSwitch, picked, CLauncher::kColourWhite));
+	CHECK(IsSettingChange(setIntro.fChanges[1], CPress::kIntroOutput, kPatternSetting, picked, 0, 0));
+	CHECK(IsSettingChange(setIntro.fChanges[1], CPress::kIntroOutput, kTransitionSetting, picked, 0, CLauncher::kTransitionOff));
+	CHECK(IsSwitchChange(setIntro.fChanges[0], CPress::kIntroSwitches, kOneBarPatternSwitch, picked, 0));
 	const CPress::TChanges setOutro = CPress::OutroEditingLaunchButton(outro, 7, 1, MixedModes(false), SomeClipValues());
-	CHECK(IsChanges(setOutro, 3 + CLauncher::kOutputCount));
-	CHECK(IsChange(setOutro.fChanges[0], CPress::kOutroPresent, picked, 1));
-	CHECK(IsChange(setOutro.fChanges[2 + CLauncher::kOutputCount], CPress::kOutroOneBarPattern, picked, 0));
+	CHECK(IsChanges(setOutro, 1 + CLauncher::kOutputCount));
+	CHECK(IsSwitchChange(setOutro.fChanges[0], CPress::kOutroSwitches, kPresentSwitch, picked, 1));
+	CHECK(IsSwitchChange(setOutro.fChanges[0], CPress::kOutroSwitches, kOneBarPatternSwitch, picked, 0));
 	const CPress::TChanges clearOutro = CPress::OutroEditingLaunchButton(outro, 7, 1, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(clearOutro, 1) && IsChange(clearOutro.fChanges[0], CPress::kOutroPresent, picked, 0));
+	CHECK(IsChanges(clearOutro, 1) && IsSwitchChange(clearOutro.fChanges[0], CPress::kOutroSwitches, kPresentSwitch, picked, 0));
 
 	// Colours, CV rows and the one-bar pattern switch.
 	const CPress::TChanges colour = CPress::IntroEditingLaunchButton(intro, 2, 2, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(colour, 1) && IsChange(colour.fChanges[0], CPress::kIntroColour, picked, 9));
+	CHECK(IsChanges(colour, 1) && IsSwitchChange(colour.fChanges[0], CPress::kIntroSwitches, kColourSwitch, picked, 9));
 	const CPress::TChanges unipolar = CPress::OutroEditingLaunchButton(outro, 4, 4, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kOutroOutput, kUnipolarSetting, picked, 1, 4));
 	const CPress::TChanges transition = CPress::IntroEditingLaunchButton(intro, 7, 6, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(transition, 1) && IsSettingChange(transition.fChanges[0], CPress::kIntroOutput, kTransitionSetting, picked, 3, CLauncher::kTransitionOff));
 	const CPress::TChanges oneBar = CPress::OutroEditingLaunchButton(outro, 7, 2, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(oneBar, 1) && IsChange(oneBar.fChanges[0], CPress::kOutroOneBarPattern, picked, 1));
+	CHECK(IsChanges(oneBar, 1) && IsSwitchChange(oneBar.fChanges[0], CPress::kOutroSwitches, kOneBarPatternSwitch, picked, 1));
 	CHECK(IsChanges(CPress::IntroEditingLaunchButton(intro, 2, 2, MixedModes(false), SomeClipValues()), 0));
 }
 
@@ -752,6 +773,38 @@ void TestEditingKeepsTheOtherSettingsOfTheOutput() {
 	CHECK(IsSettingChange(transition, CPress::kClipOutput, kTransitionSetting, picked, 1, CLauncher::kTransitionC));
 	CHECK(SettingOf(transition.fValue, kUnipolarSetting) == 2);
 	CHECK(SettingOf(transition.fValue, kPatternSetting) == 5);
+}
+
+// A press changes one switch and hands on the others, since they are one
+// property: SET/CLEAR keeps the colour, a colour keeps one-bar pattern, and
+// clearing keeps the colour of the clip.
+void TestSwitchesKeepEachOther() {
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	CPress::TEdited clip = CPress::Edited(true);
+	clip.fColour = 9;
+	const CPress::TChange cleared = CPress::LaunchButton(CLauncher::SetupForClipEditing(3, 6), 7, 1, false, clip);
+	CHECK(IsSwitchChange(cleared, CPress::kClipSwitches, kPresentSwitch, picked, 0));
+	CHECK(SwitchOf(cleared.fValue, kColourSwitch) == 9);
+
+	CPress::TEdited landing = CPress::Edited(true);
+	landing.fColour = 9;
+	landing.fOneBarPattern = true;
+	const int editing = CLauncher::SetupForLandingEditing(3, 6);
+	const CPress::TChanges colour = CPress::LandingEditingLaunchButton(editing, 2, 1, landing, SomeClipValues());
+	CHECK(IsChanges(colour, 1) && IsSwitchChange(colour.fChanges[0], CPress::kLandingSwitches, kColourSwitch, picked, 2));
+	CHECK(SwitchOf(colour.fChanges[0].fValue, kOneBarPatternSwitch) == 1 && SwitchOf(colour.fChanges[0].fValue, kPresentSwitch) == 1);
+	const CPress::TChanges oneBar = CPress::LandingEditingLaunchButton(editing, 7, 2, landing, SomeClipValues());
+	CHECK(IsChanges(oneBar, 1) && IsSwitchChange(oneBar.fChanges[0], CPress::kLandingSwitches, kOneBarPatternSwitch, picked, 0));
+	CHECK(SwitchOf(oneBar.fChanges[0].fValue, kColourSwitch) == 9);
+	const CPress::TChanges off = CPress::LandingEditingLaunchButton(editing, 7, 1, landing, SomeClipValues());
+	CHECK(IsChanges(off, 1) && IsSwitchChange(off.fChanges[0], CPress::kLandingSwitches, kPresentSwitch, picked, 0));
+	CHECK(SwitchOf(off.fChanges[0].fValue, kColourSwitch) == 9 && SwitchOf(off.fChanges[0].fValue, kOneBarPatternSwitch) == 1);
+
+	const CPress::TChanges clearOne = CPress::ClearModeLaunchButton(CLauncher::kSetupClearMode, 3, 6, true, 11);
+	CHECK(SwitchOf(clearOne.fChanges[0].fValue, kColourSwitch) == 11 && SwitchOf(clearOne.fChanges[0].fValue, kPresentSwitch) == 0);
+	const bool holdsClip[CLauncher::kTrackCount] = { false, true, false, false, false, false, false, false };
+	const CPress::TChanges clearScene = CPress::SceneButton(CLauncher::kSetupClearMode, 4, holdsClip, kColours);
+	CHECK(IsSwitchChange(clearScene.fChanges[0], CPress::kClipSwitches, kColourSwitch, CLauncher::ButtonIndex(1, 4), kColours[1]));
 }
 
 int main() {
@@ -811,6 +864,7 @@ int main() {
 	TestFunctionSelectButtonChoosesItsFunction();
 	TestIntroAndOutroEditing();
 	TestEditingKeepsTheOtherSettingsOfTheOutput();
+	TestSwitchesKeepEachOther();
 
 	return ReportChecks("Press");
 }

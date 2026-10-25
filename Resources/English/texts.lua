@@ -194,52 +194,17 @@ for track = 1, 8 do
 		local short = "T" .. track .. "C" .. row
 		local digits = track .. row
 
-		texts[clip .. "_present"] = long .. " Present"
-		texts[clip .. "_present_short"] = short .. " On"
-		texts[clip .. "_present_shortest"] = "O" .. digits
+		-- Whether there is a clip, fill-in, landing, intro or outro, its
+		-- colour and one-bar pattern, all in one item, for example "T1C1 Sw"
+		-- and "S11" for the clip, "T1C1 FSw" and "FS11" for the fill-in.
+		for _, kind in ipairs(KINDS) do
+			local property = clip .. kind[1] .. "_switches"
+			texts[property] = long .. kind[2] .. " Switches"
+			texts[property .. "_short"] = short .. " " .. kind[3] .. "Sw"
+			texts[property .. "_shortest"] = kind[3] .. "S" .. digits
+		end
 
 		texts[clip .. "_name"] = long .. " Name"
-
-		texts[clip .. "_colour"] = long .. " Colour"
-		texts[clip .. "_colour_short"] = short .. " Col"
-		texts[clip .. "_colour_shortest"] = "C" .. digits
-
-		texts[clip .. "_fill_in_present"] = long .. " Fill-In Present"
-		texts[clip .. "_fill_in_present_short"] = short .. " FOn"
-		texts[clip .. "_fill_in_present_shortest"] = "FO" .. digits
-
-		texts[clip .. "_fill_in_colour"] = long .. " Fill-In Colour"
-		texts[clip .. "_fill_in_colour_short"] = short .. " FCl"
-		texts[clip .. "_fill_in_colour_shortest"] = "FC" .. digits
-
-		texts[clip .. "_fill_in_one_bar"] = long .. " Fill-In One-Bar Pattern"
-		texts[clip .. "_fill_in_one_bar_short"] = short .. " F1B"
-		texts[clip .. "_fill_in_one_bar_shortest"] = "FB" .. digits
-
-		texts[clip .. "_landing_present"] = long .. " Landing Present"
-		texts[clip .. "_landing_present_short"] = short .. " LOn"
-		texts[clip .. "_landing_present_shortest"] = "LO" .. digits
-
-		texts[clip .. "_landing_colour"] = long .. " Landing Colour"
-		texts[clip .. "_landing_colour_short"] = short .. " LCl"
-		texts[clip .. "_landing_colour_shortest"] = "LC" .. digits
-
-		texts[clip .. "_landing_one_bar"] = long .. " Landing One-Bar Pattern"
-		texts[clip .. "_landing_one_bar_short"] = short .. " L1B"
-		texts[clip .. "_landing_one_bar_shortest"] = "LB" .. digits
-
-		for _, overlay in ipairs({ { "intro", "Intro", "I" }, { "outro", "Outro", "O" } }) do
-			local key, name, initial = clip .. "_" .. overlay[1], overlay[2], overlay[3]
-			texts[key .. "_present"] = long .. " " .. name .. " Present"
-			texts[key .. "_present_short"] = short .. " " .. initial .. "On"
-			texts[key .. "_present_shortest"] = initial .. "O" .. digits
-			texts[key .. "_colour"] = long .. " " .. name .. " Colour"
-			texts[key .. "_colour_short"] = short .. " " .. initial .. "Cl"
-			texts[key .. "_colour_shortest"] = initial .. "C" .. digits
-			texts[key .. "_one_bar"] = long .. " " .. name .. " One-Bar Pattern"
-			texts[key .. "_one_bar_short"] = short .. " " .. initial .. "1B"
-			texts[key .. "_one_bar_shortest"] = initial .. "B" .. digits
-		end
 
 		-- The settings of the CV outputs, all four of an output in one item,
 		-- for example "T1C1 A" and "11A" for the clip, "T1C1 FA" and "11AF"

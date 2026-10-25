@@ -3742,6 +3742,29 @@ void TestOutputSettingsPackIntoOneNumber() {
 	CHECK(CLauncher::UnpackOutputSettings(CLauncher::kOutputSettingsCount).fTransition == 0);
 }
 
+// Whether there is a clip, fill-in, landing, intro or outro, its colour and
+// its one-bar pattern are one number, every combination its own.
+void TestSwitchesPackIntoOneNumber() {
+	CHECK(CLauncher::kSwitchesCount == 56);
+	bool seen[CLauncher::kSwitchesCount] = {};
+	for (int present = 0; present < 2; ++present) {
+		for (int colour = 0; colour < CLauncher::kColourCount; ++colour) {
+			for (int oneBar = 0; oneBar < 2; ++oneBar) {
+				const CLauncher::TSwitches switches = { present == 1, colour, oneBar == 1 };
+				const int packed = CLauncher::PackSwitches(switches);
+				CHECK(packed >= 0 && packed < CLauncher::kSwitchesCount && !seen[packed]);
+				seen[packed] = true;
+				const CLauncher::TSwitches unpacked = CLauncher::UnpackSwitches(packed);
+				CHECK(unpacked.fPresent == (present == 1) && unpacked.fColour == colour && unpacked.fOneBarPattern == (oneBar == 1));
+			}
+		}
+	}
+	// An empty launch button of track 1, in red, as motherboard_def.lua
+	// defaults it.
+	const CLauncher::TSwitches fresh = { false, CLauncher::DefaultColour(0), false };
+	CHECK(CLauncher::PackSwitches(fresh) == 2);
+}
+
 int main() {
 	TestInitialState();
 	TestClickWhileStoppedTakesEffectAtOnce();
@@ -3934,6 +3957,7 @@ int main() {
 	TestJumpingDropsTheOutro();
 	TestOutroLiesOverAFillInAndALanding();
 	TestOutputSettingsPackIntoOneNumber();
+	TestSwitchesPackIntoOneNumber();
 
 	return ReportChecks("Launcher");
 }

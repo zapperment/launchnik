@@ -98,63 +98,27 @@ inline TJBox_Tag SceneLightFrameTag(int iScene) {
 	return 2090 + iScene;
 }
 
-inline TJBox_Tag ClipPresentTag(int iTrack, int iRow) {
+// Whether a launch button holds a clip, its colour and one-bar pattern, all
+// in one property (see docs/adr/0008), and the same of its fill-in, landing,
+// intro and outro.
+inline TJBox_Tag ClipSwitchesTag(int iTrack, int iRow) {
 	return 3000 + 10 * (iTrack + 1) + iRow;
 }
 
-inline TJBox_Tag ClipColourTag(int iTrack, int iRow) {
-	return 5000 + 10 * (iTrack + 1) + iRow;
-}
-
-inline TJBox_Tag FillInPresentTag(int iTrack, int iRow) {
+inline TJBox_Tag FillInSwitchesTag(int iTrack, int iRow) {
 	return 6000 + 10 * (iTrack + 1) + iRow;
 }
 
-inline TJBox_Tag FillInColourTag(int iTrack, int iRow) {
-	return 8000 + 10 * (iTrack + 1) + iRow;
-}
-
-inline TJBox_Tag LandingPresentTag(int iTrack, int iRow) {
+inline TJBox_Tag LandingSwitchesTag(int iTrack, int iRow) {
 	return 7000 + 10 * (iTrack + 1) + iRow;
 }
 
-inline TJBox_Tag LandingColourTag(int iTrack, int iRow) {
-	return 9000 + 10 * (iTrack + 1) + iRow;
-}
-
-// After the settings of the CV outputs of the clips, fill-ins and landings
-// below.
-inline TJBox_Tag LandingOneBarPatternTag(int iTrack, int iRow) {
-	return 22000 + 10 * (iTrack + 1) + iRow;
-}
-
-inline TJBox_Tag FillInOneBarPatternTag(int iTrack, int iRow) {
-	return 23000 + 10 * (iTrack + 1) + iRow;
-}
-
-// The intro's and the outro's, after those of the landing and the fill-in.
-inline TJBox_Tag IntroPresentTag(int iTrack, int iRow) {
+inline TJBox_Tag IntroSwitchesTag(int iTrack, int iRow) {
 	return 24000 + 10 * (iTrack + 1) + iRow;
 }
 
-inline TJBox_Tag IntroColourTag(int iTrack, int iRow) {
-	return 25000 + 10 * (iTrack + 1) + iRow;
-}
-
-inline TJBox_Tag IntroOneBarPatternTag(int iTrack, int iRow) {
-	return 26000 + 10 * (iTrack + 1) + iRow;
-}
-
-inline TJBox_Tag OutroPresentTag(int iTrack, int iRow) {
+inline TJBox_Tag OutroSwitchesTag(int iTrack, int iRow) {
 	return 27000 + 10 * (iTrack + 1) + iRow;
-}
-
-inline TJBox_Tag OutroColourTag(int iTrack, int iRow) {
-	return 28000 + 10 * (iTrack + 1) + iRow;
-}
-
-inline TJBox_Tag OutroOneBarPatternTag(int iTrack, int iRow) {
-	return 29000 + 10 * (iTrack + 1) + iRow;
 }
 
 // The settings of a clip's CV outputs, and of its fill-in's, its landing's,

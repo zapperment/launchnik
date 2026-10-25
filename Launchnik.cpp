@@ -11,20 +11,11 @@ const TJBox_Int32 kNothingWritten = -1;
 
 // The tags of the launch buttons' properties are a base plus 10 for each track
 // plus the row; a base of its own for each kind of property.
-const TJBox_Tag kClipPresentBase = 3000;
-const TJBox_Tag kClipColourBase = 5000;
-const TJBox_Tag kFillInPresentBase = 6000;
-const TJBox_Tag kLandingPresentBase = 7000;
-const TJBox_Tag kFillInColourBase = 8000;
-const TJBox_Tag kLandingColourBase = 9000;
-const TJBox_Tag kLandingOneBarPatternBase = 22000;
-const TJBox_Tag kFillInOneBarPatternBase = 23000;
-const TJBox_Tag kIntroPresentBase = 24000;
-const TJBox_Tag kIntroColourBase = 25000;
-const TJBox_Tag kIntroOneBarPatternBase = 26000;
-const TJBox_Tag kOutroPresentBase = 27000;
-const TJBox_Tag kOutroColourBase = 28000;
-const TJBox_Tag kOutroOneBarPatternBase = 29000;
+const TJBox_Tag kClipSwitchesBase = 3000;
+const TJBox_Tag kFillInSwitchesBase = 6000;
+const TJBox_Tag kLandingSwitchesBase = 7000;
+const TJBox_Tag kIntroSwitchesBase = 24000;
+const TJBox_Tag kOutroSwitchesBase = 27000;
 const TJBox_Tag kClipTagSpan = 1000;
 
 const TJBox_Tag kOutputSettingBases[] = {
@@ -129,12 +120,8 @@ void CLaunchnik::LoadEverything() {
 		}
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 			const TJBox_Tag tags[] = {
-				ClipPresentTag(track, row), ClipColourTag(track, row),
-				FillInPresentTag(track, row), FillInColourTag(track, row),
-				LandingPresentTag(track, row), LandingColourTag(track, row),
-				LandingOneBarPatternTag(track, row), FillInOneBarPatternTag(track, row),
-				IntroPresentTag(track, row), IntroColourTag(track, row), IntroOneBarPatternTag(track, row),
-				OutroPresentTag(track, row), OutroColourTag(track, row), OutroOneBarPatternTag(track, row),
+				ClipSwitchesTag(track, row), FillInSwitchesTag(track, row), LandingSwitchesTag(track, row),
+				IntroSwitchesTag(track, row), OutroSwitchesTag(track, row),
 			};
 			for (TJBox_Tag tag : tags) {
 				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
@@ -203,55 +190,40 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		HandleOutputSettingChange(iTag, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	const bool isClipTag = iTag >= kClipPresentBase && iTag < kLandingColourBase + kClipTagSpan;
-	const bool isOverlayTag = iTag >= kLandingOneBarPatternBase && iTag < kOutroOneBarPatternBase + kClipTagSpan;
-	if (!isClipTag && !isOverlayTag) {
+	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
+	const bool isSwitchesTag = base == kClipSwitchesBase || base == kFillInSwitchesBase || base == kLandingSwitchesBase || base == kIntroSwitchesBase || base == kOutroSwitchesBase;
+	if (!isSwitchesTag) {
 		return;
 	}
-	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
 	const int track = static_cast<int>((iTag - base) / 10) - 1;
 	const int row = static_cast<int>((iTag - base) % 10);
-	if (base == kClipPresentBase) {
-		fLauncher.SetClipPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kClipColourBase) {
-		fLauncher.SetClipColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
-	else if (base == kFillInPresentBase) {
-		fLauncher.SetFillInPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kFillInColourBase) {
-		fLauncher.SetFillInColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
-	else if (base == kLandingPresentBase) {
-		fLauncher.SetLandingPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kLandingColourBase) {
-		fLauncher.SetLandingColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
-	else if (base == kLandingOneBarPatternBase) {
-		fLauncher.SetLandingOneBarPattern(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kFillInOneBarPatternBase) {
-		fLauncher.SetFillInOneBarPattern(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kIntroPresentBase) {
-		fLauncher.SetIntroPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kIntroColourBase) {
-		fLauncher.SetIntroColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
-	else if (base == kIntroOneBarPatternBase) {
-		fLauncher.SetIntroOneBarPattern(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kOutroPresentBase) {
-		fLauncher.SetOutroPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kOutroColourBase) {
-		fLauncher.SetOutroColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
-	else if (base == kOutroOneBarPatternBase) {
-		fLauncher.SetOutroOneBarPattern(track, row, JBox_GetBoolean(iValue));
+	// The colour first, so that a launch button that is emptied keeps it.
+	const CLauncher::TSwitches switches = CLauncher::UnpackSwitches(static_cast<int>(JBox_GetNumber(iValue)));
+	switch (base) {
+		case kClipSwitchesBase:
+			fLauncher.SetClipColour(track, row, switches.fColour);
+			fLauncher.SetClipPresent(track, row, switches.fPresent);
+			break;
+		case kFillInSwitchesBase:
+			fLauncher.SetFillInColour(track, row, switches.fColour);
+			fLauncher.SetFillInOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetFillInPresent(track, row, switches.fPresent);
+			break;
+		case kLandingSwitchesBase:
+			fLauncher.SetLandingColour(track, row, switches.fColour);
+			fLauncher.SetLandingOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetLandingPresent(track, row, switches.fPresent);
+			break;
+		case kIntroSwitchesBase:
+			fLauncher.SetIntroColour(track, row, switches.fColour);
+			fLauncher.SetIntroOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetIntroPresent(track, row, switches.fPresent);
+			break;
+		default:
+			fLauncher.SetOutroColour(track, row, switches.fColour);
+			fLauncher.SetOutroOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetOutroPresent(track, row, switches.fPresent);
+			break;
 	}
 }
 

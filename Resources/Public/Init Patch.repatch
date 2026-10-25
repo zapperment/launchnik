@@ -8,581 +8,389 @@
             <Value property="switch_interval"  type="number" >
                 5
             </Value>
-            <Value property="track1_clip1_present"  type="boolean" >
-                false
+            <Value property="track1_clip1_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track1_clip1_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track1_clip2_present"  type="boolean" >
-                false
+            <Value property="track1_clip2_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track1_clip2_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track1_clip3_present"  type="boolean" >
-                false
+            <Value property="track1_clip3_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track1_clip3_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track1_clip4_present"  type="boolean" >
-                false
+            <Value property="track1_clip4_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track1_clip4_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track1_clip5_present"  type="boolean" >
-                false
+            <Value property="track1_clip5_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track1_clip5_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track1_clip6_present"  type="boolean" >
-                false
+            <Value property="track1_clip6_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track1_clip6_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track1_clip7_present"  type="boolean" >
-                false
+            <Value property="track1_clip7_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track1_clip7_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track1_clip8_present"  type="boolean" >
-                false
+            <Value property="track1_clip8_switches"  type="number" >
+                2
             </Value>
             <Value property="track1_clip8_a"  type="number" >
                 175
             </Value>
-            <Value property="track1_clip8_colour"  type="number" >
-                1
-            </Value>
-            <Value property="track2_clip1_present"  type="boolean" >
-                false
+            <Value property="track2_clip1_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track2_clip1_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track2_clip2_present"  type="boolean" >
-                false
+            <Value property="track2_clip2_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track2_clip2_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track2_clip3_present"  type="boolean" >
-                false
+            <Value property="track2_clip3_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track2_clip3_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track2_clip4_present"  type="boolean" >
-                false
+            <Value property="track2_clip4_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track2_clip4_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track2_clip5_present"  type="boolean" >
-                false
+            <Value property="track2_clip5_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track2_clip5_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track2_clip6_present"  type="boolean" >
-                false
+            <Value property="track2_clip6_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track2_clip6_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track2_clip7_present"  type="boolean" >
-                false
+            <Value property="track2_clip7_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track2_clip7_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track2_clip8_present"  type="boolean" >
-                false
+            <Value property="track2_clip8_switches"  type="number" >
+                4
             </Value>
             <Value property="track2_clip8_a"  type="number" >
                 175
             </Value>
-            <Value property="track2_clip8_colour"  type="number" >
-                2
-            </Value>
-            <Value property="track3_clip1_present"  type="boolean" >
-                false
+            <Value property="track3_clip1_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track3_clip1_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track3_clip2_present"  type="boolean" >
-                false
+            <Value property="track3_clip2_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track3_clip2_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track3_clip3_present"  type="boolean" >
-                false
+            <Value property="track3_clip3_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track3_clip3_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track3_clip4_present"  type="boolean" >
-                false
+            <Value property="track3_clip4_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track3_clip4_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track3_clip5_present"  type="boolean" >
-                false
+            <Value property="track3_clip5_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track3_clip5_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track3_clip6_present"  type="boolean" >
-                false
+            <Value property="track3_clip6_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track3_clip6_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track3_clip7_present"  type="boolean" >
-                false
+            <Value property="track3_clip7_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track3_clip7_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track3_clip8_present"  type="boolean" >
-                false
+            <Value property="track3_clip8_switches"  type="number" >
+                6
             </Value>
             <Value property="track3_clip8_a"  type="number" >
                 175
             </Value>
-            <Value property="track3_clip8_colour"  type="number" >
-                3
-            </Value>
-            <Value property="track4_clip1_present"  type="boolean" >
-                false
+            <Value property="track4_clip1_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track4_clip1_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track4_clip2_present"  type="boolean" >
-                false
+            <Value property="track4_clip2_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track4_clip2_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track4_clip3_present"  type="boolean" >
-                false
+            <Value property="track4_clip3_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track4_clip3_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track4_clip4_present"  type="boolean" >
-                false
+            <Value property="track4_clip4_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track4_clip4_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track4_clip5_present"  type="boolean" >
-                false
+            <Value property="track4_clip5_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track4_clip5_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track4_clip6_present"  type="boolean" >
-                false
+            <Value property="track4_clip6_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track4_clip6_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track4_clip7_present"  type="boolean" >
-                false
+            <Value property="track4_clip7_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track4_clip7_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track4_clip8_present"  type="boolean" >
-                false
+            <Value property="track4_clip8_switches"  type="number" >
+                10
             </Value>
             <Value property="track4_clip8_a"  type="number" >
                 175
             </Value>
-            <Value property="track4_clip8_colour"  type="number" >
-                5
-            </Value>
-            <Value property="track5_clip1_present"  type="boolean" >
-                false
+            <Value property="track5_clip1_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track5_clip1_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track5_clip2_present"  type="boolean" >
-                false
+            <Value property="track5_clip2_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track5_clip2_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track5_clip3_present"  type="boolean" >
-                false
+            <Value property="track5_clip3_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track5_clip3_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track5_clip4_present"  type="boolean" >
-                false
+            <Value property="track5_clip4_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track5_clip4_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track5_clip5_present"  type="boolean" >
-                false
+            <Value property="track5_clip5_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track5_clip5_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track5_clip6_present"  type="boolean" >
-                false
+            <Value property="track5_clip6_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track5_clip6_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track5_clip7_present"  type="boolean" >
-                false
+            <Value property="track5_clip7_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track5_clip7_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track5_clip8_present"  type="boolean" >
-                false
+            <Value property="track5_clip8_switches"  type="number" >
+                14
             </Value>
             <Value property="track5_clip8_a"  type="number" >
                 175
             </Value>
-            <Value property="track5_clip8_colour"  type="number" >
-                7
-            </Value>
-            <Value property="track6_clip1_present"  type="boolean" >
-                false
+            <Value property="track6_clip1_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track6_clip1_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track6_clip2_present"  type="boolean" >
-                false
+            <Value property="track6_clip2_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track6_clip2_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track6_clip3_present"  type="boolean" >
-                false
+            <Value property="track6_clip3_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track6_clip3_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track6_clip4_present"  type="boolean" >
-                false
+            <Value property="track6_clip4_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track6_clip4_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track6_clip5_present"  type="boolean" >
-                false
+            <Value property="track6_clip5_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track6_clip5_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track6_clip6_present"  type="boolean" >
-                false
+            <Value property="track6_clip6_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track6_clip6_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track6_clip7_present"  type="boolean" >
-                false
+            <Value property="track6_clip7_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track6_clip7_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track6_clip8_present"  type="boolean" >
-                false
+            <Value property="track6_clip8_switches"  type="number" >
+                18
             </Value>
             <Value property="track6_clip8_a"  type="number" >
                 175
             </Value>
-            <Value property="track6_clip8_colour"  type="number" >
-                9
-            </Value>
-            <Value property="track7_clip1_present"  type="boolean" >
-                false
+            <Value property="track7_clip1_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track7_clip1_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track7_clip2_present"  type="boolean" >
-                false
+            <Value property="track7_clip2_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track7_clip2_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track7_clip3_present"  type="boolean" >
-                false
+            <Value property="track7_clip3_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track7_clip3_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track7_clip4_present"  type="boolean" >
-                false
+            <Value property="track7_clip4_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track7_clip4_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track7_clip5_present"  type="boolean" >
-                false
+            <Value property="track7_clip5_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track7_clip5_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track7_clip6_present"  type="boolean" >
-                false
+            <Value property="track7_clip6_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track7_clip6_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track7_clip7_present"  type="boolean" >
-                false
+            <Value property="track7_clip7_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track7_clip7_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track7_clip8_present"  type="boolean" >
-                false
+            <Value property="track7_clip8_switches"  type="number" >
+                22
             </Value>
             <Value property="track7_clip8_a"  type="number" >
                 175
             </Value>
-            <Value property="track7_clip8_colour"  type="number" >
-                11
-            </Value>
-            <Value property="track8_clip1_present"  type="boolean" >
-                false
+            <Value property="track8_clip1_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip1_a"  type="number" >
                 168
             </Value>
-            <Value property="track8_clip1_colour"  type="number" >
-                13
-            </Value>
-            <Value property="track8_clip2_present"  type="boolean" >
-                false
+            <Value property="track8_clip2_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip2_a"  type="number" >
                 169
             </Value>
-            <Value property="track8_clip2_colour"  type="number" >
-                13
-            </Value>
-            <Value property="track8_clip3_present"  type="boolean" >
-                false
+            <Value property="track8_clip3_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip3_a"  type="number" >
                 170
             </Value>
-            <Value property="track8_clip3_colour"  type="number" >
-                13
-            </Value>
-            <Value property="track8_clip4_present"  type="boolean" >
-                false
+            <Value property="track8_clip4_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip4_a"  type="number" >
                 171
             </Value>
-            <Value property="track8_clip4_colour"  type="number" >
-                13
-            </Value>
-            <Value property="track8_clip5_present"  type="boolean" >
-                false
+            <Value property="track8_clip5_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip5_a"  type="number" >
                 172
             </Value>
-            <Value property="track8_clip5_colour"  type="number" >
-                13
-            </Value>
-            <Value property="track8_clip6_present"  type="boolean" >
-                false
+            <Value property="track8_clip6_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip6_a"  type="number" >
                 173
             </Value>
-            <Value property="track8_clip6_colour"  type="number" >
-                13
-            </Value>
-            <Value property="track8_clip7_present"  type="boolean" >
-                false
+            <Value property="track8_clip7_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip7_a"  type="number" >
                 174
             </Value>
-            <Value property="track8_clip7_colour"  type="number" >
-                13
-            </Value>
-            <Value property="track8_clip8_present"  type="boolean" >
-                false
+            <Value property="track8_clip8_switches"  type="number" >
+                26
             </Value>
             <Value property="track8_clip8_a"  type="number" >
                 175
-            </Value>
-            <Value property="track8_clip8_colour"  type="number" >
-                13
             </Value>
         </Object>
     </Properties>

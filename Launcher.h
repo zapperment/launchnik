@@ -75,6 +75,20 @@ class CLauncher {
 	public: static TOutputSettings UnpackOutputSettings(int iPacked);
 
 	public: static const int kColourCount = 14;
+
+	// Whether a clip, fill-in, landing, intro or outro is there, its colour
+	// and its one-bar pattern, as one number, the way the patch, the panel
+	// and control surfaces keep them (see docs/adr/0008): 1 if it is there,
+	// plus 2 times the colour, plus 28 if one-bar pattern is on. A clip's
+	// one-bar pattern is always off.
+	public: struct TSwitches {
+		bool fPresent;
+		int fColour;
+		bool fOneBarPattern;
+	};
+	public: static const int kSwitchesCount = 2 * kColourCount * 2;
+	public: static int PackSwitches(const TSwitches& iSwitches);
+	public: static TSwitches UnpackSwitches(int iPacked);
 	public: static const int kColourWhite = 0;
 	public: static const int kColourRed = 1;
 	public: static const int kColourOrange = 2;

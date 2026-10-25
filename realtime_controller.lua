@@ -42,20 +42,8 @@ for track = 1, 8 do
 	end
 	for row = 1, 8 do
 		local clip = "/custom_properties/track" .. track .. "_clip" .. row
-		table.insert(notify, clip .. "_present")
-		table.insert(notify, clip .. "_colour")
-		table.insert(notify, clip .. "_fill_in_present")
-		table.insert(notify, clip .. "_fill_in_colour")
-		table.insert(notify, clip .. "_fill_in_one_bar")
-		table.insert(notify, clip .. "_landing_present")
-		table.insert(notify, clip .. "_landing_colour")
-		table.insert(notify, clip .. "_landing_one_bar")
-		for _, overlay in ipairs({ "_intro", "_outro" }) do
-			table.insert(notify, clip .. overlay .. "_present")
-			table.insert(notify, clip .. overlay .. "_colour")
-			table.insert(notify, clip .. overlay .. "_one_bar")
-		end
 		for _, kind in ipairs({ "", "_fill_in", "_landing", "_intro", "_outro" }) do
+			table.insert(notify, clip .. kind .. "_switches")
 			for _, letter in ipairs(OUTPUT_LETTERS) do
 				table.insert(notify, clip .. kind .. "_" .. letter)
 			end
