@@ -272,12 +272,12 @@ void TestQueuedButtonFlashesOnTheBeat() {
 	// Vibrant for the first quaver of a crotchet, dim for the second.
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
-	CHECK(launcher.GetFunctionLightFrame(1) == 2);
+	CHECK(launcher.GetFunctionLightFrame(1) == 2 + 2 * CLauncher::kColourRed);
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver - kBatch));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver));
 	CHECK(launcher.GetLightFrame(0, 3) == dimFrame);
-	CHECK(launcher.GetFunctionLightFrame(1) == 1);
+	CHECK(launcher.GetFunctionLightFrame(1) == 1 + 2 * CLauncher::kColourRed);
 	launcher.Advance(Playing(2 * CLauncher::kPPQPerCrotchet));
 	CHECK(launcher.GetLightFrame(0, 3) == vibrantFrame);
 
@@ -287,7 +287,7 @@ void TestQueuedButtonFlashesOnTheBeat() {
 
 	// The active buttons do not flash. Track 2's clips are orange.
 	launcher.Advance(Playing(CLauncher::kPPQPerCrotchet + quaver));
-	CHECK(launcher.GetFunctionLightFrame(0) == 1);
+	CHECK(launcher.GetFunctionLightFrame(0) == 1 + 2 * CLauncher::kColourRed);
 	CHECK(launcher.GetLightFrame(1, 2) == 2 + 2 * 2);
 }
 
@@ -446,8 +446,8 @@ void TestStopLights() {
 	CHECK(launcher.GetStopLight(0) == CLauncher::kDim);
 	CHECK(launcher.GetStopLight(1) == CLauncher::kVibrant);
 	CHECK(launcher.GetStopLight(2) == CLauncher::kUnlit);
-	CHECK(launcher.GetFunctionLightFrame(0) == 1);
-	CHECK(launcher.GetFunctionLightFrame(1) == 2);
+	CHECK(launcher.GetFunctionLightFrame(0) == 1 + 2 * CLauncher::kColourRed);
+	CHECK(launcher.GetFunctionLightFrame(1) == 2 + 2 * CLauncher::kColourRed);
 	CHECK(launcher.GetFunctionLightFrame(2) == 0);
 
 	// A queued clip does not change the stop button...
@@ -792,10 +792,10 @@ void TestIntervalMeterColours() {
 	CHECK(launcher.GetSceneLightValue(3) == 1 + 3 * CLauncher::kColourYellow);
 	CHECK(launcher.GetSceneLightValue(1) == 1 + 3 * CLauncher::kColourRed);
 
-	// The film strip: unlit, then dim and vibrant for red, green and yellow.
-	CHECK(launcher.GetSceneLightFrame(8) == 3);
-	CHECK(launcher.GetSceneLightFrame(3) == 5);
-	CHECK(launcher.GetSceneLightFrame(1) == 1);
+	// The film strip is laid out like the launch buttons'.
+	CHECK(launcher.GetSceneLightFrame(8) == 1 + 2 * CLauncher::kColourGreen);
+	CHECK(launcher.GetSceneLightFrame(3) == 1 + 2 * CLauncher::kColourYellow);
+	CHECK(launcher.GetSceneLightFrame(1) == 1 + 2 * CLauncher::kColourRed);
 
 	launcher.Advance(Playing(0.0));
 	CHECK(launcher.GetSceneLightValue(7) == 0);
@@ -987,14 +987,14 @@ void TestSceneButtonsFlashWithTheLaunchButtons() {
 	launcher.SetSetup(CLauncher::kSetupClipPicking);
 	launcher.SetLength(7);
 
-	// The film strip: 3 and 4 are dim and vibrant green, 7 and 8 white.
+	// Vibrant green and white, then dim.
 	launcher.Advance(Playing(100));
-	CHECK(launcher.GetSceneLightFrame(1) == 4);
-	CHECK(launcher.GetSceneLightFrame(2) == 8);
+	CHECK(launcher.GetSceneLightFrame(1) == 2 + 2 * CLauncher::kColourGreen);
+	CHECK(launcher.GetSceneLightFrame(2) == 2 + 2 * CLauncher::kColourWhite);
 	CHECK(launcher.GetLightFrame(0, 1) == 2);
 	launcher.Advance(Playing(static_cast<double>(CLauncher::kPPQPerCrotchet / 2 + 100)));
-	CHECK(launcher.GetSceneLightFrame(1) == 3);
-	CHECK(launcher.GetSceneLightFrame(2) == 7);
+	CHECK(launcher.GetSceneLightFrame(1) == 1 + 2 * CLauncher::kColourGreen);
+	CHECK(launcher.GetSceneLightFrame(2) == 1 + 2 * CLauncher::kColourWhite);
 	CHECK(launcher.GetLightFrame(0, 1) == 1);
 }
 
@@ -1059,20 +1059,54 @@ void TestLaunchLabelsAreLitOnlyInClipEditing() {
 
 void TestBackButtonShowsTheStepItGoesBackFrom() {
 	CLauncher launcher;
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
+	CHECK(IsUnlit(launcher.GetBackButtonLight()));
+	CHECK(launcher.GetBackButtonFrame() == 0);
 	launcher.SetSetup(CLauncher::kSetupClipPicking);
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantWhite);
+	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourWhite));
+	CHECK(launcher.GetBackButtonFrame() == 2 + 2 * CLauncher::kColourWhite);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantGreen);
+	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourGreen));
+	CHECK(launcher.GetBackButtonFrame() == 2 + 2 * CLauncher::kColourGreen);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantYellow);
+	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourYellow));
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantOrange);
+	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonDark);
+	CHECK(IsUnlit(launcher.GetBackButtonLight()));
 	// In clear mode it goes back to launch mode, as in clip picking.
 	launcher.SetSetup(CLauncher::kSetupClearMode);
-	CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantWhite);
+	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourWhite));
+}
+
+// Frames of the SETUP caption's film strip: white, dark grey, then green,
+// yellow, orange and blue.
+void TestSetupButtonShowsTheStepOfSetupMode() {
+	CLauncher launcher;
+	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kDim, CLauncher::kColourGreen));
+	CHECK(launcher.GetSetupLightFrame() == 1 + 2 * CLauncher::kColourGreen);
+	CHECK(launcher.GetSetupCaptionFrame() == 0);
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kVibrant, CLauncher::kColourGreen));
+	CHECK(launcher.GetSetupLightFrame() == 2 + 2 * CLauncher::kColourGreen);
+	CHECK(launcher.GetSetupCaptionFrame() == 2);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
+	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kVibrant, CLauncher::kColourYellow));
+	CHECK(launcher.GetSetupCaptionFrame() == 3);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
+	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(launcher.GetSetupCaptionFrame() == 4);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
+	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kVibrant, CLauncher::kColourBlue));
+	CHECK(launcher.GetSetupCaptionFrame() == 5);
+
+	// Dark in clear mode and duplicate mode, where it does nothing.
+	const int steps[] = { CLauncher::kSetupClearMode, CLauncher::kSetupSourcePicking, CLauncher::SetupForClipDestinationPicking(2, 4), CLauncher::SetupForSceneDestinationPicking(4) };
+	for (int step : steps) {
+		launcher.SetSetup(step);
+		CHECK(IsUnlit(launcher.GetSetupLight()));
+		CHECK(launcher.GetSetupLightFrame() == 0);
+		CHECK(launcher.GetSetupCaptionFrame() == 1);
+	}
 }
 
 // Frames of the back labels' film strip: all unlit, then LAUNCH, PICK CLIP,
@@ -1314,7 +1348,7 @@ void TestFillInLights() {
 	PlayThrough(launcher, 0.0, kBar);
 	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kDim, CLauncher::kColourWhite));
 	CHECK(launcher.GetFillInLightValue() == 1);
-	CHECK(launcher.GetFillInLightFrame() == 9);
+	CHECK(launcher.GetFillInLightFrame() == 1 + 2 * CLauncher::kColourWhite);
 	CHECK(launcher.GetFillInLabelFrame() == 0);
 	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
 
@@ -1322,7 +1356,7 @@ void TestFillInLights() {
 	launcher.Advance(Playing(kBar));
 	CHECK(IsLight(launcher.GetFillInLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
 	CHECK(launcher.GetFillInLightValue() == 8);
-	CHECK(launcher.GetFillInLightFrame() == 12);
+	CHECK(launcher.GetFillInLightFrame() == 2 + 2 * CLauncher::kColourOrange);
 	CHECK(launcher.GetFillInLabelFrame() == 1);
 	// The launch button of a track that plays its fill-in flashes in the
 	// fill-in's colour; the others are as they were.
@@ -1359,14 +1393,14 @@ void TestForwardButtonIsLitWhileItLeadsSomewhere() {
 	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
 	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
 	CHECK(launcher.GetForwardLightValue() == 8);
-	CHECK(launcher.GetForwardLightFrame() == 12);
+	CHECK(launcher.GetForwardLightFrame() == 2 + 2 * CLauncher::kColourOrange);
 	CHECK(launcher.GetForwardLabelFrame() == 1);
 
 	// Blue towards landing editing, whether or not there is a fill-in.
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(2, 4));
 	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourBlue));
 	CHECK(launcher.GetForwardLightValue() == 29);
-	CHECK(launcher.GetForwardLightFrame() == 10);
+	CHECK(launcher.GetForwardLightFrame() == 2 + 2 * CLauncher::kColourBlue);
 	CHECK(launcher.GetForwardLabelFrame() == 2);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(0, 1));
 	CHECK(IsUnlit(launcher.GetForwardLight()));
@@ -1421,7 +1455,7 @@ void TestClearModeLightsWhatThereIsToClear() {
 	CHECK(launcher.GetLightValue(2, 4) == 30);
 	CHECK(launcher.GetSceneLightValue(4) == 6);
 	CHECK(launcher.GetLightFrame(2, 4) == 20);
-	CHECK(launcher.GetSceneLightFrame(4) == 2);
+	CHECK(launcher.GetSceneLightFrame(4) == 2 + 2 * CLauncher::kColourRed);
 
 	// The labels of the setup steps stay unlit, and the scene labels are as in
 	// launch mode.
@@ -1561,17 +1595,16 @@ void TestClearedClipComesBackAtTheSwitchPoint() {
 	CHECK(launcher.GetCVValue(0, 1) == 1.0);
 }
 
-// Frames of the side buttons' film strip: 9 is dim white, 2 vibrant red.
 void TestClearButtonLights() {
 	CLauncher launcher;
 	CHECK(IsLight(launcher.GetClearLight(), CLauncher::kDim, CLauncher::kColourWhite));
-	CHECK(launcher.GetClearLightFrame() == 9);
+	CHECK(launcher.GetClearLightFrame() == 1 + 2 * CLauncher::kColourWhite);
 	CHECK(launcher.GetClearCaptionFrame() == 0);
 
 	// In clear mode it is red, the mode colour, like its caption.
 	launcher.SetSetup(CLauncher::kSetupClearMode);
 	CHECK(IsLight(launcher.GetClearLight(), CLauncher::kVibrant, CLauncher::kColourRed));
-	CHECK(launcher.GetClearLightFrame() == 2);
+	CHECK(launcher.GetClearLightFrame() == 2 + 2 * CLauncher::kColourRed);
 	CHECK(launcher.GetClearCaptionFrame() == 2);
 
 	// In setup mode and duplicate mode it does nothing, so it is dark, with
@@ -1688,9 +1721,8 @@ void TestNewDeviceHasTheStopFunction() {
 	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionStop), CLauncher::kVibrant, CLauncher::kColourRed));
 	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionMute), CLauncher::kDim, CLauncher::kColourWhite));
 	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionSolo), CLauncher::kDim, CLauncher::kColourWhite));
-	// Vibrant red, and dim white, in the side buttons' film strip.
-	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionStop) == 2);
-	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 9);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionStop) == 2 + 2 * CLauncher::kColourRed);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 1 + 2 * CLauncher::kColourWhite);
 	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionStop) == 1);
 	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionMute) == 0);
 	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionSolo) == 0);
@@ -1700,15 +1732,15 @@ void TestFunctionSelectButtonsWorkLikeRadioButtons() {
 	CLauncher launcher;
 	launcher.SetFunction(CLauncher::kFunctionMute);
 	CHECK(launcher.GetFunction() == CLauncher::kFunctionMute);
-	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 6);
-	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionStop) == 9);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 2 + 2 * CLauncher::kColourYellow);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionStop) == 1 + 2 * CLauncher::kColourWhite);
 	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionMute) == 1);
 	CHECK(launcher.GetFunctionSelectCaptionFrame(CLauncher::kFunctionStop) == 0);
 
 	launcher.SetFunction(CLauncher::kFunctionSolo);
 	CHECK(IsLight(launcher.GetFunctionSelectLight(CLauncher::kFunctionSolo), CLauncher::kVibrant, CLauncher::kColourBlue));
-	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionSolo) == 8);
-	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 9);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionSolo) == 2 + 2 * CLauncher::kColourBlue);
+	CHECK(launcher.GetFunctionSelectLightFrame(CLauncher::kFunctionMute) == 1 + 2 * CLauncher::kColourWhite);
 
 	launcher.SetFunction(3);
 	launcher.SetFunction(-1);
@@ -1940,8 +1972,8 @@ void TestFunctionLights() {
 	CHECK(IsLight(launcher.GetFunctionLight(1), CLauncher::kDim, CLauncher::kColourYellow));
 	CHECK(IsLight(launcher.GetFunctionLight(3), CLauncher::kVibrant, CLauncher::kColourYellow));
 	CHECK(IsUnlit(launcher.GetFunctionLight(4)));
-	CHECK(launcher.GetFunctionLightFrame(0) == 4);
-	CHECK(launcher.GetFunctionLightFrame(1) == 3);
+	CHECK(launcher.GetFunctionLightFrame(0) == 2 + 2 * CLauncher::kColourYellow);
+	CHECK(launcher.GetFunctionLightFrame(1) == 1 + 2 * CLauncher::kColourYellow);
 	CHECK(launcher.GetFunctionLightFrame(4) == 0);
 	CHECK(launcher.GetFunctionLightValue(0) == 2);
 	CHECK(launcher.GetFunctionLightValue(1) == 1);
@@ -1954,8 +1986,8 @@ void TestFunctionLights() {
 	CHECK(IsLight(launcher.GetFunctionLight(0), CLauncher::kDim, CLauncher::kColourBlue));
 	CHECK(IsLight(launcher.GetFunctionLight(1), CLauncher::kVibrant, CLauncher::kColourBlue));
 	CHECK(IsUnlit(launcher.GetFunctionLight(4)));
-	CHECK(launcher.GetFunctionLightFrame(0) == 5);
-	CHECK(launcher.GetFunctionLightFrame(1) == 6);
+	CHECK(launcher.GetFunctionLightFrame(0) == 1 + 2 * CLauncher::kColourBlue);
+	CHECK(launcher.GetFunctionLightFrame(1) == 2 + 2 * CLauncher::kColourBlue);
 	launcher.SetFunction(CLauncher::kFunctionMute);
 	CHECK(IsLight(launcher.GetFunctionLight(1), CLauncher::kDim, CLauncher::kColourYellow));
 }
@@ -3031,9 +3063,9 @@ void TestSourcePickingLightsWhatThereIsToCopy() {
 		}
 	}
 	// Flashing fuchsia is light value 3 * 12 + 3; the scene buttons' film
-	// strip shows vibrant fuchsia, its last frame, in the first quaver.
+	// strip shows vibrant fuchsia in the first quaver.
 	CHECK(launcher.GetSceneLightValue(4) == 39);
-	CHECK(launcher.GetSceneLightFrame(4) == 14);
+	CHECK(launcher.GetSceneLightFrame(4) == 2 + 2 * CLauncher::kColourFuchsia);
 }
 
 void TestClipDestinationPickingLightsTheDestinations() {
@@ -3084,7 +3116,7 @@ void TestDuplicateModeWearsFuchsia() {
 		const CLauncher launcher = DuplicateLauncher(step);
 		CHECK(launcher.GetModeColour() == CLauncher::kModeFuchsia);
 		// The back button leads back to launch mode, in white.
-		CHECK(launcher.GetBackButtonFrame() == CLauncher::kBackButtonVibrantWhite);
+		CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourWhite));
 		CHECK(launcher.GetBackLabelFrame() == 1);
 		// Nothing of setup mode is lit.
 		CHECK(IsUnlit(launcher.GetForwardLight()));
@@ -3093,19 +3125,17 @@ void TestDuplicateModeWearsFuchsia() {
 		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 			CHECK(launcher.GetOutputLabelsFrame(output) == 0);
 		}
-		// The duplicate button and its caption are fuchsia: frame 14 of the
-		// side buttons' film strip is vibrant fuchsia.
+		// The duplicate button and its caption are fuchsia.
 		CHECK(IsLight(launcher.GetDuplicateLight(), CLauncher::kVibrant, CLauncher::kColourFuchsia));
-		CHECK(launcher.GetDuplicateLightFrame() == 14);
+		CHECK(launcher.GetDuplicateLightFrame() == 2 + 2 * CLauncher::kColourFuchsia);
 		CHECK(launcher.GetDuplicateCaptionFrame() == 2);
 	}
 }
 
-// Frame 9 of the side buttons' film strip is dim white.
 void TestDuplicateButtonLights() {
 	CLauncher launcher;
 	CHECK(IsLight(launcher.GetDuplicateLight(), CLauncher::kDim, CLauncher::kColourWhite));
-	CHECK(launcher.GetDuplicateLightFrame() == 9);
+	CHECK(launcher.GetDuplicateLightFrame() == 1 + 2 * CLauncher::kColourWhite);
 	CHECK(launcher.GetDuplicateCaptionFrame() == 0);
 
 	// In setup mode and clear mode it does nothing, so it is dark, with its
@@ -3176,6 +3206,7 @@ int main() {
 	TestModeColourFollowsTheSetupStep();
 	TestLaunchLabelsAreLitOnlyInClipEditing();
 	TestBackButtonShowsTheStepItGoesBackFrom();
+	TestSetupButtonShowsTheStepOfSetupMode();
 	TestBackLabelHasTheColourOfTheBackButton();
 	TestSceneLabelsShowTheLength();
 

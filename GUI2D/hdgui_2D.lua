@@ -34,7 +34,11 @@ local front_widgets = header_widgets()
 -- Lamps first, whatever takes the clicks afterwards: later widgets are on top.
 table.insert(front_widgets, jbox.sequence_meter{
 	graphics = { node = "lamp_setup" },
-	value = "/custom_properties/setup_lamp",
+	value = "/custom_properties/setup_light_frame",
+})
+table.insert(front_widgets, jbox.sequence_meter{
+	graphics = { node = "caption_setup" },
+	value = "/custom_properties/setup_caption_frame",
 })
 for track = 1, TRACK_COUNT do
 	table.insert(front_widgets, jbox.sequence_meter{

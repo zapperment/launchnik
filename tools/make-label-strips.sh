@@ -29,9 +29,9 @@
 # - GUI2D/Caption_Mute_2frames.png, Caption_Solo_2frames.png and
 #   Caption_Stop_2frames.png hold the captions of the function select buttons:
 #   white, then yellow, blue and red.
-# - GUI2D/Labels_Front.png holds the caption SETUP, which is always white, as
-#   large as the panel: to the left of the setup button, its right edge 8
-#   pixels from the button and 2 pixels above its vertical centre.
+# - GUI2D/Caption_Setup_6frames.png holds the caption of the setup button,
+#   which stands to its left, aligned on the right: white, then dark grey
+#   like an unlit label, then green, yellow, orange and blue.
 #
 # The labels are set in Arial Bold, capitals 26 pixels high, in white or
 # coloured. Each one is centred below its button, its top 8 pixels above the
@@ -234,9 +234,12 @@ draw_strip "$SCENE_SIZE" "$POINTSIZE" MUTE GUI2D/Caption_Mute_2frames.png "$WHIT
 draw_strip "$SCENE_SIZE" "$POINTSIZE" SOLO GUI2D/Caption_Solo_2frames.png "$WHITE" "$BLUE"
 draw_strip "$SCENE_SIZE" "$POINTSIZE" STOP GUI2D/Caption_Stop_2frames.png "$WHITE" "$RED"
 
-# The setup button is 70 by 75 pixels; SETUP is 118 by 26 pixels when trimmed.
-SETUP_LEFT=592
-FUNCTION_TOP=2440
-magick -size 300x80 xc:none -font "$FONT" -pointsize "$POINTSIZE" -fill "$WHITE" -annotate +10+50 SETUP -trim +repage "PNG32:$WORK/setup.png"
-magick -size 3770x2760 xc:none "$WORK/setup.png" -geometry "+$((SETUP_LEFT - 8 - 118))+$((FUNCTION_TOP + (75 - 26) / 2 - 2))" -composite "PNG32:GUI2D/Labels_Front.png"
-echo "Wrote GUI2D/Labels_Front.png"
+# SETUP is 118 by 26 pixels when trimmed, aligned on the right and centred
+# vertically in a frame of 125 by 30 pixels.
+index=0
+for colour in "$WHITE" "$UNLIT" "$STEP_GREEN" "$YELLOW" "$ORANGE" "$BLUE"; do
+	magick -size 300x80 xc:none -font "$FONT" -pointsize "$POINTSIZE" -fill "$colour" -annotate +10+50 SETUP -trim +repage -background none -gravity east -extent 125x30 "PNG32:$WORK/setup$index.png"
+	index=$((index + 1))
+done
+magick "$WORK"/setup[0-5].png -background none -append +repage "PNG32:GUI2D/Caption_Setup_6frames.png"
+echo "Wrote GUI2D/Caption_Setup_6frames.png"

@@ -185,8 +185,9 @@ class CPress {
 	// Chooses the function of a function select button.
 	public: static TChange FunctionSelectButton(int iFunction);
 
-	// From launch mode to clip picking, and from any step of setup mode, from
-	// clear mode or from duplicate mode back to launch mode.
+	// From launch mode to clip picking, and from any step of setup mode back
+	// to launch mode. In clear mode and duplicate mode it is dark and does
+	// nothing.
 	public: static TChange SetupButton(int iSetup);
 	// From launch mode to clear mode and back. In setup mode and duplicate
 	// mode it does nothing.

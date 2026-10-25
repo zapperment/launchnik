@@ -27,10 +27,10 @@ class CLaunchnik {
 	private: TJBox_ObjectRef fCVOutputs[CLauncher::kTrackCount][CLauncher::kOutputCount];
 	private: TJBox_Float32 fSampleRate;
 	private: bool fIsFirstBatch;
-	private: bool fSetupLampLit;
 
 	// What was last written to the host, to avoid storing unchanged values.
-	private: TJBox_Int32 fWrittenSetupLamp;
+	private: TJBox_Int32 fWrittenSetupLightFrame;
+	private: TJBox_Int32 fWrittenSetupCaptionFrame;
 	private: TJBox_Int32 fWrittenLogoFrame;
 	private: TJBox_Int32 fWrittenLaunchLabelsFrame;
 	private: TJBox_Int32 fWrittenBackButtonFrame;

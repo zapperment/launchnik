@@ -306,18 +306,10 @@ python3 build45.py local45 Testing
 
 This compiles the device and installs it for Reason Recon. Restart Recon to pick up a new build.
 
-The film strips of the launch buttons, the scene buttons and the side buttons (the fill-in button, the clear button, the duplicate button and the function select buttons) are built from the source graphics in `Image_Sources`, with orange made from their red frames, that of the function buttons from those and the stock button image (all need ImageMagick):
+Every button has a film strip of 29 frames: unlit, then dim and vibrant for each of the fourteen colours. There are five of them, one for each kind of button: side buttons (the fill-in button, the clear button, the duplicate button and the function select buttons), back button, forward buttons (the scene buttons and the forward button), launch buttons and function buttons (with the setup button). Each is built from a source image in `Image_Sources` that holds an unlit, a vibrant red and a dim red frame; the other colours are made from the red ones with ImageMagick:
 
 ```bash
-./tools/make-launch-button-strip.sh
-```
-
-```bash
-./tools/make-scene-button-strip.sh
-```
-
-```bash
-./tools/make-function-button-strip.sh
+./tools/make-button-strips.py
 ```
 
 The logo's seven frames, light grey, green, yellow, red, blue, orange and fuchsia, are built from the versions of the lettering:
@@ -375,7 +367,7 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
 | `GUI2D/` | Panel layout and the graphics it uses; `gui_functions.lua`, written by `tools/make-gui-functions.py`, decides when the names are shown. |
 | `Image_Sources/` | Source graphics that are not stock images. |
-| `tools/` | Scripts that build the film strips of the launch, scene, side and function buttons, of the labels and of the logo, and `GUI2D/gui_functions.lua`. |
+| `tools/` | Scripts that build the film strips of the buttons, of the labels and of the logo, and `GUI2D/gui_functions.lua`. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |

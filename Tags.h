@@ -6,7 +6,7 @@
 // here and rows from 1, as in Launcher.h; in the tags both count from 1.
 
 const TJBox_Tag kCustomPropsTag_Setup = 50;
-const TJBox_Tag kCustomPropsTag_SetupLamp = 51;
+const TJBox_Tag kCustomPropsTag_SetupLightFrame = 51;
 const TJBox_Tag kCustomPropsTag_Length = 52;
 const TJBox_Tag kCustomPropsTag_LogoFrame = 53;
 const TJBox_Tag kCustomPropsTag_LaunchLabelsFrame = 54;
@@ -24,6 +24,7 @@ const TJBox_Tag kCustomPropsTag_ClearLightFrame = 84;
 const TJBox_Tag kCustomPropsTag_ClearCaptionFrame = 85;
 const TJBox_Tag kCustomPropsTag_DuplicateLightFrame = 86;
 const TJBox_Tag kCustomPropsTag_DuplicateCaptionFrame = 87;
+const TJBox_Tag kCustomPropsTag_SetupCaptionFrame = 88;
 const TJBox_Tag kCustomPropsTag_TransitionDiagramsFrame = 150;
 
 // Functions are numbered as in Launcher.h.

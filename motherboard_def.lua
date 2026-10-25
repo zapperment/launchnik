@@ -5,7 +5,7 @@ format_version = "3.0"
 --
 -- Property tags, as used by Tags.h, for track t and row r, both from 1:
 --   setup state:                      50
---   lamp of the setup button:         51
+--   film strip frame of the setup button:  51
 --   length of the switch interval:    52
 --   film strip frame of the logo:     53
 --   film strip frame of the launch labels: 54
@@ -19,6 +19,7 @@ format_version = "3.0"
 --   function:                              74
 --   film strip frames of the clear button and its caption: 84, 85
 --   film strip frames of the duplicate button and its caption: 86, 87
+--   film strip frame of the setup button's caption: 88
 --   film strip frame of the function select button of function f (0 = stop,
 --   1 = mute, 2 = solo):                   75 + f
 --   film strip frame of its caption:       80 + f
@@ -84,16 +85,9 @@ local SETUP_COUNT = 4 + 4 * TRACK_COUNT * ROW_COUNT + ROW_COUNT
 
 -- Unlit, then dim, vibrant and flashing for each colour
 local LIGHT_COUNT = 1 + 3 * COLOUR_COUNT
--- Unlit, then dim and vibrant for each colour
+-- The frames of every button's film strip: unlit, then dim and vibrant for
+-- each colour
 local LIGHT_FRAME_COUNT = 1 + 2 * COLOUR_COUNT
--- Unlit, then dim and vibrant for red, green, yellow, white, blue, orange and
--- fuchsia
-local SCENE_LIGHT_FRAME_COUNT = 15
--- Unlit, then dim and vibrant for red, green, yellow, blue, white, orange and
--- fuchsia
-local SIDE_LIGHT_FRAME_COUNT = 15
--- Unlit, then dim and vibrant for red (stop), yellow (mute) and blue (solo)
-local FUNCTION_LIGHT_FRAME_COUNT = 7
 
 -- Stop, mute and solo, numbered from 0, with the names used in properties
 local FUNCTIONS = { "stop", "mute", "solo" }
@@ -249,16 +243,16 @@ document_properties.selected_function = jbox.number{
 }
 add_remote_item("selected_function", "Function")
 
--- The frames the front panel shows of the function select buttons, in the
--- side buttons' film strip, and of their captions: 0 = white, 1 = in the
+-- The frames the front panel shows of the function select buttons and of
+-- their captions: 0 = white, 1 = in the
 -- colour of the function while it is chosen. Computed by the realtime code.
 for index, name in ipairs(FUNCTIONS) do
 	rt_properties["function_select_" .. name .. "_light_frame"] = jbox.number{
 		property_tag = 75 + index - 1,
 		default = 0,
-		steps = SIDE_LIGHT_FRAME_COUNT,
+		steps = LIGHT_FRAME_COUNT,
 		ui_name = jbox.ui_text("text_function_select_" .. name),
-		ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
+		ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 	}
 	rt_properties["function_select_" .. name .. "_caption_frame"] = jbox.number{
 		property_tag = 80 + index - 1,
@@ -292,16 +286,15 @@ rt_properties.forward_light = jbox.number{
 add_remote_item("forward_light", "Forward Light")
 
 -- The frames the front panel shows of the two buttons, and of their
--- captions: the fill-in button's film strip is that of the side buttons, the
--- forward button's that of the scene buttons; FILL-IN is 0 = white, 1 =
+-- captions: FILL-IN is 0 = white, 1 =
 -- orange; the forward button's labels 0 = unlit, 1 = SET FILL-IN in orange, 2
 -- = SET LANDING in blue.
 rt_properties.fill_in_light_frame = jbox.number{
 	property_tag = 70,
 	default = 0,
-	steps = SIDE_LIGHT_FRAME_COUNT,
+	steps = LIGHT_FRAME_COUNT,
 	ui_name = jbox.ui_text("text_fill_in_light"),
-	ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
+	ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 }
 
 rt_properties.fill_in_label_frame = jbox.number{
@@ -315,9 +308,9 @@ rt_properties.fill_in_label_frame = jbox.number{
 rt_properties.forward_light_frame = jbox.number{
 	property_tag = 72,
 	default = 0,
-	steps = SCENE_LIGHT_FRAME_COUNT,
+	steps = LIGHT_FRAME_COUNT,
 	ui_name = jbox.ui_text("text_forward_light"),
-	ui_type = plain_number(SCENE_LIGHT_FRAME_COUNT - 1),
+	ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 }
 
 rt_properties.forward_label_frame = jbox.number{
@@ -328,16 +321,15 @@ rt_properties.forward_label_frame = jbox.number{
 	ui_type = plain_number(2),
 }
 
--- The frames the front panel shows of the clear button, in the side buttons'
--- film strip, and of its caption: 0 = white, 1 = dark grey in setup mode and
+-- The frames the front panel shows of the clear button and of its caption: 0 = white, 1 = dark grey in setup mode and
 -- duplicate mode, 2 = red in clear mode. Not Remote items: a codec can tell
 -- them from the setup state.
 rt_properties.clear_light_frame = jbox.number{
 	property_tag = 84,
 	default = 0,
-	steps = SIDE_LIGHT_FRAME_COUNT,
+	steps = LIGHT_FRAME_COUNT,
 	ui_name = jbox.ui_text("text_clear_light"),
-	ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
+	ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 }
 
 rt_properties.clear_caption_frame = jbox.number{
@@ -353,9 +345,9 @@ rt_properties.clear_caption_frame = jbox.number{
 rt_properties.duplicate_light_frame = jbox.number{
 	property_tag = 86,
 	default = 0,
-	steps = SIDE_LIGHT_FRAME_COUNT,
+	steps = LIGHT_FRAME_COUNT,
 	ui_name = jbox.ui_text("text_duplicate_light"),
-	ui_type = plain_number(SIDE_LIGHT_FRAME_COUNT - 1),
+	ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 }
 
 rt_properties.duplicate_caption_frame = jbox.number{
@@ -366,13 +358,26 @@ rt_properties.duplicate_caption_frame = jbox.number{
 	ui_type = plain_number(2),
 }
 
--- Whether the setup button is lit: in every step of setup mode, not in clear
--- mode or duplicate mode.
-rt_properties.setup_lamp = jbox.boolean{
+-- The frames the front panel shows of the setup button and of its caption,
+-- computed by the realtime code. The button is dim green in launch mode, dark
+-- in clear mode and duplicate mode, and in setup mode vibrant in the mode
+-- colour of the step; its caption is 0 = white (launch mode), 1 = dark grey,
+-- then 2 = green, 3 = yellow, 4 = orange, 5 = blue. Not Remote items: a codec
+-- can tell them from the setup state.
+rt_properties.setup_light_frame = jbox.number{
 	property_tag = 51,
-	default = false,
+	default = 0,
+	steps = LIGHT_FRAME_COUNT,
 	ui_name = jbox.ui_text("text_setup"),
-	ui_type = plain_number(1),
+	ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
+}
+
+rt_properties.setup_caption_frame = jbox.number{
+	property_tag = 88,
+	default = 0,
+	steps = 6,
+	ui_name = jbox.ui_text("text_setup_caption"),
+	ui_type = plain_number(5),
 }
 
 -- The labels and the logo, computed by the realtime code. The logo shows the
@@ -401,18 +406,17 @@ rt_properties.launch_labels_frame = jbox.number{
 	ui_type = plain_number(6),
 }
 
--- The back button's frame, computed by the realtime code: 0 = dark (launch
--- mode), 7 = vibrant white (clip picking, clear mode and duplicate mode), 3 =
--- vibrant green
--- (clip editing), 5 = vibrant yellow (fill-in editing), 1 = vibrant orange
--- (landing editing). Not a Remote item: a codec can tell it from the setup
+-- The back button's frame, computed by the realtime code: dark in launch
+-- mode, vibrant white in clip picking, clear mode and duplicate mode, vibrant
+-- green in clip editing, vibrant yellow in fill-in editing, vibrant orange in
+-- landing editing. Not a Remote item: a codec can tell it from the setup
 -- state.
 rt_properties.back_button_frame = jbox.number{
 	property_tag = 55,
 	default = 0,
-	steps = 9,
+	steps = LIGHT_FRAME_COUNT,
 	ui_name = jbox.ui_text("text_back_button"),
-	ui_type = plain_number(8),
+	ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 }
 
 -- Its labels, one line for each step it goes back to, lit in the colour of
@@ -562,13 +566,13 @@ for track = 1, TRACK_COUNT do
 	add_remote_item(function_button .. "_light", "Track " .. track .. " Function Light")
 
 	-- The frame of the function buttons' film strip the front panel shows
-	-- right now: unlit, then dim and vibrant for red, yellow and blue.
+	-- right now.
 	rt_properties[function_button .. "_light_frame"] = jbox.number{
 		property_tag = 2000 + 10 * track,
 		default = 0,
-		steps = FUNCTION_LIGHT_FRAME_COUNT,
+		steps = LIGHT_FRAME_COUNT,
 		ui_name = jbox.ui_text("text_" .. function_button),
-		ui_type = plain_number(FUNCTION_LIGHT_FRAME_COUNT - 1),
+		ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 	}
 
 	for row = 1, ROW_COUNT do
@@ -725,9 +729,9 @@ for scene = 1, ROW_COUNT do
 	rt_properties[light .. "_frame"] = jbox.number{
 		property_tag = 2090 + scene,
 		default = 0,
-		steps = SCENE_LIGHT_FRAME_COUNT,
+		steps = LIGHT_FRAME_COUNT,
 		ui_name = jbox.ui_text("text_" .. light),
-		ui_type = plain_number(SCENE_LIGHT_FRAME_COUNT - 1),
+		ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 	}
 end
 

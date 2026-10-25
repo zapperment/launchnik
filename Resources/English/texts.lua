@@ -31,6 +31,7 @@ texts = {
 	["text_setup"] = "Setup",
 	["text_setup_short"] = "Setup",
 	["text_setup_shortest"] = "Set",
+	["text_setup_caption"] = "Setup Caption",
 
 	["text_logo"] = "Logo",
 	["text_launch_labels"] = "Launch Button Labels",
