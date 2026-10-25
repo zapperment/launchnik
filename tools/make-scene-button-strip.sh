@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds GUI2D/Scene_Button_15frames.png, the film strip of the scene buttons
 # and the forward button, from the thirteen-frame image in
-# RE2D_Launchnik_Graphics, and GUI2D/Side_Button_15frames.png, that of the
+# Image_Sources, and GUI2D/Side_Button_15frames.png, that of the
 # fill-in button, the clear button, the duplicate button and the function
 # select buttons, from the thirteen-frame image of a button without an arrow.
 #
@@ -70,5 +70,5 @@ build_strip() {
 	echo "Wrote $target"
 }
 
-build_strip RE2D_Launchnik_Graphics/Launchnik_Scene_Button_13frames.png GUI2D/Scene_Button_15frames.png
-build_strip RE2D_Launchnik_Graphics/Launchnik_Side_Button_13frames.png GUI2D/Side_Button_15frames.png
+build_strip Image_Sources/Launchnik_Scene_Button_13frames.png GUI2D/Scene_Button_15frames.png
+build_strip Image_Sources/Launchnik_Side_Button_13frames.png GUI2D/Side_Button_15frames.png

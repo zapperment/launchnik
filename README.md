@@ -306,7 +306,7 @@ python3 build45.py local45 Testing
 
 This compiles the device and installs it for Reason Recon. Restart Recon to pick up a new build.
 
-The film strips of the launch buttons, the scene buttons and the side buttons (the fill-in button, the clear button, the duplicate button and the function select buttons) are built from the source graphics in `RE2D_Launchnik_Graphics`, with orange made from their red frames, that of the function buttons from those and the stock button image (all need ImageMagick):
+The film strips of the launch buttons, the scene buttons and the side buttons (the fill-in button, the clear button, the duplicate button and the function select buttons) are built from the source graphics in `Image_Sources`, with orange made from their red frames, that of the function buttons from those and the stock button image (all need ImageMagick):
 
 ```bash
 ./tools/make-launch-button-strip.sh
@@ -374,7 +374,7 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `motherboard_def.lua` | Properties, Remote items, automation and CV outputs. |
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
 | `GUI2D/` | Panel layout and the graphics it uses; `gui_functions.lua`, written by `tools/make-gui-functions.py`, decides when the names are shown. |
-| `RE2D_Launchnik_Graphics/` | Source graphics that are not stock images. |
+| `Image_Sources/` | Source graphics that are not stock images. |
 | `tools/` | Scripts that build the film strips of the launch, scene, side and function buttons, of the labels and of the logo, and `GUI2D/gui_functions.lua`. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |

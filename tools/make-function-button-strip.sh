@@ -4,7 +4,7 @@
 # (solo).
 #
 # Red comes from the stock button image, yellow and blue from the images in
-# RE2D_Launchnik_Graphics; each has two frames, a dark one and a bright one,
+# Image_Sources; each has two frames, a dark one and a bright one,
 # which serve as dim and vibrant. The unlit frame is the dark red one with most
 # of its colour and brightness taken away.
 #
@@ -17,8 +17,8 @@ set -e
 cd "$(dirname "$0")/.."
 
 STOCK=../../../RE2D_Stock_Graphics_1_1/Buttons/Button_21_2frames.png
-YELLOW=RE2D_Launchnik_Graphics/Button_21_yellow_2frames.png
-BLUE=RE2D_Launchnik_Graphics/Button_21_blue_2frames.png
+YELLOW=Image_Sources/Button_21_yellow_2frames.png
+BLUE=Image_Sources/Button_21_blue_2frames.png
 TARGET=GUI2D/Function_Button_7frames.png
 
 WORK=$(mktemp -d)

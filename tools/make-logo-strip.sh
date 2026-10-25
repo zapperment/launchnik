@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds GUI2D/Logo_7frames.png, the film strip of the logo, from the seven
-# versions of the lettering in RE2D_Launchnik_Graphics, one for each mode
+# versions of the lettering in Image_Sources, one for each mode
 # colour: light grey (white) in launch mode, green in clip picking, yellow in
 # clip editing, red in clear mode, blue in landing editing, orange in
 # fill-in editing and fuchsia in duplicate mode.
@@ -12,7 +12,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-SOURCES=RE2D_Launchnik_Graphics
+SOURCES=Image_Sources
 TARGET=GUI2D/Logo_7frames.png
 FRAME=285x110
 

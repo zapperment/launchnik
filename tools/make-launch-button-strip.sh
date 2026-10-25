@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds GUI2D/Launch_Button_29frames.png, the film strip of the launch
-# buttons, from the fourteen three-frame images in RE2D_Launchnik_Graphics.
+# buttons, from the fourteen three-frame images in Image_Sources.
 #
 # Frame 0 is the unlit button. Colour c (1..14, in the order of CONTEXT.md)
 # follows as frame 2c - 1, dim, and frame 2c, vibrant.
@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-SOURCES=RE2D_Launchnik_Graphics
+SOURCES=Image_Sources
 TARGET=GUI2D/Launch_Button_29frames.png
 FRAME=205x135
 COLOURS="White Red Orange Yellow Lime Green Turquoise Cyan Light_Blue Blue Dark_Blue Purple Fuchsia Pink"

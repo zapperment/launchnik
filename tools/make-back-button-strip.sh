@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds GUI2D/Back_Button_9frames.png, the film strip of the back button,
-# from the nine-frame image in RE2D_Launchnik_Graphics.
+# from the nine-frame image in Image_Sources.
 #
 # The frames keep the order of the source: dark, then vibrant and dim for red,
 # green, yellow and white, except that red is turned orange in the same way
@@ -17,7 +17,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-SOURCE=RE2D_Launchnik_Graphics/Launchnik_Back_Button_9frames.png
+SOURCE=Image_Sources/Launchnik_Back_Button_9frames.png
 TARGET=GUI2D/Back_Button_9frames.png
 ORANGE=100,160,111
 

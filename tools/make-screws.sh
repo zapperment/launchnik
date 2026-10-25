@@ -1,5 +1,5 @@
 #!/bin/sh
-# Splits the film strip RE2D_Launchnik_Graphics/Screw_17_4frames.png into one
+# Splits the film strip Image_Sources/Screw_17_4frames.png into one
 # image per frame, GUI2D/Screw_17_<n>.png, so that each of the four screws on
 # the front panel can show a different one: frame 1 top left, 2 top right,
 # 3 bottom left, 4 bottom right. A static decoration always shows the first
@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-SOURCE=RE2D_Launchnik_Graphics/Screw_17_4frames.png
+SOURCE=Image_Sources/Screw_17_4frames.png
 
 for frame in 1 2 3 4; do
 	target=GUI2D/Screw_17_$frame.png

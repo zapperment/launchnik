@@ -38,7 +38,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 GUI = ROOT / "GUI2D"
-SOURCES = ROOT / "RE2D_Launchnik_Graphics"
+SOURCES = ROOT / "Image_Sources"
 STOCK = ROOT.parent.parent.parent / "RE2D_Stock_Graphics_1_1"
 
 BOLD = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
