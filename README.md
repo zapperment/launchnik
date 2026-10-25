@@ -344,6 +344,12 @@ The labels below the launch buttons in scenes 1 and 2, of the scene buttons and 
 ./tools/make-cv-labels.py
 ```
 
+The model label, the sticker and the power label of the back panel and the small logo of the folded back panel are copied from `Image_Sources` onto canvases RE2DRender accepts:
+
+```bash
+./tools/make-back-decals.sh
+```
+
 After changing anything in `GUI2D`, regenerate the panel graphics first, from the `RE2DRender` directory of the SDK download:
 
 ```bash
