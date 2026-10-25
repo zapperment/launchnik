@@ -355,11 +355,14 @@ class CLauncher {
 	// and it is muted or another track is soloed.
 	public: bool IsSilenced(int iTrack) const;
 
-	// Whether the fill-in button is held down. Pressing it triggers a fill-in,
-	// which plays from the next call of Advance() until the next switch point.
-	// A press does nothing while a fill-in is playing or while the length is
-	// immediate. Call before Advance() for changes that arrived in the same
-	// batch.
+	// Whether the fill-in button is held down. Every change counts as a press
+	// and triggers a fill-in, which plays from the next call of Advance()
+	// until the next switch point: a computer key or a Remote Override that
+	// toggles the property, rather than holding it down and letting it go,
+	// sets it to false every other time. A press does nothing while a fill-in
+	// is playing, which is what keeps letting go of a held button from
+	// triggering another, or while the length is immediate. Call before
+	// Advance() for changes that arrived in the same batch.
 	public: void SetFillInPressed(bool iPressed);
 	public: bool IsFillInPlaying() const;
 

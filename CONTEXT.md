@@ -21,7 +21,7 @@ A second **colour** and, for each **CV output**, a second pattern, unipolar valu
 _Avoid_: Fill, drum fill, fill-in mode (it is not a way of working like **launch mode** or **setup mode**)
 
 **Fill-in button**:
-The button to the left of **scene** 6 that triggers a fill-in: from the press until the next **switch point**, every track whose **active** clip holds a fill-in plays it, and its active launch button flashes in the fill-in's colour. Tracks without one, and stopped tracks, go on as before. It works in every mode; a press while a fill-in is already playing, or while the **length** is **immediate**, does nothing. Its **light** is dim white, and vibrant orange while a fill-in is playing, whether or not any track has one to play. Its caption FILL-IN is white, and orange while a fill-in is playing. It can be automated.
+The button to the left of **scene** 6 that triggers a fill-in: from the press until the next **switch point**, every track whose **active** clip holds a fill-in plays it, and its active launch button flashes in the fill-in's colour. Tracks without one, and stopped tracks, go on as before. It works in every mode; a press while a fill-in is already playing, or while the **length** is **immediate**, does nothing. Its **light** is dim white, and vibrant orange while a fill-in is playing, whether or not any track has one to play. Its caption FILL-IN is white, and orange while a fill-in is playing. It can be automated. A computer key or a MIDI control assigned to it triggers a fill-in with every press, whether it holds the button down and lets go of it, or switches it on with one press and off with the next.
 _Avoid_: Fill button, trigger
 
 **Playing** (of a fill-in):
