@@ -11,19 +11,25 @@ const TJBox_Int32 kNothingWritten = -1;
 
 // The tags of the launch buttons' properties are a base plus 10 for each track
 // plus the row; a base of its own for each kind of property.
-const TJBox_Tag kClipPresentBase = 3000;
-const TJBox_Tag kClipColourBase = 5000;
-const TJBox_Tag kFillInPresentBase = 6000;
-const TJBox_Tag kLandingPresentBase = 7000;
-const TJBox_Tag kFillInColourBase = 8000;
-const TJBox_Tag kLandingColourBase = 9000;
+const TJBox_Tag kClipSwitchesBase = 3000;
+const TJBox_Tag kFillInSwitchesBase = 6000;
+const TJBox_Tag kLandingSwitchesBase = 7000;
+const TJBox_Tag kIntroSwitchesBase = 24000;
+const TJBox_Tag kOutroSwitchesBase = 27000;
 const TJBox_Tag kClipTagSpan = 1000;
 
 const TJBox_Tag kOutputSettingBases[] = {
-	kClipPatternBase, kClipUnipolarBase, kClipBipolarBase, kClipTransitionBase,
-	kFillInPatternBase, kFillInUnipolarBase, kFillInBipolarBase, kFillInTransitionBase,
-	kLandingPatternBase, kLandingUnipolarBase, kLandingBipolarBase, kLandingTransitionBase,
+	kClipOutputBase, kFillInOutputBase, kLandingOutputBase, kIntroOutputBase, kOutroOutputBase,
 };
+
+bool IsOutputSettingTag(TJBox_Tag iTag) {
+	for (TJBox_Tag base : kOutputSettingBases) {
+		if (iTag >= base && iTag < base + kOutputSettingTagSpan) {
+			return true;
+		}
+	}
+	return false;
+}
 
 // The names of the CV outputs in motherboard_def.lua, by track and output.
 const char* const kCVOutputPaths[CLauncher::kTrackCount][CLauncher::kOutputCount] = {
@@ -114,10 +120,8 @@ void CLaunchnik::LoadEverything() {
 		}
 		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
 			const TJBox_Tag tags[] = {
-				ClipPresentTag(track, row), ClipColourTag(track, row),
-				FillInPresentTag(track, row), FillInColourTag(track, row),
-				LandingPresentTag(track, row), LandingColourTag(track, row),
-				LandingOneBarPatternTag(track, row), FillInOneBarPatternTag(track, row),
+				ClipSwitchesTag(track, row), FillInSwitchesTag(track, row), LandingSwitchesTag(track, row),
+				IntroSwitchesTag(track, row), OutroSwitchesTag(track, row),
 			};
 			for (TJBox_Tag tag : tags) {
 				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
@@ -182,43 +186,44 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		fLauncher.SetCVMode(track, output, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	if (iTag >= LandingOneBarPatternTag(0, 1) && iTag <= LandingOneBarPatternTag(CLauncher::kTrackCount - 1, CLauncher::kRowCount)) {
-		const int offset = static_cast<int>(iTag - LandingOneBarPatternTag(0, 0));
-		fLauncher.SetLandingOneBarPattern(offset / 10, offset % 10, JBox_GetBoolean(iValue));
-		return;
-	}
-	if (iTag >= FillInOneBarPatternTag(0, 1) && iTag <= FillInOneBarPatternTag(CLauncher::kTrackCount - 1, CLauncher::kRowCount)) {
-		const int offset = static_cast<int>(iTag - FillInOneBarPatternTag(0, 0));
-		fLauncher.SetFillInOneBarPattern(offset / 10, offset % 10, JBox_GetBoolean(iValue));
-		return;
-	}
-	if (iTag >= kClipPatternBase && iTag < kLandingTransitionBase + kOutputSettingTagSpan) {
+	if (IsOutputSettingTag(iTag)) {
 		HandleOutputSettingChange(iTag, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	if (iTag < kClipPresentBase || iTag >= kLandingColourBase + kClipTagSpan) {
+	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
+	const bool isSwitchesTag = base == kClipSwitchesBase || base == kFillInSwitchesBase || base == kLandingSwitchesBase || base == kIntroSwitchesBase || base == kOutroSwitchesBase;
+	if (!isSwitchesTag) {
 		return;
 	}
-	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
 	const int track = static_cast<int>((iTag - base) / 10) - 1;
 	const int row = static_cast<int>((iTag - base) % 10);
-	if (base == kClipPresentBase) {
-		fLauncher.SetClipPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kClipColourBase) {
-		fLauncher.SetClipColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
-	else if (base == kFillInPresentBase) {
-		fLauncher.SetFillInPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kFillInColourBase) {
-		fLauncher.SetFillInColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
-	}
-	else if (base == kLandingPresentBase) {
-		fLauncher.SetLandingPresent(track, row, JBox_GetBoolean(iValue));
-	}
-	else if (base == kLandingColourBase) {
-		fLauncher.SetLandingColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	// The colour first, so that a launch button that is emptied keeps it.
+	const CLauncher::TSwitches switches = CLauncher::UnpackSwitches(static_cast<int>(JBox_GetNumber(iValue)));
+	switch (base) {
+		case kClipSwitchesBase:
+			fLauncher.SetClipColour(track, row, switches.fColour);
+			fLauncher.SetClipPresent(track, row, switches.fPresent);
+			break;
+		case kFillInSwitchesBase:
+			fLauncher.SetFillInColour(track, row, switches.fColour);
+			fLauncher.SetFillInOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetFillInPresent(track, row, switches.fPresent);
+			break;
+		case kLandingSwitchesBase:
+			fLauncher.SetLandingColour(track, row, switches.fColour);
+			fLauncher.SetLandingOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetLandingPresent(track, row, switches.fPresent);
+			break;
+		case kIntroSwitchesBase:
+			fLauncher.SetIntroColour(track, row, switches.fColour);
+			fLauncher.SetIntroOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetIntroPresent(track, row, switches.fPresent);
+			break;
+		default:
+			fLauncher.SetOutroColour(track, row, switches.fColour);
+			fLauncher.SetOutroOneBarPattern(track, row, switches.fOneBarPattern);
+			fLauncher.SetOutroPresent(track, row, switches.fPresent);
+			break;
 	}
 }
 
@@ -228,19 +233,38 @@ void CLaunchnik::HandleOutputSettingChange(TJBox_Tag iTag, int iValue) {
 	const int track = offset / 100 - 1;
 	const int row = (offset / 10) % 10;
 	const int output = offset % 10 - 1;
+	const CLauncher::TOutputSettings settings = CLauncher::UnpackOutputSettings(iValue);
 	switch (base) {
-		case kClipPatternBase: fLauncher.SetClipPattern(track, row, output, iValue); break;
-		case kClipUnipolarBase: fLauncher.SetClipUnipolar(track, row, output, iValue); break;
-		case kClipBipolarBase: fLauncher.SetClipBipolar(track, row, output, iValue); break;
-		case kClipTransitionBase: fLauncher.SetClipTransition(track, row, output, iValue); break;
-		case kFillInPatternBase: fLauncher.SetFillInPattern(track, row, output, iValue); break;
-		case kFillInUnipolarBase: fLauncher.SetFillInUnipolar(track, row, output, iValue); break;
-		case kFillInBipolarBase: fLauncher.SetFillInBipolar(track, row, output, iValue); break;
-		case kFillInTransitionBase: fLauncher.SetFillInTransition(track, row, output, iValue); break;
-		case kLandingPatternBase: fLauncher.SetLandingPattern(track, row, output, iValue); break;
-		case kLandingUnipolarBase: fLauncher.SetLandingUnipolar(track, row, output, iValue); break;
-		case kLandingBipolarBase: fLauncher.SetLandingBipolar(track, row, output, iValue); break;
-		case kLandingTransitionBase: fLauncher.SetLandingTransition(track, row, output, iValue); break;
+		case kClipOutputBase:
+			fLauncher.SetClipPattern(track, row, output, settings.fPattern);
+			fLauncher.SetClipUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetClipBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetClipTransition(track, row, output, settings.fTransition);
+			break;
+		case kFillInOutputBase:
+			fLauncher.SetFillInPattern(track, row, output, settings.fPattern);
+			fLauncher.SetFillInUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetFillInBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetFillInTransition(track, row, output, settings.fTransition);
+			break;
+		case kLandingOutputBase:
+			fLauncher.SetLandingPattern(track, row, output, settings.fPattern);
+			fLauncher.SetLandingUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetLandingBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetLandingTransition(track, row, output, settings.fTransition);
+			break;
+		case kIntroOutputBase:
+			fLauncher.SetIntroPattern(track, row, output, settings.fPattern);
+			fLauncher.SetIntroUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetIntroBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetIntroTransition(track, row, output, settings.fTransition);
+			break;
+		case kOutroOutputBase:
+			fLauncher.SetOutroPattern(track, row, output, settings.fPattern);
+			fLauncher.SetOutroUnipolar(track, row, output, settings.fUnipolar);
+			fLauncher.SetOutroBipolar(track, row, output, settings.fBipolar);
+			fLauncher.SetOutroTransition(track, row, output, settings.fTransition);
+			break;
 		default: break;
 	}
 }

@@ -12,11 +12,15 @@ local TRANSITIONS = { "Off", "A", "B", "C", "D" }
 
 -- The settings of a CV output: long name, the letters of the short name and
 -- the letter of the shortest.
-local OUTPUT_SETTINGS = {
-	{ "pattern", "Pattern", "Pt", "P" },
-	{ "unipolar", "Unipolar", "Un", "U" },
-	{ "bipolar", "Bipolar", "Bi", "B" },
-	{ "transition", "Transition", "Tr", "T" },
+-- The kinds of settings a launch button holds: the clip's, the fill-in's,
+-- the landing's, the intro's and the outro's, with the infix of their
+-- properties, the word in their long names and the letter in their short ones.
+local KINDS = {
+	{ "", "", "" },
+	{ "_fill_in", " Fill-In", "F" },
+	{ "_landing", " Landing", "L" },
+	{ "_intro", " Intro", "I" },
+	{ "_outro", " Outro", "O" },
 }
 
 texts = {
@@ -100,6 +104,18 @@ texts = {
 	["gesture_landing_bipolar"] = "Change landing bipolar value",
 	["gesture_landing_transition"] = "Change landing transition",
 	["gesture_landing_colour"] = "Change landing colour",
+	["gesture_intro_present"] = "Switch intro on or off",
+	["gesture_intro_pattern"] = "Change intro pattern",
+	["gesture_intro_unipolar"] = "Change intro unipolar value",
+	["gesture_intro_bipolar"] = "Change intro bipolar value",
+	["gesture_intro_transition"] = "Change intro transition",
+	["gesture_intro_colour"] = "Change intro colour",
+	["gesture_outro_present"] = "Switch outro on or off",
+	["gesture_outro_pattern"] = "Change outro pattern",
+	["gesture_outro_unipolar"] = "Change outro unipolar value",
+	["gesture_outro_bipolar"] = "Change outro bipolar value",
+	["gesture_outro_transition"] = "Change outro transition",
+	["gesture_outro_colour"] = "Change outro colour",
 	["gesture_one_bar_pattern"] = "Switch one-bar pattern on or off",
 	["gesture_function"] = "Change function",
 	["gesture_mute"] = "Mute or unmute track",
@@ -178,59 +194,29 @@ for track = 1, 8 do
 		local short = "T" .. track .. "C" .. row
 		local digits = track .. row
 
-		texts[clip .. "_present"] = long .. " Present"
-		texts[clip .. "_present_short"] = short .. " On"
-		texts[clip .. "_present_shortest"] = "O" .. digits
+		-- Whether there is a clip, fill-in, landing, intro or outro, its
+		-- colour and one-bar pattern, all in one item, for example "T1C1 Sw"
+		-- and "S11" for the clip, "T1C1 FSw" and "FS11" for the fill-in.
+		for _, kind in ipairs(KINDS) do
+			local property = clip .. kind[1] .. "_switches"
+			texts[property] = long .. kind[2] .. " Switches"
+			texts[property .. "_short"] = short .. " " .. kind[3] .. "Sw"
+			texts[property .. "_shortest"] = kind[3] .. "S" .. digits
+		end
 
 		texts[clip .. "_name"] = long .. " Name"
 
-		texts[clip .. "_colour"] = long .. " Colour"
-		texts[clip .. "_colour_short"] = short .. " Col"
-		texts[clip .. "_colour_shortest"] = "C" .. digits
-
-		texts[clip .. "_fill_in_present"] = long .. " Fill-In Present"
-		texts[clip .. "_fill_in_present_short"] = short .. " FOn"
-		texts[clip .. "_fill_in_present_shortest"] = "FO" .. digits
-
-		texts[clip .. "_fill_in_colour"] = long .. " Fill-In Colour"
-		texts[clip .. "_fill_in_colour_short"] = short .. " FCl"
-		texts[clip .. "_fill_in_colour_shortest"] = "FC" .. digits
-
-		texts[clip .. "_fill_in_one_bar"] = long .. " Fill-In One-Bar Pattern"
-		texts[clip .. "_fill_in_one_bar_short"] = short .. " F1B"
-		texts[clip .. "_fill_in_one_bar_shortest"] = "FB" .. digits
-
-		texts[clip .. "_landing_present"] = long .. " Landing Present"
-		texts[clip .. "_landing_present_short"] = short .. " LOn"
-		texts[clip .. "_landing_present_shortest"] = "LO" .. digits
-
-		texts[clip .. "_landing_colour"] = long .. " Landing Colour"
-		texts[clip .. "_landing_colour_short"] = short .. " LCl"
-		texts[clip .. "_landing_colour_shortest"] = "LC" .. digits
-
-		texts[clip .. "_landing_one_bar"] = long .. " Landing One-Bar Pattern"
-		texts[clip .. "_landing_one_bar_short"] = short .. " L1B"
-		texts[clip .. "_landing_one_bar_shortest"] = "LB" .. digits
-
-		-- The settings of the CV outputs, for example "T1C1 APt" and "11AP"
-		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in, "T1C1LAPt" and
-		-- "11Ap" for the landing.
+		-- The settings of the CV outputs, all four of an output in one item,
+		-- for example "T1C1 A" and "11A" for the clip, "T1C1 FA" and "11AF"
+		-- for the fill-in, and likewise L, I and O for the landing, the intro
+		-- and the outro.
 		for _, letter in ipairs(OUTPUT_LETTERS) do
 			local upper = string.upper(letter)
-			for _, setting in ipairs(OUTPUT_SETTINGS) do
-				local name, short_letters, shortest_letter = setting[2], setting[3], setting[4]
-				local property = clip .. "_" .. letter .. "_" .. setting[1]
-				texts[property] = long .. " Output " .. upper .. " " .. name
-				texts[property .. "_short"] = short .. " " .. upper .. short_letters
-				texts[property .. "_shortest"] = digits .. upper .. shortest_letter
-				local fill_in = clip .. "_fill_in_" .. letter .. "_" .. setting[1]
-				texts[fill_in] = long .. " Fill-In Output " .. upper .. " " .. name
-				texts[fill_in .. "_short"] = short .. "F" .. upper .. short_letters
-				texts[fill_in .. "_shortest"] = digits .. letter .. string.lower(shortest_letter)
-				local landing = clip .. "_landing_" .. letter .. "_" .. setting[1]
-				texts[landing] = long .. " Landing Output " .. upper .. " " .. name
-				texts[landing .. "_short"] = short .. "L" .. upper .. short_letters
-				texts[landing .. "_shortest"] = digits .. upper .. string.lower(shortest_letter)
+			for _, kind in ipairs(KINDS) do
+				local property = clip .. kind[1] .. "_" .. letter
+				texts[property] = long .. kind[2] .. " Output " .. upper
+				texts[property .. "_short"] = short .. " " .. kind[3] .. upper
+				texts[property .. "_shortest"] = digits .. upper .. kind[3]
 			end
 		end
 
