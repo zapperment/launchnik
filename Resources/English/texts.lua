@@ -100,6 +100,18 @@ texts = {
 	["gesture_landing_bipolar"] = "Change landing bipolar value",
 	["gesture_landing_transition"] = "Change landing transition",
 	["gesture_landing_colour"] = "Change landing colour",
+	["gesture_intro_present"] = "Switch intro on or off",
+	["gesture_intro_pattern"] = "Change intro pattern",
+	["gesture_intro_unipolar"] = "Change intro unipolar value",
+	["gesture_intro_bipolar"] = "Change intro bipolar value",
+	["gesture_intro_transition"] = "Change intro transition",
+	["gesture_intro_colour"] = "Change intro colour",
+	["gesture_outro_present"] = "Switch outro on or off",
+	["gesture_outro_pattern"] = "Change outro pattern",
+	["gesture_outro_unipolar"] = "Change outro unipolar value",
+	["gesture_outro_bipolar"] = "Change outro bipolar value",
+	["gesture_outro_transition"] = "Change outro transition",
+	["gesture_outro_colour"] = "Change outro colour",
 	["gesture_one_bar_pattern"] = "Switch one-bar pattern on or off",
 	["gesture_function"] = "Change function",
 	["gesture_mute"] = "Mute or unmute track",
@@ -212,10 +224,25 @@ for track = 1, 8 do
 		texts[clip .. "_landing_one_bar_short"] = short .. " L1B"
 		texts[clip .. "_landing_one_bar_shortest"] = "LB" .. digits
 
+		for _, overlay in ipairs({ { "intro", "Intro", "I" }, { "outro", "Outro", "O" } }) do
+			local key, name, initial = clip .. "_" .. overlay[1], overlay[2], overlay[3]
+			texts[key .. "_present"] = long .. " " .. name .. " Present"
+			texts[key .. "_present_short"] = short .. " " .. initial .. "On"
+			texts[key .. "_present_shortest"] = initial .. "O" .. digits
+			texts[key .. "_colour"] = long .. " " .. name .. " Colour"
+			texts[key .. "_colour_short"] = short .. " " .. initial .. "Cl"
+			texts[key .. "_colour_shortest"] = initial .. "C" .. digits
+			texts[key .. "_one_bar"] = long .. " " .. name .. " One-Bar Pattern"
+			texts[key .. "_one_bar_short"] = short .. " " .. initial .. "1B"
+			texts[key .. "_one_bar_shortest"] = initial .. "B" .. digits
+		end
+
 		-- The settings of the CV outputs, for example "T1C1 APt" and "11AP"
 		-- for the clip, "T1C1FAPt" and "11ap" for the fill-in, "T1C1LAPt" and
-		-- "11Ap" for the landing.
-		for _, letter in ipairs(OUTPUT_LETTERS) do
+		-- "11Ap" for the landing, "T1C1IAPt" and "11aP" for the intro,
+		-- "T1C1OAPt" and "11GP" for the outro, whose outputs are lettered G to
+		-- L in the shortest names, since four characters allow no more.
+		for output, letter in ipairs(OUTPUT_LETTERS) do
 			local upper = string.upper(letter)
 			for _, setting in ipairs(OUTPUT_SETTINGS) do
 				local name, short_letters, shortest_letter = setting[2], setting[3], setting[4]
@@ -231,6 +258,14 @@ for track = 1, 8 do
 				texts[landing] = long .. " Landing Output " .. upper .. " " .. name
 				texts[landing .. "_short"] = short .. "L" .. upper .. short_letters
 				texts[landing .. "_shortest"] = digits .. upper .. string.lower(shortest_letter)
+				local intro = clip .. "_intro_" .. letter .. "_" .. setting[1]
+				texts[intro] = long .. " Intro Output " .. upper .. " " .. name
+				texts[intro .. "_short"] = short .. "I" .. upper .. short_letters
+				texts[intro .. "_shortest"] = digits .. letter .. shortest_letter
+				local outro = clip .. "_outro_" .. letter .. "_" .. setting[1]
+				texts[outro] = long .. " Outro Output " .. upper .. " " .. name
+				texts[outro .. "_short"] = short .. "O" .. upper .. short_letters
+				texts[outro .. "_shortest"] = digits .. string.char(string.byte("G") + output - 1) .. shortest_letter
 			end
 		end
 

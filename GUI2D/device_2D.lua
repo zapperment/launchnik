@@ -20,9 +20,10 @@ local FUNCTION_HEIGHT = 75
 
 -- The header is the strip above the divider on the front panel. It is as high
 -- as the folded panel, so the logo sits at the same place on both. It is a
--- lamp with one frame for each mode colour: light grey in launch mode, green
--- in clip picking, yellow in clip editing, red in clear mode, blue in landing
--- editing, orange in fill-in editing, fuchsia in duplicate mode.
+-- lamp with one frame for each colour, of which it shows the mode colour:
+-- light grey in launch mode, green in clip picking, yellow in clip editing,
+-- orange in fill-in editing, blue in landing editing, pink in intro editing,
+-- turquoise in outro editing, red in clear mode, fuchsia in duplicate mode.
 local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
@@ -117,7 +118,7 @@ front.click_scenes = {
 -- bottom of the buttons' images, right below the buttons themselves. Those of
 -- the launch buttons in scenes 1 and 2 are one lamp whose film strip starts
 -- 25 pixels left of the grid: all unlit, or SET/CLEAR or all in yellow,
--- orange or blue (see tools/make-label-strips.sh). Each of scenes 3
+-- orange, blue, pink or turquoise (see tools/make-label-strips.sh). Each of scenes 3
 -- to 8, which stand for the CV outputs A to F, has a lamp of its own, with
 -- two lines below every launch button (see tools/make-cv-labels.py). Each
 -- scene button has a lamp of its own, 250 pixels wide and unlit, white or
@@ -126,23 +127,23 @@ local LABEL_GAP = -8
 local SCENE_LABEL_WIDTH = 250
 front.labels_launch = {
 	offset = { LAUNCH_LEFT - 25, LAUNCH_TOP + BUTTON_HEIGHT + LABEL_GAP },
-	{ path = "Labels_Launch_7frames", frames = 7 },
+	{ path = "Labels_Launch_11frames", frames = 11 },
 }
 local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
 for output, letter in ipairs(OUTPUT_LETTERS) do
 	front["labels_output_" .. letter] = {
 		offset = { LAUNCH_LEFT - 25, LAUNCH_TOP + ROW_PITCH * (output + 1) + BUTTON_HEIGHT + LABEL_GAP },
-		{ path = "Labels_Output_34frames", frames = 34 },
+		{ path = "Labels_Output_56frames", frames = 56 },
 	}
 end
 
--- The three sets of transition diagrams, TRANSITION, FILL-IN and LANDING,
--- stand one above the other to the right of the scene buttons, centred on the
--- grid. One lamp shows them all grey or one set lit (see
+-- The five sets of transition diagrams, TRANSITION, FILL-IN, LANDING, INTRO
+-- and OUTRO, stand one above the other to the right of the scene buttons,
+-- centred on the grid. One lamp shows them all grey or one set lit (see
 -- tools/make-cv-labels.py).
 front.transition_diagrams = {
-	offset = { 3327, 900 },
-	{ path = "Transition_Diagrams_4frames", frames = 4 },
+	offset = { 3327, 555 },
+	{ path = "Transition_Diagrams_6frames", frames = 6 },
 }
 for scene = 1, ROW_COUNT do
 	front["label_scene" .. scene] = {
@@ -216,13 +217,15 @@ front.click_back = {
 }
 
 -- Its labels, one line for each step it goes back to, stand to its left,
--- aligned on the right 10 pixels from the button and as high as it; one line
+-- aligned on the right 10 pixels from the button and centred on it, in a
+-- strip 20 pixels higher than the button at the top and the bottom; one line
 -- is lit at a time (see tools/make-label-strips.sh).
 local STEP_LABEL_WIDTH = 300
 local STEP_LABEL_GAP = 10
+local STEP_LABEL_TOP = BACK_TOP - 20
 front.label_back = {
-	offset = { BACK_LEFT - STEP_LABEL_GAP - STEP_LABEL_WIDTH, BACK_TOP },
-	{ path = "Label_Back_5frames", frames = 5 },
+	offset = { BACK_LEFT - STEP_LABEL_GAP - STEP_LABEL_WIDTH, STEP_LABEL_TOP },
+	{ path = "Label_Back_7frames", frames = 7 },
 }
 
 -- The forward button stands beside it, above the second track, and looks
@@ -238,8 +241,8 @@ front.click_forward = {
 	{ size = { 130, 135 } },
 }
 front.label_forward = {
-	offset = { FORWARD_LEFT + 130 + STEP_LABEL_GAP, BACK_TOP },
-	{ path = "Label_Forward_3frames", frames = 3 },
+	offset = { FORWARD_LEFT + 130 + STEP_LABEL_GAP, STEP_LABEL_TOP },
+	{ path = "Label_Forward_5frames", frames = 5 },
 }
 
 -- The fill-in button stands to the left of scene 6, as far from the grid as
@@ -323,7 +326,7 @@ end
 -- The setup button looks like a function button, a lamp with a transparent
 -- display on top, centred below the fill-in button. Its caption SETUP stands
 -- to its left, 8 pixels from it and 2 pixels above its vertical centre, in
--- white, dark grey, green, yellow, orange or blue.
+-- white, dark grey, green, yellow, orange, blue, pink or turquoise.
 local SETUP_LEFT = FILL_IN_LEFT + (SCENE_WIDTH - 70) / 2
 local SETUP_CAPTION_WIDTH = 125
 local SETUP_CAPTION_HEIGHT = 30
@@ -337,7 +340,7 @@ front.click_setup = {
 }
 front.caption_setup = {
 	offset = { SETUP_LEFT - 8 - SETUP_CAPTION_WIDTH, FUNCTION_TOP + math.floor((75 - SETUP_CAPTION_HEIGHT) / 2) - 2 },
-	{ path = "Caption_Setup_6frames", frames = 6 },
+	{ path = "Caption_Setup_8frames", frames = 8 },
 }
 
 back = {

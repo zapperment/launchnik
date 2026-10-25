@@ -6,21 +6,24 @@
 """Builds the labels of the CV outputs (see "Label" and "CV output" in
 CONTEXT.md):
 
-- GUI2D/Labels_Output_34frames.png holds the labels below the launch buttons
+- GUI2D/Labels_Output_56frames.png holds the labels below the launch buttons
   of one scene from 3 to 8, each of which stands for a CV output in clip
-  editing, fill-in editing and landing editing. Every launch button has two
+  editing, fill-in editing, landing editing, intro editing and outro
+  editing. Every launch button has two
   lines: on top the unipolar value on the left and the bipolar value on the
   right, or in the last track the transitions OFF A B C D; below it the
-  pattern. The frames are: all unlit, then in yellow, in orange and in blue each
-  the patterns lit, the unipolar values lit with each of the five
+  pattern. The frames are: all unlit, then in yellow, orange, blue, pink and
+  turquoise each the patterns lit, the unipolar values lit with each of the five
   transitions, and the bipolar values lit with each of the five transitions.
   The six scenes share it.
-- GUI2D/Transition_Diagrams_4frames.png holds the three sets of transition
+- GUI2D/Transition_Diagrams_6frames.png holds the five sets of transition
   diagrams to the right of the scene buttons, one above the other:
-  TRANSITION, FILL-IN and LANDING, each with its letters A to D and its four
-  diagrams. In the first frame all are grey; in the others one set is lit,
-  TRANSITION in yellow, FILL-IN in orange or LANDING in blue, with its diagrams
-  in colour.
+  TRANSITION, FILL-IN, LANDING, INTRO and OUTRO, each with its letters A to D
+  and its four diagrams. An intro moves like a clip or a fill-in, towards
+  the switch point; an outro like a landing, away from it. In the first
+  frame all are grey; in the others one set is lit, TRANSITION in yellow,
+  FILL-IN in orange, LANDING in blue, INTRO in pink or OUTRO in turquoise,
+  with its diagrams in colour.
 - GUI2D/Labels_Back.png holds every caption of the back panel, as large as
   the panel: CV OUT and, left of the first track, the names of the CV modes with lines to the
   positions of the switch.
@@ -48,6 +51,9 @@ UNLIT = "#4d4d4d"
 YELLOW = "#fafe07"
 ORANGE = "#fe881c"
 BLUE = "#0598fe"
+PINK = "#fd3aa9"
+TURQUOISE = "#21ffc2"
+EDITING_COLOURS = (YELLOW, ORANGE, BLUE, PINK, TURQUOISE)
 BACK_TEXT = "#e0e0e0"
 
 # The launch buttons, as in tools/make-label-strips.sh.
@@ -71,8 +77,8 @@ TRANSITIONS = ["OFF", "A", "B", "C", "D"]
 # frame's size, and for each set, SET_PITCH pixels apart, where its heading
 # and the middle of its letters go, and where its diagram is, with the middle
 # of its four boxes DIAGRAM_ROWS pixels below its top. The frame sits at
-# 3327, 900 on the front panel (see GUI2D/device_2D.lua).
-DIAGRAMS_SIZE = (250, 1000)
+# 3327, 555 on the front panel (see GUI2D/device_2D.lua).
+DIAGRAMS_SIZE = (250, 1690)
 SET_PITCH = 345
 HEADING_LEFT = 16
 HEADING_TOP = 9
@@ -86,6 +92,8 @@ DIAGRAM_SETS = [
 	("TRANSITION", YELLOW, "fill-in"),
 	("FILL-IN", ORANGE, "fill-in"),
 	("LANDING", BLUE, "landing"),
+	("INTRO", PINK, "fill-in"),
+	("OUTRO", TURQUOISE, "landing"),
 ]
 
 # The back panel: the jacks of track 1 start 840 pixels from the left, 300
@@ -141,7 +149,7 @@ def output_frame(top_colour, bottom_colour, lit):
 
 def make_output_labels():
 	frames = [output_frame(UNLIT, UNLIT, None)]
-	for colour in (YELLOW, ORANGE, BLUE):
+	for colour in EDITING_COLOURS:
 		frames.append(output_frame(colour, colour, "patterns"))
 		for kind in ("unipolar", "bipolar"):
 			for transition in range(len(TRANSITIONS)):

@@ -671,7 +671,11 @@ void TestButtonIndexAndSetupNumbering() {
 	CHECK(CLauncher::SetupForFillInEditing(7, 8) == 129);
 	CHECK(CLauncher::SetupForLandingEditing(0, 1) == 130);
 	CHECK(CLauncher::SetupForLandingEditing(7, 8) == 193);
-	CHECK(CLauncher::kSetupClearMode == 194);
+	CHECK(CLauncher::SetupForIntroEditing(0, 1) == 194);
+	CHECK(CLauncher::SetupForIntroEditing(7, 8) == 257);
+	CHECK(CLauncher::SetupForOutroEditing(0, 1) == 258);
+	CHECK(CLauncher::SetupForOutroEditing(7, 8) == 321);
+	CHECK(CLauncher::kSetupClearMode == 322);
 
 	CHECK(!CLauncher::IsClipEditing(CLauncher::kSetupClipPicking));
 	CHECK(CLauncher::IsClipEditing(2));
@@ -685,12 +689,21 @@ void TestButtonIndexAndSetupNumbering() {
 	CHECK(CLauncher::IsLandingEditing(130));
 	CHECK(CLauncher::IsLandingEditing(193));
 	CHECK(!CLauncher::IsLandingEditing(194));
+	CHECK(CLauncher::IsIntroEditing(194));
+	CHECK(CLauncher::IsIntroEditing(257));
+	CHECK(!CLauncher::IsIntroEditing(258));
+	CHECK(CLauncher::IsOutroEditing(258));
+	CHECK(CLauncher::IsOutroEditing(321));
+	CHECK(!CLauncher::IsOutroEditing(322));
+	CHECK(CLauncher::IsSetupMode(321));
 
 	CHECK(CLauncher::PickedButton(CLauncher::kSetupLaunchMode) == -1);
 	CHECK(CLauncher::PickedButton(CLauncher::kSetupClipPicking) == -1);
 	CHECK(CLauncher::PickedButton(CLauncher::SetupForClipEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
 	CHECK(CLauncher::PickedButton(CLauncher::SetupForFillInEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
 	CHECK(CLauncher::PickedButton(CLauncher::SetupForLandingEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
+	CHECK(CLauncher::PickedButton(CLauncher::SetupForIntroEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
+	CHECK(CLauncher::PickedButton(CLauncher::SetupForOutroEditing(3, 6)) == CLauncher::ButtonIndex(3, 6));
 }
 
 void TestOutOfRangeClipSettingsAreIgnored() {
@@ -1019,6 +1032,10 @@ void TestModeColourFollowsTheSetupStep() {
 	CHECK(launcher.GetModeColour() == CLauncher::kModeOrange);
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 5));
 	CHECK(launcher.GetModeColour() == CLauncher::kModeBlue);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(3, 5));
+	CHECK(launcher.GetModeColour() == CLauncher::kModePink);
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(3, 5));
+	CHECK(launcher.GetModeColour() == CLauncher::kModeTurquoise);
 	launcher.SetSetup(CLauncher::kSetupClearMode);
 	CHECK(launcher.GetModeColour() == CLauncher::kModeRed);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
@@ -1037,6 +1054,10 @@ void TestLogoShowsTheModeColour() {
 	CHECK(launcher.GetLogoFrame() == CLauncher::kColourOrange);
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 5));
 	CHECK(launcher.GetLogoFrame() == CLauncher::kColourBlue);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(3, 5));
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourPink);
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(3, 5));
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourTurquoise);
 	launcher.SetSetup(CLauncher::kSetupClearMode);
 	CHECK(launcher.GetLogoFrame() == CLauncher::kColourRed);
 	launcher.SetSetup(CLauncher::kSetupSourcePicking);
@@ -1073,6 +1094,16 @@ void TestLaunchLabelsAreLitOnlyInClipEditing() {
 	CHECK(launcher.GetLaunchLabelsFrame() == 5);
 	launcher.SetLandingPresent(2, 4, true);
 	CHECK(launcher.GetLaunchLabelsFrame() == 6);
+
+	// In intro editing they are pink, in outro editing turquoise.
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(2, 4));
+	CHECK(launcher.GetLaunchLabelsFrame() == 7);
+	launcher.SetIntroPresent(2, 4, true);
+	CHECK(launcher.GetLaunchLabelsFrame() == 8);
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(2, 4));
+	CHECK(launcher.GetLaunchLabelsFrame() == 9);
+	launcher.SetOutroPresent(2, 4, true);
+	CHECK(launcher.GetLaunchLabelsFrame() == 10);
 }
 
 void TestBackButtonShowsTheStepItGoesBackFrom() {
@@ -1089,6 +1120,10 @@ void TestBackButtonShowsTheStepItGoesBackFrom() {
 	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourYellow));
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
 	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourOrange));
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(2, 4));
+	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourBlue));
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(2, 4));
+	CHECK(IsLight(launcher.GetBackButtonLight(), CLauncher::kVibrant, CLauncher::kColourPink));
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(IsUnlit(launcher.GetBackButtonLight()));
 	// In clear mode it goes back to launch mode, as in clip picking.
@@ -1116,6 +1151,12 @@ void TestSetupButtonShowsTheStepOfSetupMode() {
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
 	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kVibrant, CLauncher::kColourBlue));
 	CHECK(launcher.GetSetupCaptionFrame() == 5);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(2, 4));
+	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kVibrant, CLauncher::kColourPink));
+	CHECK(launcher.GetSetupCaptionFrame() == 6);
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(2, 4));
+	CHECK(IsLight(launcher.GetSetupLight(), CLauncher::kVibrant, CLauncher::kColourTurquoise));
+	CHECK(launcher.GetSetupCaptionFrame() == 7);
 
 	// Dark in clear mode and duplicate mode, where it does nothing.
 	const int steps[] = { CLauncher::kSetupClearMode, CLauncher::kSetupSourcePicking, CLauncher::SetupForClipDestinationPicking(2, 4), CLauncher::SetupForSceneDestinationPicking(4) };
@@ -1128,7 +1169,7 @@ void TestSetupButtonShowsTheStepOfSetupMode() {
 }
 
 // Frames of the back labels' film strip: all unlit, then LAUNCH, PICK CLIP,
-// EDIT CLIP or SET FILL-IN lit.
+// EDIT CLIP, SET FILL-IN, SET LANDING or SET INTRO lit.
 void TestBackLabelHasTheColourOfTheBackButton() {
 	CLauncher launcher;
 	CHECK(launcher.GetBackLabelFrame() == 0);
@@ -1140,6 +1181,10 @@ void TestBackLabelHasTheColourOfTheBackButton() {
 	CHECK(launcher.GetBackLabelFrame() == 3);
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
 	CHECK(launcher.GetBackLabelFrame() == 4);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(2, 4));
+	CHECK(launcher.GetBackLabelFrame() == 5);
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(2, 4));
+	CHECK(launcher.GetBackLabelFrame() == 6);
 	launcher.SetSetup(CLauncher::kSetupLaunchMode);
 	CHECK(launcher.GetBackLabelFrame() == 0);
 	launcher.SetSetup(CLauncher::kSetupClearMode);
@@ -1423,8 +1468,20 @@ void TestForwardButtonIsLitWhileItLeadsSomewhere() {
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(0, 1));
 	CHECK(IsUnlit(launcher.GetForwardLight()));
 
-	// Landing editing is the last step.
+	// Pink towards intro editing, turquoise towards outro editing.
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
+	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourPink));
+	CHECK(launcher.GetForwardLightValue() == 41);
+	CHECK(launcher.GetForwardLabelFrame() == 3);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(2, 4));
+	CHECK(IsLight(launcher.GetForwardLight(), CLauncher::kVibrant, CLauncher::kColourTurquoise));
+	CHECK(launcher.GetForwardLightValue() == 20);
+	CHECK(launcher.GetForwardLabelFrame() == 4);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(0, 1));
+	CHECK(IsUnlit(launcher.GetForwardLight()));
+
+	// Outro editing is the last step.
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(2, 4));
 	CHECK(IsUnlit(launcher.GetForwardLight()));
 	CHECK(launcher.GetForwardLabelFrame() == 0);
 
@@ -1644,7 +1701,9 @@ void TestClearModeIsNotASetupStep() {
 	CHECK(!CLauncher::IsFillInEditing(CLauncher::kSetupClearMode));
 	CHECK(!CLauncher::IsLandingEditing(CLauncher::kSetupClearMode));
 	CHECK(CLauncher::PickedButton(CLauncher::kSetupClearMode) == -1);
-	CHECK(CLauncher::IsLandingEditing(CLauncher::kSetupClearMode - 1));
+	CHECK(!CLauncher::IsIntroEditing(CLauncher::kSetupClearMode));
+	CHECK(!CLauncher::IsOutroEditing(CLauncher::kSetupClearMode));
+	CHECK(CLauncher::IsOutroEditing(CLauncher::kSetupClearMode - 1));
 	CHECK(!CLauncher::IsSetupMode(CLauncher::kSetupClearMode));
 	CHECK(!CLauncher::IsDuplicateMode(CLauncher::kSetupClearMode));
 
@@ -2419,7 +2478,7 @@ void TestOutputLabelsFollowTheCVModeAndTransition() {
 	CHECK(launcher.GetOutputLabelsFrame(kOutputB) == 24 + CLauncher::kTransitionD);
 	CHECK(launcher.GetOutputLabelsFrame(2) == 29);
 	CHECK(launcher.GetTransitionDiagramsFrame() == 3);
-	CHECK(CLauncher::kOutputLabelsFrameCount == 34);
+	CHECK(CLauncher::kOutputLabelsFrameCount == 56);
 
 	// Without a clip they are unlit.
 	launcher.SetSetup(CLauncher::SetupForClipEditing(1, 1));
@@ -2997,11 +3056,11 @@ void TestDuplicateModeStates() {
 	// Source picking, then destination picking for each launch button and
 	// each scene, after clear mode.
 	CHECK(CLauncher::kSetupSourcePicking == CLauncher::kSetupClearMode + 1);
-	CHECK(CLauncher::kSetupCount == 268);
-	CHECK(CLauncher::SetupForClipDestinationPicking(0, 1) == 196);
-	CHECK(CLauncher::SetupForClipDestinationPicking(7, 8) == 259);
-	CHECK(CLauncher::SetupForSceneDestinationPicking(1) == 260);
-	CHECK(CLauncher::SetupForSceneDestinationPicking(8) == 267);
+	CHECK(CLauncher::kSetupCount == 396);
+	CHECK(CLauncher::SetupForClipDestinationPicking(0, 1) == 324);
+	CHECK(CLauncher::SetupForClipDestinationPicking(7, 8) == 387);
+	CHECK(CLauncher::SetupForSceneDestinationPicking(1) == 388);
+	CHECK(CLauncher::SetupForSceneDestinationPicking(8) == 395);
 
 	CHECK(!CLauncher::IsDuplicateMode(CLauncher::kSetupLaunchMode));
 	CHECK(!CLauncher::IsDuplicateMode(CLauncher::kSetupClearMode));
@@ -3165,6 +3224,496 @@ void TestDuplicateButtonLights() {
 		CHECK(launcher.GetDuplicateLightFrame() == 0);
 		CHECK(launcher.GetDuplicateCaptionFrame() == 1);
 	}
+}
+
+// Track 1 is stopped; the clip in row 2 plays pattern 2 and unipolar value 6
+// on output B, and holds an intro with pattern 8, unipolar value 0 and
+// transition iTransition on output B, in colour 4.
+void SetUpIntro(CLauncher& iLauncher, int iTransition) {
+	FillGrid(iLauncher);
+	iLauncher.SetClipPattern(0, 2, 0, 1);
+	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6);
+	iLauncher.SetIntroPresent(0, 2, true);
+	iLauncher.SetIntroPattern(0, 2, 0, 7);
+	iLauncher.SetIntroUnipolar(0, 2, kOutputB, 0);
+	iLauncher.SetIntroTransition(0, 2, kOutputB, iTransition);
+	iLauncher.SetIntroColour(0, 2, 4);
+	OpenWith(iLauncher, 0, CLauncher::kSelectionStop);
+}
+
+// Plays the first bar, then queues row 2.
+void QueueRow2(CLauncher& iLauncher) {
+	PlayThrough(iLauncher, 0.0, kBar);
+	iLauncher.SetSelection(0, 2);
+	iLauncher.Advance(Playing(kBar));
+}
+
+void TestIntroPlaysFromTheQueueUntilTheSwitchPoint() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	QueueRow2(launcher);
+	CHECK(launcher.PlaysIntro(0));
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kQueued);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	CHECK(launcher.GetLight(0, 2).fBrightness == CLauncher::kFlashing);
+	CHECK(launcher.GetLight(0, 2).fColour == 4);
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kDim, CLauncher::DefaultColour(0)));
+
+	// Without a transition it holds the intro's value, then the clip takes
+	// over at the switch point.
+	PlayOnTo(launcher, kBar, kInterval - kBatch);
+	CHECK(launcher.PlaysIntro(0));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	launcher.Advance(Playing(kInterval));
+	CHECK(!launcher.PlaysIntro(0));
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kActive);
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, CLauncher::DefaultColour(0)));
+}
+
+void TestNoIntroWhileAnotherClipIsActive() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	OpenWith(launcher, 0, 1);
+	QueueRow2(launcher);
+	CHECK(!launcher.PlaysIntro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 1.0 / 8);
+	CHECK(launcher.GetLight(0, 2).fColour == CLauncher::DefaultColour(0));
+}
+
+void TestNoIntroWithoutASwitchPointToWaitFor() {
+	// While the transport is stopped, the clip becomes active at once.
+	CLauncher stopped;
+	SetUpIntro(stopped, CLauncher::kTransitionOff);
+	stopped.Advance(Stopped(kBar));
+	stopped.SetSelection(0, 2);
+	stopped.Advance(Stopped(kBar));
+	CHECK(!stopped.PlaysIntro(0));
+	CHECK(stopped.GetButtonState(0, 2) == CLauncher::kActive);
+
+	// Likewise with the length immediate.
+	CLauncher immediate;
+	SetUpIntro(immediate, CLauncher::kTransitionOff);
+	immediate.SetLength(CLauncher::kLengthImmediate);
+	QueueRow2(immediate);
+	CHECK(!immediate.PlaysIntro(0));
+	CHECK(immediate.GetCVValue(0, 0) == 2.0 / 8);
+}
+
+void TestIntroTransitionAMovesFromTheQueue() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionA);
+	QueueRow2(launcher);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	const double halfway = kBar + (kInterval - kBar) / 2;
+	PlayOnTo(launcher, kBar, halfway);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestIntroTransitionBStartsSlowly() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionB);
+	QueueRow2(launcher);
+	const double halfway = kBar + (kInterval - kBar) / 2;
+	PlayOnTo(launcher, kBar, halfway);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), CLauncher::TransitionCurve(CLauncher::kTransitionB, 0.5)));
+	CHECK(launcher.GetCVValue(0, kOutputB) < 0.5);
+}
+
+void TestIntroTransitionCMovesOnlyInTheLastBar() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionC);
+	QueueRow2(launcher);
+	PlayOnTo(launcher, kBar, kInterval - kBar);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	PlayOnTo(launcher, kInterval - kBar, kInterval - kBar / 2);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestIntroMovesTowardsTheLanding() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionA);
+	launcher.SetLandingPresent(0, 2, true);
+	launcher.SetLandingUnipolar(0, 2, kOutputB, 3);
+	QueueRow2(launcher);
+	const double halfway = kBar + (kInterval - kBar) / 2;
+	PlayOnTo(launcher, kBar, halfway);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.25));
+	// The landing takes over at the switch point.
+	PlayOnTo(launcher, halfway, kInterval);
+	CHECK(launcher.PlaysLanding(0));
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
+}
+
+void TestIntroOneBarPatternPlaysInTheLastBar() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionA);
+	launcher.SetIntroOneBarPattern(0, 2, true);
+	QueueRow2(launcher);
+	// Before the last bar the pattern outputs emit nothing, while the values
+	// move already.
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	PlayOnTo(launcher, kBar, kInterval - kBar - kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) > 0.0);
+	PlayOnTo(launcher, kInterval - kBar - kBatch, kInterval - kBar);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetLight(0, 2).fColour == 4);
+
+	// Queued within the last bar, it plays from the queue.
+	CLauncher late;
+	SetUpIntro(late, CLauncher::kTransitionOff);
+	late.SetIntroOneBarPattern(0, 2, true);
+	PlayThrough(late, 0.0, kInterval - kBar / 2);
+	late.SetSelection(0, 2);
+	late.Advance(Playing(kInterval - kBar / 2));
+	CHECK(late.GetCVValue(0, 0) == 8.0 / 8);
+}
+
+void TestMutedTrackPlaysNoIntroPattern() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 3);
+	QueueRow2(launcher);
+	PressMute(launcher, 0);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.IsMuted(0));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
+}
+
+void TestTakingTheClipBackDropsTheIntro() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 3);
+	QueueRow2(launcher);
+	PlayOnTo(launcher, kBar, 2 * kBar);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
+
+	// Stop: the pattern outputs emit nothing and the others hold their value.
+	launcher.SetSelection(0, CLauncher::kSelectionStop);
+	launcher.Advance(Playing(2 * kBar + kBatch));
+	CHECK(!launcher.PlaysIntro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
+	PlayOnTo(launcher, 2 * kBar + kBatch, kInterval + kBar);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kDim, CLauncher::DefaultColour(0)));
+
+	// Queueing the clip again starts the intro over.
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Playing(kInterval + kBar + kBatch));
+	CHECK(launcher.PlaysIntro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+}
+
+void TestQueueingAnotherClipPlaysItsIntroInstead() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	launcher.SetIntroPresent(0, 3, true);
+	launcher.SetIntroPattern(0, 3, 0, 4);
+	launcher.SetIntroUnipolar(0, 3, kOutputB, 6);
+	QueueRow2(launcher);
+	launcher.SetSelection(0, 3);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.PlaysIntro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 5.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+
+	// One without an intro waits with what was emitted.
+	launcher.SetSelection(0, 4);
+	launcher.Advance(Playing(kBar + 2 * kBatch));
+	CHECK(!launcher.PlaysIntro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestJumpingDropsTheIntro() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 3);
+	QueueRow2(launcher);
+	launcher.Advance(Playing(kBar + kBatch));
+	launcher.Advance(Playing(2 * kBar));
+	CHECK(!launcher.PlaysIntro(0));
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kQueued);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
+	CHECK(launcher.GetLight(0, 2).fColour == CLauncher::DefaultColour(0));
+}
+
+void TestChangesToTheIntroTakeEffectAtOnce() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	launcher.SetIntroPresent(0, 2, false);
+	QueueRow2(launcher);
+	CHECK(!launcher.PlaysIntro(0));
+	launcher.SetIntroPresent(0, 2, true);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.PlaysIntro(0));
+	launcher.SetIntroPattern(0, 2, 0, 5);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 6);
+	launcher.Advance(Playing(kBar + 2 * kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestNewIntroAndOutroHaveThePatternOfTheirClipInWhite() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(3, 6));
+	launcher.SetIntroPresent(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(5, 3), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::kColourWhite));
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(3, 6));
+	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kDim, CLauncher::kColourRed));
+	CHECK(IsUnlit(launcher.GetLight(0, 1)));
+	launcher.SetOutroPresent(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(5, 3), CLauncher::kVibrant, CLauncher::kColourOrange));
+	CHECK(IsLight(launcher.GetLight(0, 1), CLauncher::kVibrant, CLauncher::kColourWhite));
+}
+
+void TestOneBarPatternSwitchInIntroAndOutroEditing() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 6, true);
+	launcher.SetIntroPresent(3, 6, true);
+	launcher.SetOutroPresent(3, 6, true);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(3, 6));
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kDim, CLauncher::kColourRed));
+	launcher.SetIntroOneBarPattern(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kVibrant, CLauncher::kColourGreen));
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(3, 6));
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kDim, CLauncher::kColourRed));
+	launcher.SetOutroOneBarPattern(3, 6, true);
+	CHECK(IsLight(launcher.GetLight(7, 2), CLauncher::kVibrant, CLauncher::kColourGreen));
+	// The output labels and transition diagrams are pink and turquoise.
+	CHECK(launcher.GetOutputLabelsFrame(0) == 1 + 4 * CLauncher::kOutputLabelsFramesPerColour);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 5);
+	launcher.SetSetup(CLauncher::SetupForIntroEditing(3, 6));
+	CHECK(launcher.GetOutputLabelsFrame(0) == 1 + 3 * CLauncher::kOutputLabelsFramesPerColour);
+	CHECK(launcher.GetTransitionDiagramsFrame() == 4);
+}
+
+// Track 1 plays the clip in row 2, with pattern 2 and unipolar value 6 on
+// output B; it holds an outro with pattern 8, unipolar value 0 and
+// transition iTransition on output B, in colour 4.
+void SetUpOutro(CLauncher& iLauncher, int iTransition) {
+	FillGrid(iLauncher);
+	iLauncher.SetClipPattern(0, 2, 0, 1);
+	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6);
+	iLauncher.SetOutroPresent(0, 2, true);
+	iLauncher.SetOutroPattern(0, 2, 0, 7);
+	iLauncher.SetOutroUnipolar(0, 2, kOutputB, 0);
+	iLauncher.SetOutroTransition(0, 2, kOutputB, iTransition);
+	iLauncher.SetOutroColour(0, 2, 4);
+	OpenWith(iLauncher, 0, 2);
+}
+
+// Queues stop in the first bar and plays on up to the switch point, at which
+// the outro starts.
+void StopRow2(CLauncher& iLauncher) {
+	PlayThrough(iLauncher, 0.0, kBar);
+	iLauncher.SetSelection(0, CLauncher::kSelectionStop);
+	PlayThrough(iLauncher, kBar, kInterval);
+	iLauncher.Advance(Playing(kInterval));
+}
+
+void TestOutroPlaysForOneSwitchIntervalAfterStop() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionOff);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetSelection(0, CLauncher::kSelectionStop);
+	PlayThrough(launcher, kBar, kInterval);
+	CHECK(!launcher.PlaysOutro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 2.0 / 8);
+
+	launcher.Advance(Playing(kInterval));
+	CHECK(launcher.PlaysOutro(0));
+	CHECK(launcher.GetButtonState(0, CLauncher::kSelectionStop) == CLauncher::kActive);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 4));
+	CHECK(launcher.GetStopLight(0) == CLauncher::kDim);
+
+	// At the next switch point it is over: no pattern, and the outro's value
+	// stays.
+	PlayOnTo(launcher, kInterval, 2 * kInterval - kBatch);
+	CHECK(launcher.PlaysOutro(0));
+	launcher.Advance(Playing(2 * kInterval));
+	CHECK(!launcher.PlaysOutro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kDim, CLauncher::DefaultColour(0)));
+	PlayOnTo(launcher, 2 * kInterval, 3 * kInterval + kBatch);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+}
+
+void TestOutroTransitionAMovesFromWhatWasEmitted() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionA);
+	StopRow2(launcher);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 1.0));
+	PlayOnTo(launcher, kInterval, kInterval + kInterval / 2);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	PlayOnTo(launcher, kInterval + kInterval / 2, 2 * kInterval);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+}
+
+void TestOutroTransitionBLeavesQuickly() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionB);
+	StopRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kInterval / 2);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 1.0 - CLauncher::LandingCurve(CLauncher::kTransitionB, 0.5)));
+	CHECK(launcher.GetCVValue(0, kOutputB) < 0.5);
+}
+
+void TestOutroTransitionCMovesOnlyInTheFirstBar() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionC);
+	StopRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kBar / 2);
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+	PlayOnTo(launcher, kInterval + kBar / 2, kInterval + 2 * kBar);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
+	CHECK(launcher.PlaysOutro(0));
+}
+
+void TestOutroOneBarPatternPlaysInTheFirstBar() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionOff);
+	launcher.SetOutroOneBarPattern(0, 2, true);
+	StopRow2(launcher);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	PlayOnTo(launcher, kInterval, kInterval + kBar - kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	PlayOnTo(launcher, kInterval + kBar - kBatch, kInterval + kBar);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.PlaysOutro(0));
+	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 4));
+}
+
+void TestNoOutroWhenAnotherClipTakesOver() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionOff);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetSelection(0, 3);
+	PlayThrough(launcher, kBar, kInterval + kBatch);
+	CHECK(!launcher.PlaysOutro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+}
+
+void TestNoOutroWithoutASwitchPoint() {
+	// Emptying the active launch button stops at once, with 0 everywhere.
+	CLauncher emptied;
+	SetUpOutro(emptied, CLauncher::kTransitionOff);
+	PlayThrough(emptied, 0.0, kBar);
+	emptied.SetClipPresent(0, 2, false);
+	emptied.Advance(Playing(kBar));
+	CHECK(!emptied.PlaysOutro(0));
+	CHECK(emptied.GetCVValue(0, 0) == 0.0);
+	CHECK(emptied.GetCVValue(0, kOutputB) == 0.0);
+
+	// Stopping while the transport is stopped.
+	CLauncher stopped;
+	SetUpOutro(stopped, CLauncher::kTransitionOff);
+	stopped.Advance(Stopped(kBar));
+	stopped.SetSelection(0, CLauncher::kSelectionStop);
+	stopped.Advance(Stopped(kBar));
+	CHECK(!stopped.PlaysOutro(0));
+	CHECK(stopped.GetCVValue(0, kOutputB) == 1.0);
+
+	// With the length immediate.
+	CLauncher immediate;
+	SetUpOutro(immediate, CLauncher::kTransitionOff);
+	immediate.SetLength(CLauncher::kLengthImmediate);
+	PlayThrough(immediate, 0.0, kBar);
+	immediate.SetSelection(0, CLauncher::kSelectionStop);
+	immediate.Advance(Playing(kBar));
+	CHECK(!immediate.PlaysOutro(0));
+	CHECK(immediate.GetCVValue(0, kOutputB) == 1.0);
+}
+
+void TestOutroWaitsWhileTheTransportIsStopped() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionA);
+	StopRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kInterval / 2);
+	launcher.Advance(Stopped(kInterval + kInterval / 2));
+	launcher.Advance(Stopped(kInterval + kInterval / 2));
+	CHECK(launcher.PlaysOutro(0));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
+}
+
+void TestLaunchingDuringAnOutro() {
+	// A clip without an intro takes over at the next switch point.
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionOff);
+	StopRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kBar);
+	launcher.SetSelection(0, 3);
+	launcher.Advance(Playing(kInterval + kBar + kBatch));
+	CHECK(launcher.PlaysOutro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 8.0 / 8);
+	CHECK(launcher.GetLight(0, 3).fBrightness == CLauncher::kFlashing);
+	PlayOnTo(launcher, kInterval + kBar + kBatch, 2 * kInterval);
+	CHECK(!launcher.PlaysOutro(0));
+	CHECK(launcher.GetButtonState(0, 3) == CLauncher::kActive);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+
+	// One with an intro cuts the outro short.
+	CLauncher intro;
+	SetUpOutro(intro, CLauncher::kTransitionOff);
+	intro.SetIntroPresent(0, 3, true);
+	intro.SetIntroPattern(0, 3, 0, 4);
+	intro.SetIntroUnipolar(0, 3, kOutputB, 3);
+	StopRow2(intro);
+	PlayOnTo(intro, kInterval, kInterval + kBar);
+	intro.SetSelection(0, 3);
+	intro.Advance(Playing(kInterval + kBar + kBatch));
+	CHECK(!intro.PlaysOutro(0));
+	CHECK(intro.PlaysIntro(0));
+	CHECK(intro.GetCVValue(0, 0) == 5.0 / 8);
+	CHECK(intro.GetCVValue(0, kOutputB) == 0.5);
+	CHECK(IsLight(intro.GetLight(0, 2), CLauncher::kDim, CLauncher::DefaultColour(0)));
+
+	// Choosing stop again changes nothing.
+	CLauncher again;
+	SetUpOutro(again, CLauncher::kTransitionOff);
+	StopRow2(again);
+	again.SetSelection(0, CLauncher::kSelectionStop);
+	again.Advance(Playing(kInterval + kBatch));
+	CHECK(again.PlaysOutro(0));
+}
+
+void TestJumpingDropsTheOutro() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionA);
+	StopRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kInterval / 2);
+	const double held = launcher.GetCVValue(0, kOutputB);
+	launcher.Advance(Playing(kBar));
+	CHECK(!launcher.PlaysOutro(0));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetCVValue(0, kOutputB) == held);
+}
+
+void TestOutroLiesOverAFillInAndALanding() {
+	// What the fill-in emitted is where the outro starts from.
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionA);
+	launcher.SetFillInPresent(0, 2, true);
+	launcher.SetFillInUnipolar(0, 2, kOutputB, 3);
+	PlayThrough(launcher, 0.0, kBar);
+	launcher.SetSelection(0, CLauncher::kSelectionStop);
+	launcher.SetFillInPressed(true);
+	PlayThrough(launcher, kBar, kInterval);
+	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
+	launcher.Advance(Playing(kInterval));
+	CHECK(launcher.PlaysOutro(0));
+	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
 }
 
 int main() {
@@ -3331,6 +3880,33 @@ int main() {
 	TestHoldingTheRelaunchPressRelaunchesOnlyOnce();
 	TestNoLandingAfterAFillInWhenSomethingIsQueued();
 	TestClipWithoutAFillInDoesNotLandAfterThePress();
+
+	TestIntroPlaysFromTheQueueUntilTheSwitchPoint();
+	TestNoIntroWhileAnotherClipIsActive();
+	TestNoIntroWithoutASwitchPointToWaitFor();
+	TestIntroTransitionAMovesFromTheQueue();
+	TestIntroTransitionBStartsSlowly();
+	TestIntroTransitionCMovesOnlyInTheLastBar();
+	TestIntroMovesTowardsTheLanding();
+	TestIntroOneBarPatternPlaysInTheLastBar();
+	TestMutedTrackPlaysNoIntroPattern();
+	TestTakingTheClipBackDropsTheIntro();
+	TestQueueingAnotherClipPlaysItsIntroInstead();
+	TestJumpingDropsTheIntro();
+	TestChangesToTheIntroTakeEffectAtOnce();
+	TestNewIntroAndOutroHaveThePatternOfTheirClipInWhite();
+	TestOneBarPatternSwitchInIntroAndOutroEditing();
+	TestOutroPlaysForOneSwitchIntervalAfterStop();
+	TestOutroTransitionAMovesFromWhatWasEmitted();
+	TestOutroTransitionBLeavesQuickly();
+	TestOutroTransitionCMovesOnlyInTheFirstBar();
+	TestOutroOneBarPatternPlaysInTheFirstBar();
+	TestNoOutroWhenAnotherClipTakesOver();
+	TestNoOutroWithoutASwitchPoint();
+	TestOutroWaitsWhileTheTransportIsStopped();
+	TestLaunchingDuringAnOutro();
+	TestJumpingDropsTheOutro();
+	TestOutroLiesOverAFillInAndALanding();
 
 	return ReportChecks("Launcher");
 }

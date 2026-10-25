@@ -8,7 +8,8 @@
 // Vocabulary follows CONTEXT.md: track, clip, empty, selection, off / queued /
 // active, light, label, mode colour, switch interval, switch point, length,
 // immediate, clip picking, clip editing, fill-in, fill-in editing, landing,
-// landing editing, one-bar pattern, relaunch, forward button, clear mode,
+// landing editing, intro, intro editing, outro, outro editing, one-bar
+// pattern, relaunch, forward button, clear mode,
 // clear button, duplicate mode, duplicate button, source, destination, source
 // picking, destination picking, scene,
 // segment, interval meter, function, function button, function select button,
@@ -66,6 +67,7 @@ class CLauncher {
 	public: static const int kColourYellow = 3;
 	public: static const int kColourLime = 4;
 	public: static const int kColourGreen = 5;
+	public: static const int kColourTurquoise = 6;
 	public: static const int kColourCyan = 7;
 	public: static const int kColourLightBlue = 8;
 	public: static const int kColourBlue = 9;
@@ -74,7 +76,8 @@ class CLauncher {
 	public: static const int kColourPink = 13;
 
 	// The setup state is one number: launch mode, clip picking, clip editing,
-	// fill-in editing or landing editing for one launch button, clear mode, or
+	// fill-in editing, landing editing, intro editing or outro editing for one
+	// launch button, clear mode, or
 	// duplicate mode: source picking, then destination picking for a launch
 	// button or a scene as the source. Clear mode and duplicate mode are not
 	// part of setup mode.
@@ -83,14 +86,17 @@ class CLauncher {
 	public: static const int kSetupFirstClipEditing = 2;
 	public: static const int kSetupFirstFillInEditing = kSetupFirstClipEditing + kButtonCount;
 	public: static const int kSetupFirstLandingEditing = kSetupFirstFillInEditing + kButtonCount;
-	public: static const int kSetupClearMode = kSetupFirstLandingEditing + kButtonCount;
+	public: static const int kSetupFirstIntroEditing = kSetupFirstLandingEditing + kButtonCount;
+	public: static const int kSetupFirstOutroEditing = kSetupFirstIntroEditing + kButtonCount;
+	public: static const int kSetupClearMode = kSetupFirstOutroEditing + kButtonCount;
 	public: static const int kSetupSourcePicking = kSetupClearMode + 1;
 	public: static const int kSetupFirstClipDestinationPicking = kSetupSourcePicking + 1;
 	public: static const int kSetupFirstSceneDestinationPicking = kSetupFirstClipDestinationPicking + kButtonCount;
 	public: static const int kSetupCount = kSetupFirstSceneDestinationPicking + kRowCount;
 
-	// Where the controls of clip editing sit on the grid; fill-in editing and
-	// landing editing have them in the same places. The colours fill the first seven tracks of rows
+	// Where the controls of clip editing sit on the grid; fill-in editing,
+	// landing editing, intro editing and outro editing have them in the same
+	// places. The colours fill the first seven tracks of rows
 	// 1 and 2, and each of rows 3 to 8 stands for one CV output, A to F: eight
 	// patterns in pattern mode, otherwise seven values and, in the last track,
 	// the transition.
@@ -100,8 +106,9 @@ class CLauncher {
 	public: static const int kEditingColoursPerRow = 7;
 	public: static const int kEditingFirstOutputRow = 3;
 	public: static const int kEditingTransitionTrack = 7;
-	// In fill-in editing and landing editing only, the one-bar pattern switch
-	// sits in the last track of the second colour row.
+	// In fill-in editing, landing editing, intro editing and outro editing
+	// only, the one-bar pattern switch sits in the last track of the second
+	// colour row.
 	public: static const int kEditingOneBarPatternTrack = 7;
 	public: static const int kEditingOneBarPatternRow = 2;
 
@@ -186,14 +193,19 @@ class CLauncher {
 	public: static int SetupForClipEditing(int iTrack, int iRow);
 	public: static int SetupForFillInEditing(int iTrack, int iRow);
 	public: static int SetupForLandingEditing(int iTrack, int iRow);
+	public: static int SetupForIntroEditing(int iTrack, int iRow);
+	public: static int SetupForOutroEditing(int iTrack, int iRow);
 	public: static bool IsClipEditing(int iSetup);
 	public: static bool IsFillInEditing(int iSetup);
 	public: static bool IsLandingEditing(int iSetup);
+	public: static bool IsIntroEditing(int iSetup);
+	public: static bool IsOutroEditing(int iSetup);
 	// The number of the launch button being edited in clip editing, fill-in
-	// editing or landing editing, or -1 in launch mode and clip picking.
+	// editing, landing editing, intro editing or outro editing, or -1 in
+	// launch mode and clip picking.
 	public: static int PickedButton(int iSetup);
 	// Whether a setup state is one of setup mode: clip picking, clip editing,
-	// fill-in editing or landing editing.
+	// fill-in editing, landing editing, intro editing or outro editing.
 	public: static bool IsSetupMode(int iSetup);
 	// Duplicate mode: source picking or destination picking.
 	public: static bool IsDuplicateMode(int iSetup);
@@ -244,6 +256,34 @@ class CLauncher {
 	// point, or went on there after playing its fill-in, unless the length is
 	// immediate.
 	public: bool PlaysLanding(int iTrack) const;
+
+	// Record the intro a launch button holds, which it keeps while it is
+	// empty, like its clip's settings.
+	public: void SetIntroPresent(int iTrack, int iRow, bool iPresent);
+	public: void SetIntroColour(int iTrack, int iRow, int iColour);
+	public: void SetIntroPattern(int iTrack, int iRow, int iOutput, int iPattern);
+	public: void SetIntroUnipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetIntroBipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetIntroTransition(int iTrack, int iRow, int iOutput, int iTransition);
+	public: void SetIntroOneBarPattern(int iTrack, int iRow, bool iOn);
+	// Whether a stopped track is playing the intro of its queued clip: from
+	// the moment the clip was queued until the switch point, while the song
+	// plays and unless the length is immediate or the song position jumped.
+	public: bool PlaysIntro(int iTrack) const;
+
+	// Record the outro a launch button holds, which it keeps while it is
+	// empty, like its clip's settings.
+	public: void SetOutroPresent(int iTrack, int iRow, bool iPresent);
+	public: void SetOutroColour(int iTrack, int iRow, int iColour);
+	public: void SetOutroPattern(int iTrack, int iRow, int iOutput, int iPattern);
+	public: void SetOutroUnipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetOutroBipolar(int iTrack, int iRow, int iOutput, int iValue);
+	public: void SetOutroTransition(int iTrack, int iRow, int iOutput, int iTransition);
+	public: void SetOutroOneBarPattern(int iTrack, int iRow, bool iOn);
+	// Whether a track is playing the outro of the clip it stopped: during the
+	// switch interval that began when stop took over from the clip at a
+	// switch point, unless an intro cut it short.
+	public: bool PlaysOutro(int iTrack) const;
 
 	// The CV mode of a track's CV output. A change takes effect at once and
 	// drops any transition under way.
@@ -357,8 +397,8 @@ class CLauncher {
 
 	// The mode colour, worn by the logo and the lit labels: white in launch
 	// mode, green in clip picking, yellow in clip editing, orange in fill-in
-	// editing, blue in landing editing, red in clear mode, fuchsia in
-	// duplicate mode.
+	// editing, blue in landing editing, pink in intro editing, turquoise in
+	// outro editing, red in clear mode, fuchsia in duplicate mode.
 	public: enum EModeColour {
 		kModeWhite = 0,
 		kModeGreen = 1,
@@ -366,9 +406,11 @@ class CLauncher {
 		kModeRed = 3,
 		kModeBlue = 4,
 		kModeOrange = 5,
-		kModeFuchsia = 6
+		kModeFuchsia = 6,
+		kModePink = 7,
+		kModeTurquoise = 8
 	};
-	public: static const int kModeColourCount = 7;
+	public: static const int kModeColourCount = 9;
 	public: EModeColour GetModeColour() const;
 	// The frame of the logo's film strip, which holds the lettering in each
 	// colour: the mode colour's.
@@ -376,7 +418,8 @@ class CLauncher {
 
 	// What the back button shows: unlit in launch mode, vibrant white in clip
 	// picking, clear mode and duplicate mode, vibrant green in clip editing,
-	// vibrant yellow in fill-in editing, vibrant orange in landing editing.
+	// vibrant yellow in fill-in editing, vibrant orange in landing editing,
+	// vibrant blue in intro editing, vibrant pink in outro editing.
 	public: TLight GetBackButtonLight() const;
 	public: int GetBackButtonFrame() const;
 
@@ -386,42 +429,48 @@ class CLauncher {
 	public: TLight GetSetupLight() const;
 	public: int GetSetupLightFrame() const;
 	// The frame of the SETUP caption: 0 white, 1 dark grey, then green,
-	// yellow, orange and blue (2 to 5), coloured like the light.
-	public: static const int kSetupCaptionFrameCount = 6;
+	// yellow, orange, blue, pink and turquoise (2 to 7), coloured like the
+	// light.
+	public: static const int kSetupCaptionFrameCount = 8;
 	public: int GetSetupCaptionFrame() const;
 
 	// The frame of the back button's labels to show, one line for each step
 	// it can go back to, lit in the colour of the button: 0 all unlit, 1
 	// LAUNCH in white, 2 PICK CLIP in green, 3 EDIT CLIP in yellow, 4 SET
-	// FILL-IN in orange.
-	public: static const int kBackLabelFrameCount = 5;
+	// FILL-IN in orange, 5 SET LANDING in blue, 6 SET INTRO in pink.
+	public: static const int kBackLabelFrameCount = 7;
 	public: int GetBackLabelFrame() const;
 
 	// The frame of the launch labels' film strip to show, for rows 1 and 2: 0
-	// unlit, then SET/CLEAR lit and all lit, in yellow (1, 2), orange (3, 4)
-	// and blue (5, 6). They are lit only in clip editing, in yellow, in
-	// fill-in editing, in orange, and in landing editing, in blue; the labels
-	// of colours only while there is something to set up: the picked launch
-	// button's clip, fill-in or landing. 1 BAR PATT is lit only in the frames
-	// with all lit in orange and in blue.
-	public: static const int kLaunchLabelsFrameCount = 7;
+	// unlit, then SET/CLEAR lit and all lit, in yellow (1, 2), orange (3, 4),
+	// blue (5, 6), pink (7, 8) and turquoise (9, 10). They are lit only in
+	// clip editing, in yellow, in fill-in editing, in orange, in landing
+	// editing, in blue, in intro editing, in pink, and in outro editing, in
+	// turquoise; the labels of colours only while there is something to set
+	// up: the picked launch button's clip, fill-in, landing, intro or outro.
+	// 1 BAR PATT is lit only in the frames with all lit in orange, blue, pink
+	// and turquoise.
+	public: static const int kEditingColourCount = 5;
+	public: static const int kLaunchLabelsFrameCount = 1 + 2 * kEditingColourCount;
 	public: int GetLaunchLabelsFrame() const;
 
 	// The frame of the film strip of the labels of a CV output's row, lit like
-	// the colours': 0 unlit, then for yellow, orange and blue in turn the
+	// the colours': 0 unlit, then for yellow, orange, blue, pink and
+	// turquoise in turn the
 	// patterns, the unipolar values with each of the five transitions, and the
 	// bipolar values with each of the five transitions. Only the labels that
 	// go with the output's CV mode are lit, and of the transitions only the
 	// one chosen.
 	public: static const int kOutputLabelsFramesPerColour = 1 + 2 * kTransitionCount;
-	public: static const int kOutputLabelsFrameCount = 1 + 3 * kOutputLabelsFramesPerColour;
+	public: static const int kOutputLabelsFrameCount = 1 + kEditingColourCount * kOutputLabelsFramesPerColour;
 	public: int GetOutputLabelsFrame(int iOutput) const;
 
-	// The three sets of transition diagrams to the right of the scene
-	// buttons, TRANSITION, FILL-IN and LANDING from the top, lit like the
-	// colours: 0 all grey, 1 TRANSITION lit in yellow, 2 FILL-IN lit in
-	// orange, 3 LANDING lit in blue.
-	public: static const int kTransitionDiagramsFrameCount = 4;
+	// The five sets of transition diagrams to the right of the scene
+	// buttons, TRANSITION, FILL-IN, LANDING, INTRO and OUTRO from the top, lit
+	// like the colours: 0 all grey, 1 TRANSITION lit in yellow, 2 FILL-IN lit
+	// in orange, 3 LANDING lit in blue, 4 INTRO lit in pink, 5 OUTRO lit in
+	// turquoise.
+	public: static const int kTransitionDiagramsFrameCount = 1 + kEditingColourCount;
 	public: int GetTransitionDiagramsFrame() const;
 
 	// What the fill-in button shows: dim white, or vibrant orange while a
@@ -452,15 +501,17 @@ class CLauncher {
 	// and clear mode, 2 fuchsia in duplicate mode.
 	public: int GetDuplicateCaptionFrame() const;
 
-	// What the forward button shows: vibrant orange in clip editing and vibrant
-	// blue in fill-in editing of a launch button that holds a clip, unlit
+	// What the forward button shows: vibrant orange in clip editing, vibrant
+	// blue in fill-in editing, vibrant pink in landing editing and vibrant
+	// turquoise in intro editing of a launch button that holds a clip, unlit
 	// otherwise. Encoded like the fill-in button's light.
 	public: TLight GetForwardLight() const;
 	public: int GetForwardLightValue() const;
 	public: int GetForwardLightFrame() const;
 	// The frame of its labels, one line for each step it can go forward to:
-	// 0 both unlit, 1 SET FILL-IN in orange, 2 SET LANDING in blue.
-	public: static const int kForwardLabelFrameCount = 3;
+	// 0 all unlit, 1 SET FILL-IN in orange, 2 SET LANDING in blue, 3 SET INTRO
+	// in pink, 4 SET OUTRO in turquoise.
+	public: static const int kForwardLabelFrameCount = 5;
 	public: int GetForwardLabelFrame() const;
 
 	// The frame of the scene labels' film strip to show: 0 unlit, 1 white, 2
@@ -481,12 +532,14 @@ class CLauncher {
 	public: static double TransitionCurve(int iTransition, double iTime);
 	// The same for a landing's transition, which runs the other way round: B
 	// and D leave quickly and settle slowly, a clip's curve mirrored in time.
+	// An outro's transition follows it too.
 	public: static double LandingCurve(int iTransition, double iTime);
 
 	// A length in PPQ; 0 for immediate, which has no switch intervals.
 	public: static long long ComputeSwitchIntervalLength(int iLength, int iNumerator, int iDenominator);
 
-	// What a clip holds, and also what its fill-in and its landing hold.
+	// What a clip holds, and also what its fill-in, its landing, its intro and
+	// its outro hold.
 	private: struct TSettings {
 		bool fPresent;
 		int fColour;
@@ -494,20 +547,25 @@ class CLauncher {
 		int fUnipolar[kOutputCount];
 		int fBipolar[kOutputCount];
 		int fTransitions[kOutputCount];
-		// Only a fill-in's and a landing's mean anything.
+		// Only a fill-in's, a landing's, an intro's and an outro's mean
+		// anything.
 		bool fOneBarPattern;
 	};
 
 	private: struct TClip : TSettings {
 		TSettings fFillIn;
 		TSettings fLanding;
+		TSettings fIntro;
+		TSettings fOutro;
 	};
 
 	// Which of a clip's settings a setter changes.
 	private: enum ESettingsKind {
 		kClipSettings,
 		kFillInSettings,
-		kLandingSettings
+		kLandingSettings,
+		kIntroSettings,
+		kOutroSettings
 	};
 
 	// A transition of a CV output in unipolar or bipolar mode, under way or
@@ -552,6 +610,16 @@ class CLauncher {
 	// interval towards the clip's.
 	private: double ComputeLandingValue(int iTrack, int iOutput, const TTransport& iTransport) const;
 	private: double ComputeFillInValue(int iTrack, int iOutput, double iBelow, const TTransport& iTransport);
+	// What a stopped track emits on a CV output in unipolar or bipolar mode:
+	// its intro, moving from the intro's value towards the queued clip's (or
+	// its landing's); its outro, moving from what was emitted before the
+	// switch point towards the outro's value, and holding that once it is
+	// over; the value frozen when an intro was dropped; or else the value of
+	// the clip it last played.
+	private: double ComputeStoppedValue(int iTrack, int iOutput, const TTransport& iTransport) const;
+	// The settings a clip ends up emitting at the switch point: its landing,
+	// if it holds one, or its own.
+	private: const TSettings& ArrivalSettings(int iTrack, int iRow) const;
 	// Sets a movement up anew, from what is emitted now unless it had not
 	// begun to move.
 	private: void StartOver(TMovement& ioMovement, double iEmitted, int iRow, int iTransition, int iValue, int iCVMode, double iPosition, const TTransport& iTransport) const;
@@ -596,6 +664,19 @@ class CLauncher {
 	// patterns: while it plays the landing, but with one-bar pattern only for
 	// the landing's first bar.
 	private: bool PlaysLandingPatterns(int iTrack) const;
+	// The same for an intro, with one-bar pattern only in the last bar before
+	// the switch point, and for an outro, with one-bar pattern only for the
+	// outro's first bar.
+	private: bool PlaysIntroPatterns(int iTrack) const;
+	private: bool PlaysOutroPatterns(int iTrack) const;
+	// Whether a stopped track plays the intro of a clip it has queued.
+	private: bool PlaysIntroOf(int iTrack, int iRow) const;
+	// Stops emitting what an intro or an outro left behind, when a clip
+	// becomes active or the track is stopped at once.
+	private: void ForgetIntroAndOutro(int iTrack);
+	// Makes a stopped track hold what it emits now, when an intro or an outro
+	// is dropped.
+	private: void Freeze(int iTrack);
 	// The frame of a button's film strip that shows a light right now; a
 	// flashing light alternates between dim and vibrant.
 	private: int LightFrame(const TLight& iLight) const;
@@ -633,6 +714,25 @@ class CLauncher {
 	// is that switch point.
 	private: int fLandingRows[kTrackCount];
 	private: double fLandingStarts[kTrackCount];
+	// The clip a stopped track has queued since fIntroStarts, which decides
+	// whether its intro plays; 0 for none. An intro plays while
+	// fIntroPlaying, which a jump of the song position switches off.
+	private: int fIntroRows[kTrackCount];
+	private: double fIntroStarts[kTrackCount];
+	private: bool fIntroPlaying[kTrackCount];
+	// The row of the clip whose outro a stopped track plays, or plays no more
+	// but goes on emitting the values of, from the switch point fOutroStarts
+	// on; 0 for none. fOutroFrom is what each CV output emitted before it, in
+	// the CV mode fOutroFromModes.
+	private: int fOutroRows[kTrackCount];
+	private: double fOutroStarts[kTrackCount];
+	private: bool fOutroPlaying[kTrackCount];
+	private: double fOutroFrom[kTrackCount][kOutputCount];
+	private: int fOutroFromModes[kTrackCount][kOutputCount];
+	// The values a stopped track holds once its intro was dropped, while
+	// fFrozen is set.
+	private: bool fFrozen[kTrackCount];
+	private: double fFrozenValues[kTrackCount][kOutputCount];
 	private: bool fFlashLit;
 	// Musical time that has passed while the transport was stopped, so that
 	// flashing goes on at the song's tempo.

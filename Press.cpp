@@ -15,8 +15,8 @@ CPress::TChange MakeChange(CPress::EProperty iProperty, int iIndex, int iValue, 
 
 const CPress::TChange kNoChange = { CPress::kNothing, 0, 0, 0 };
 
-// The properties of one kind of settings: a clip's, a fill-in's or a
-// landing's.
+// The properties of one kind of settings: a clip's, a fill-in's, a
+// landing's, an intro's or an outro's.
 struct TSettingsProperties {
 	CPress::EProperty fPresent;
 	CPress::EProperty fColour;
@@ -43,10 +43,20 @@ const TSettingsProperties kLandingProperties = {
 	CPress::kLandingUnipolar, CPress::kLandingBipolar, CPress::kLandingTransition,
 	CPress::kLandingOneBarPattern,
 };
+const TSettingsProperties kIntroProperties = {
+	CPress::kIntroPresent, CPress::kIntroColour, CPress::kIntroPattern,
+	CPress::kIntroUnipolar, CPress::kIntroBipolar, CPress::kIntroTransition,
+	CPress::kIntroOneBarPattern,
+};
+const TSettingsProperties kOutroProperties = {
+	CPress::kOutroPresent, CPress::kOutroColour, CPress::kOutroPattern,
+	CPress::kOutroUnipolar, CPress::kOutroBipolar, CPress::kOutroTransition,
+	CPress::kOutroOneBarPattern,
+};
 
 // What a press changes among the colours and the CV outputs of the settings
-// being edited, the clip's, the fill-in's or the landing's, which must be
-// there.
+// being edited, the clip's, the fill-in's, the landing's, the intro's or the
+// outro's, which must be there.
 CPress::TChange EditSetting(const TSettingsProperties& iProperties, int iPicked, int iTrack, int iRow, const CPress::TEdited& iEdited) {
 	const bool isColourRow = iRow == CLauncher::kEditingFirstColourRow || iRow == CLauncher::kEditingFirstColourRow + 1;
 	if (isColourRow && iTrack < CLauncher::kEditingColoursPerRow) {
@@ -75,9 +85,9 @@ CPress::TChange EditSetting(const TSettingsProperties& iProperties, int iPicked,
 	return MakeChange(iProperties.fBipolar, iPicked, iTrack, output);
 }
 
-// A press of a launch button in fill-in editing or landing editing, where the
-// grid stands for the fill-in or the landing as it stands for the clip in
-// clip editing.
+// A press of a launch button in fill-in editing, landing editing, intro
+// editing or outro editing, where the grid stands for the fill-in, the
+// landing, the intro or the outro as it stands for the clip in clip editing.
 CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup, int iTrack, int iRow, const CPress::TEdited& iEdited, const CPress::TClipValues& iClip) {
 	CPress::TChanges changes;
 	changes.fCount = 0;
@@ -87,8 +97,8 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fPresent, picked, 0);
 			return changes;
 		}
-		// A new fill-in or landing starts as a copy of its clip's values, with
-		// every transition off and one-bar pattern off, in white.
+		// A new fill-in, landing, intro or outro starts as a copy of its clip's
+		// values, with every transition off and one-bar pattern off, in white.
 		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fPresent, picked, 1);
 		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fColour, picked, CLauncher::kColourWhite);
 		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
@@ -102,7 +112,8 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 		}
 		return changes;
 	}
-	// The colour and CV controls are not there without a fill-in or landing.
+	// The colour and CV controls are not there without a fill-in, landing,
+	// intro or outro.
 	if (!iEdited.fPresent) {
 		return changes;
 	}
@@ -183,6 +194,24 @@ CPress::TChanges CPress::LandingEditingLaunchButton(int iSetup, int iTrack, int 
 	return EditOverlay(kLandingProperties, iSetup, iTrack, iRow, iLanding, iClip);
 }
 
+CPress::TChanges CPress::IntroEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iIntro, const TClipValues& iClip) {
+	if (!CLauncher::IsIntroEditing(iSetup)) {
+		TChanges changes;
+		changes.fCount = 0;
+		return changes;
+	}
+	return EditOverlay(kIntroProperties, iSetup, iTrack, iRow, iIntro, iClip);
+}
+
+CPress::TChanges CPress::OutroEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iOutro, const TClipValues& iClip) {
+	if (!CLauncher::IsOutroEditing(iSetup)) {
+		TChanges changes;
+		changes.fCount = 0;
+		return changes;
+	}
+	return EditOverlay(kOutroProperties, iSetup, iTrack, iRow, iOutro, iClip);
+}
+
 CPress::TChanges CPress::ClearModeLaunchButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip) {
 	TChanges changes;
 	changes.fCount = 0;
@@ -232,6 +261,8 @@ CPress::TChanges CPress::CopyButton(const TButton& iSource, int iDestination) {
 	AppendCopy(changes, kClipProperties, iSource.fClip, iDestination);
 	AppendCopy(changes, kFillInProperties, iSource.fFillIn, iDestination);
 	AppendCopy(changes, kLandingProperties, iSource.fLanding, iDestination);
+	AppendCopy(changes, kIntroProperties, iSource.fIntro, iDestination);
+	AppendCopy(changes, kOutroProperties, iSource.fOutro, iDestination);
 	return changes;
 }
 
@@ -333,6 +364,12 @@ CPress::TChange CPress::BackButton(int iSetup) {
 	if (iSetup == CLauncher::kSetupClearMode || CLauncher::IsDuplicateMode(iSetup)) {
 		return MakeChange(kSetup, 0, CLauncher::kSetupLaunchMode);
 	}
+	if (CLauncher::IsOutroEditing(iSetup)) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupFirstIntroEditing + CLauncher::PickedButton(iSetup));
+	}
+	if (CLauncher::IsIntroEditing(iSetup)) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupFirstLandingEditing + CLauncher::PickedButton(iSetup));
+	}
 	if (CLauncher::IsLandingEditing(iSetup)) {
 		return MakeChange(kSetup, 0, CLauncher::kSetupFirstFillInEditing + CLauncher::PickedButton(iSetup));
 	}
@@ -352,6 +389,12 @@ CPress::TChange CPress::ForwardButton(int iSetup, bool iPickedHoldsClip) {
 	}
 	if (CLauncher::IsFillInEditing(iSetup)) {
 		return MakeChange(kSetup, 0, CLauncher::kSetupFirstLandingEditing + CLauncher::PickedButton(iSetup));
+	}
+	if (CLauncher::IsLandingEditing(iSetup)) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupFirstIntroEditing + CLauncher::PickedButton(iSetup));
+	}
+	if (CLauncher::IsIntroEditing(iSetup)) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupFirstOutroEditing + CLauncher::PickedButton(iSetup));
 	}
 	return kNoChange;
 }

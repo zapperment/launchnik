@@ -17,13 +17,28 @@ const TJBox_Tag kFillInPresentBase = 6000;
 const TJBox_Tag kLandingPresentBase = 7000;
 const TJBox_Tag kFillInColourBase = 8000;
 const TJBox_Tag kLandingColourBase = 9000;
+const TJBox_Tag kLandingOneBarPatternBase = 22000;
+const TJBox_Tag kFillInOneBarPatternBase = 23000;
+const TJBox_Tag kIntroPresentBase = 24000;
+const TJBox_Tag kIntroColourBase = 25000;
+const TJBox_Tag kIntroOneBarPatternBase = 26000;
+const TJBox_Tag kOutroPresentBase = 27000;
+const TJBox_Tag kOutroColourBase = 28000;
+const TJBox_Tag kOutroOneBarPatternBase = 29000;
 const TJBox_Tag kClipTagSpan = 1000;
 
 const TJBox_Tag kOutputSettingBases[] = {
 	kClipPatternBase, kClipUnipolarBase, kClipBipolarBase, kClipTransitionBase,
 	kFillInPatternBase, kFillInUnipolarBase, kFillInBipolarBase, kFillInTransitionBase,
 	kLandingPatternBase, kLandingUnipolarBase, kLandingBipolarBase, kLandingTransitionBase,
+	kIntroPatternBase, kIntroUnipolarBase, kIntroBipolarBase, kIntroTransitionBase,
+	kOutroPatternBase, kOutroUnipolarBase, kOutroBipolarBase, kOutroTransitionBase,
 };
+
+bool IsOutputSettingTag(TJBox_Tag iTag) {
+	return (iTag >= kClipPatternBase && iTag < kLandingTransitionBase + kOutputSettingTagSpan)
+		|| (iTag >= kIntroPatternBase && iTag < kOutroTransitionBase + kOutputSettingTagSpan);
+}
 
 // The names of the CV outputs in motherboard_def.lua, by track and output.
 const char* const kCVOutputPaths[CLauncher::kTrackCount][CLauncher::kOutputCount] = {
@@ -118,6 +133,8 @@ void CLaunchnik::LoadEverything() {
 				FillInPresentTag(track, row), FillInColourTag(track, row),
 				LandingPresentTag(track, row), LandingColourTag(track, row),
 				LandingOneBarPatternTag(track, row), FillInOneBarPatternTag(track, row),
+				IntroPresentTag(track, row), IntroColourTag(track, row), IntroOneBarPatternTag(track, row),
+				OutroPresentTag(track, row), OutroColourTag(track, row), OutroOneBarPatternTag(track, row),
 			};
 			for (TJBox_Tag tag : tags) {
 				HandleChange(tag, JBox_LoadMOMPropertyByTag(fCustomProps, tag));
@@ -182,21 +199,13 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		fLauncher.SetCVMode(track, output, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	if (iTag >= LandingOneBarPatternTag(0, 1) && iTag <= LandingOneBarPatternTag(CLauncher::kTrackCount - 1, CLauncher::kRowCount)) {
-		const int offset = static_cast<int>(iTag - LandingOneBarPatternTag(0, 0));
-		fLauncher.SetLandingOneBarPattern(offset / 10, offset % 10, JBox_GetBoolean(iValue));
-		return;
-	}
-	if (iTag >= FillInOneBarPatternTag(0, 1) && iTag <= FillInOneBarPatternTag(CLauncher::kTrackCount - 1, CLauncher::kRowCount)) {
-		const int offset = static_cast<int>(iTag - FillInOneBarPatternTag(0, 0));
-		fLauncher.SetFillInOneBarPattern(offset / 10, offset % 10, JBox_GetBoolean(iValue));
-		return;
-	}
-	if (iTag >= kClipPatternBase && iTag < kLandingTransitionBase + kOutputSettingTagSpan) {
+	if (IsOutputSettingTag(iTag)) {
 		HandleOutputSettingChange(iTag, static_cast<int>(JBox_GetNumber(iValue)));
 		return;
 	}
-	if (iTag < kClipPresentBase || iTag >= kLandingColourBase + kClipTagSpan) {
+	const bool isClipTag = iTag >= kClipPresentBase && iTag < kLandingColourBase + kClipTagSpan;
+	const bool isOverlayTag = iTag >= kLandingOneBarPatternBase && iTag < kOutroOneBarPatternBase + kClipTagSpan;
+	if (!isClipTag && !isOverlayTag) {
 		return;
 	}
 	const TJBox_Tag base = iTag - (iTag % kClipTagSpan);
@@ -220,6 +229,30 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 	else if (base == kLandingColourBase) {
 		fLauncher.SetLandingColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
 	}
+	else if (base == kLandingOneBarPatternBase) {
+		fLauncher.SetLandingOneBarPattern(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kFillInOneBarPatternBase) {
+		fLauncher.SetFillInOneBarPattern(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kIntroPresentBase) {
+		fLauncher.SetIntroPresent(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kIntroColourBase) {
+		fLauncher.SetIntroColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	}
+	else if (base == kIntroOneBarPatternBase) {
+		fLauncher.SetIntroOneBarPattern(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kOutroPresentBase) {
+		fLauncher.SetOutroPresent(track, row, JBox_GetBoolean(iValue));
+	}
+	else if (base == kOutroColourBase) {
+		fLauncher.SetOutroColour(track, row, static_cast<int>(JBox_GetNumber(iValue)));
+	}
+	else if (base == kOutroOneBarPatternBase) {
+		fLauncher.SetOutroOneBarPattern(track, row, JBox_GetBoolean(iValue));
+	}
 }
 
 void CLaunchnik::HandleOutputSettingChange(TJBox_Tag iTag, int iValue) {
@@ -241,6 +274,14 @@ void CLaunchnik::HandleOutputSettingChange(TJBox_Tag iTag, int iValue) {
 		case kLandingUnipolarBase: fLauncher.SetLandingUnipolar(track, row, output, iValue); break;
 		case kLandingBipolarBase: fLauncher.SetLandingBipolar(track, row, output, iValue); break;
 		case kLandingTransitionBase: fLauncher.SetLandingTransition(track, row, output, iValue); break;
+		case kIntroPatternBase: fLauncher.SetIntroPattern(track, row, output, iValue); break;
+		case kIntroUnipolarBase: fLauncher.SetIntroUnipolar(track, row, output, iValue); break;
+		case kIntroBipolarBase: fLauncher.SetIntroBipolar(track, row, output, iValue); break;
+		case kIntroTransitionBase: fLauncher.SetIntroTransition(track, row, output, iValue); break;
+		case kOutroPatternBase: fLauncher.SetOutroPattern(track, row, output, iValue); break;
+		case kOutroUnipolarBase: fLauncher.SetOutroUnipolar(track, row, output, iValue); break;
+		case kOutroBipolarBase: fLauncher.SetOutroBipolar(track, row, output, iValue); break;
+		case kOutroTransitionBase: fLauncher.SetOutroTransition(track, row, output, iValue); break;
 		default: break;
 	}
 }
