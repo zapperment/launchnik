@@ -1025,6 +1025,24 @@ void TestModeColourFollowsTheSetupStep() {
 	CHECK(launcher.GetModeColour() == CLauncher::kModeWhite);
 }
 
+// The logo's film strip holds one frame for each colour.
+void TestLogoShowsTheModeColour() {
+	CLauncher launcher;
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourWhite);
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourGreen);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(3, 5));
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourYellow);
+	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 5));
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourOrange);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(3, 5));
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourBlue);
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourRed);
+	launcher.SetSetup(CLauncher::kSetupSourcePicking);
+	CHECK(launcher.GetLogoFrame() == CLauncher::kColourFuchsia);
+}
+
 // Frames of the launch labels' film strip: unlit, SET/CLEAR lit, all lit.
 void TestLaunchLabelsAreLitOnlyInClipEditing() {
 	CLauncher launcher;
@@ -3204,6 +3222,7 @@ int main() {
 	TestSceneButtonsFlashWithTheLaunchButtons();
 	TestOutOfRangeLengthIsIgnored();
 	TestModeColourFollowsTheSetupStep();
+	TestLogoShowsTheModeColour();
 	TestLaunchLabelsAreLitOnlyInClipEditing();
 	TestBackButtonShowsTheStepItGoesBackFrom();
 	TestSetupButtonShowsTheStepOfSetupMode();

@@ -312,7 +312,7 @@ Every button has a film strip of 29 frames: unlit, then dim and vibrant for each
 ./tools/make-button-strips.py
 ```
 
-The logo's seven frames, light grey, green, yellow, red, blue, orange and fuchsia, are built from the versions of the lettering:
+The logo's fourteen frames, one for each colour, are built from the white lettering:
 
 ```bash
 ./tools/make-logo-strip.sh

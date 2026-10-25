@@ -381,9 +381,8 @@ rt_properties.setup_caption_frame = jbox.number{
 }
 
 -- The labels and the logo, computed by the realtime code. The logo shows the
--- mode colour: 0 = white (launch mode), 1 = green (clip picking), 2 = yellow
--- (clip editing), 3 = red (clear mode), 4 = blue (landing editing), 5 =
--- orange (fill-in editing), 6 = fuchsia (duplicate mode). The labels of the launch buttons are lit only in
+-- mode colour; its film strip holds one frame for each colour, in their
+-- order. The labels of the launch buttons are lit only in
 -- clip editing, in yellow, in fill-in editing, in orange, and in landing
 -- editing, in blue: 0 = unlit, then SET/CLEAR and all in yellow (1, 2),
 -- orange (3, 4) and blue (5, 6); the colours
@@ -393,9 +392,9 @@ rt_properties.setup_caption_frame = jbox.number{
 rt_properties.logo_frame = jbox.number{
 	property_tag = 53,
 	default = 0,
-	steps = 7,
+	steps = COLOUR_COUNT,
 	ui_name = jbox.ui_text("text_logo"),
-	ui_type = plain_number(6),
+	ui_type = plain_number(COLOUR_COUNT - 1),
 }
 
 rt_properties.launch_labels_frame = jbox.number{

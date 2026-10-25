@@ -52,7 +52,7 @@ front = {
 	ScrewBottomRight = { offset = { SCREW_RIGHT, SCREW_BOTTOM }, { path = "Screw_17_4" } },
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_7frames", frames = 7 },
+		{ path = "Logo_14frames", frames = 14 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
@@ -397,7 +397,7 @@ folded_front = {
 	},
 	Logo = {
 		offset = LOGO_OFFSET,
-		{ path = "Logo_7frames", frames = 7 },
+		{ path = "Logo_14frames", frames = 14 },
 	},
 	DeviceName = {
 		offset = TAPE_OFFSET,

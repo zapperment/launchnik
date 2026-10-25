@@ -268,7 +268,7 @@ void CLaunchnik::WriteOutputs() {
 	Write(kCustomPropsTag_SetupLightFrame, fLauncher.GetSetupLightFrame(), fWrittenSetupLightFrame);
 	Write(kCustomPropsTag_SetupCaptionFrame, fLauncher.GetSetupCaptionFrame(), fWrittenSetupCaptionFrame);
 
-	const TJBox_Int32 logoFrame = fLauncher.GetModeColour();
+	const TJBox_Int32 logoFrame = fLauncher.GetLogoFrame();
 	if (logoFrame != fWrittenLogoFrame) {
 		fWrittenLogoFrame = logoFrame;
 		JBox_StoreMOMPropertyByTag(fCustomProps, kCustomPropsTag_LogoFrame, JBox_MakeNumber(logoFrame));

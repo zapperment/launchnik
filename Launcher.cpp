@@ -1233,6 +1233,18 @@ CLauncher::EModeColour CLauncher::GetModeColour() const {
 	return IsLandingEditing(fSetup) ? kModeBlue : kModeYellow;
 }
 
+int CLauncher::GetLogoFrame() const {
+	switch (GetModeColour()) {
+		case kModeGreen: return kColourGreen;
+		case kModeYellow: return kColourYellow;
+		case kModeRed: return kColourRed;
+		case kModeBlue: return kColourBlue;
+		case kModeOrange: return kColourOrange;
+		case kModeFuchsia: return kColourFuchsia;
+		default: return kColourWhite;
+	}
+}
+
 // The back button shows the mode colour of the step it goes back to.
 CLauncher::TLight CLauncher::GetBackButtonLight() const {
 	if (fSetup == kSetupLaunchMode) {

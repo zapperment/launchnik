@@ -358,7 +358,7 @@ class CLauncher {
 	// The mode colour, worn by the logo and the lit labels: white in launch
 	// mode, green in clip picking, yellow in clip editing, orange in fill-in
 	// editing, blue in landing editing, red in clear mode, fuchsia in
-	// duplicate mode. Also the frame of the logo's film strip.
+	// duplicate mode.
 	public: enum EModeColour {
 		kModeWhite = 0,
 		kModeGreen = 1,
@@ -370,6 +370,9 @@ class CLauncher {
 	};
 	public: static const int kModeColourCount = 7;
 	public: EModeColour GetModeColour() const;
+	// The frame of the logo's film strip, which holds the lettering in each
+	// colour: the mode colour's.
+	public: int GetLogoFrame() const;
 
 	// What the back button shows: unlit in launch mode, vibrant white in clip
 	// picking, clear mode and duplicate mode, vibrant green in clip editing,
