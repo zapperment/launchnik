@@ -219,6 +219,20 @@ class CPress {
 	// mode and from duplicate mode to launch mode. In launch mode it does
 	// nothing.
 	public: static TChange BackButton(int iSetup);
+	// Holding the back button, that is letting it go after keeping it down
+	// for kHoldMilliseconds or more: from fill-in editing, landing editing,
+	// intro editing and outro editing it goes straight back to clip picking,
+	// so that the user can pick another launch button. Anywhere else it does
+	// what BackButton does.
+	public: static TChange HeldBackButton(int iSetup);
+	public: static const int kHoldMilliseconds = 200;
+	// The back button and the forward button act when they are let go, so
+	// that a hold can be told from a click. The time of a press is kept in
+	// milliseconds, wrapped round at kPressTimeSteps to fit a number property
+	// (see motherboard_def.lua); a hold is measured across the wrap.
+	public: static const int kPressTimeSteps = 4194304;
+	public: static int PressTime(long long iSystemClockMicroseconds);
+	public: static bool IsHold(int iPressTime, int iReleaseTime);
 	// Goes forward one step of setup mode: from clip editing to fill-in
 	// editing, from fill-in editing to landing editing, from landing editing
 	// to intro editing and from intro editing to outro editing of the same

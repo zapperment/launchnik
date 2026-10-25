@@ -397,6 +397,19 @@ rt_properties.back_button_frame = jbox.number{
 	ui_type = plain_number(LIGHT_FRAME_COUNT - 1),
 }
 
+-- When the back button went down on the front panel, so that letting it go
+-- can tell a hold from a click (see CPress::IsHold): milliseconds of the
+-- system clock, wrapped round at its number of steps. Owned by the panel, so
+-- it is neither saved nor part of the undo history, and not a Remote item.
+local gui_properties = {}
+gui_properties.back_pressed_at = jbox.number{
+	property_tag = 89,
+	default = 0,
+	steps = 4194304,
+	ui_name = jbox.ui_text("text_back_pressed_at"),
+	ui_type = plain_number(4194303),
+}
+
 -- Its labels, one line for each step it goes back to, lit in the colour of
 -- the button: 0 = all unlit, 1 = LAUNCH in white, 2 = PICK CLIP in green, 3 =
 -- EDIT CLIP in yellow, 4 = SET FILL-IN in orange, 5 = SET LANDING in blue, 6 =
@@ -679,6 +692,9 @@ custom_properties = jbox.property_set{
 	},
 	rt_owner = {
 		properties = rt_properties
+	},
+	gui_owner = {
+		properties = gui_properties
 	},
 	rtc_owner = {
 		properties = {

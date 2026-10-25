@@ -88,6 +88,31 @@ void TestBackButtonGoesBackOneStep() {
 	CHECK(IsChange(CPress::BackButton(CLauncher::SetupForOutroEditing(3, 6)), CPress::kSetup, 0, CLauncher::SetupForIntroEditing(3, 6)));
 }
 
+void TestHoldingTheBackButtonReturnsToClipPicking() {
+	CHECK(IsChange(CPress::HeldBackButton(CLauncher::SetupForFillInEditing(3, 6)), CPress::kSetup, 0, kClipPicking));
+	CHECK(IsChange(CPress::HeldBackButton(CLauncher::SetupForLandingEditing(3, 6)), CPress::kSetup, 0, kClipPicking));
+	CHECK(IsChange(CPress::HeldBackButton(CLauncher::SetupForIntroEditing(3, 6)), CPress::kSetup, 0, kClipPicking));
+	CHECK(IsChange(CPress::HeldBackButton(CLauncher::SetupForOutroEditing(3, 6)), CPress::kSetup, 0, kClipPicking));
+	// Elsewhere a hold does what a click does.
+	CHECK(IsChange(CPress::HeldBackButton(CLauncher::SetupForClipEditing(3, 6)), CPress::kSetup, 0, kClipPicking));
+	CHECK(IsChange(CPress::HeldBackButton(kClipPicking), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsChange(CPress::HeldBackButton(CLauncher::kSetupClearMode), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsChange(CPress::HeldBackButton(CLauncher::kSetupSourcePicking), CPress::kSetup, 0, kLaunchMode));
+	CHECK(IsNoChange(CPress::HeldBackButton(kLaunchMode)));
+}
+
+void TestAHoldLastsAtLeastTheHoldTime() {
+	const int pressed = CPress::PressTime(5000000000LL);
+	CHECK(!CPress::IsHold(pressed, CPress::PressTime(5000199999LL)));
+	CHECK(CPress::IsHold(pressed, CPress::PressTime(5000200000LL)));
+	CHECK(CPress::IsHold(pressed, CPress::PressTime(5030000000LL)));
+	// across the wrap of the press time
+	const int beforeWrap = CPress::kPressTimeSteps - 100;
+	CHECK(!CPress::IsHold(beforeWrap, 99));
+	CHECK(CPress::IsHold(beforeWrap, 100));
+	CHECK(CPress::PressTime(-1000) >= 0);
+}
+
 // The four settings of a CV output that a change sets, all in one number.
 enum ESetting { kPatternSetting, kUnipolarSetting, kBipolarSetting, kTransitionSetting };
 
@@ -853,6 +878,8 @@ int main() {
 	TestClipPickingOpensThePressedLaunchButton();
 	TestClipEditingToggleSwitchesThePickedClip();
 	TestBackButtonGoesBackOneStep();
+	TestHoldingTheBackButtonReturnsToClipPicking();
+	TestAHoldLastsAtLeastTheHoldTime();
 	TestClipEditingColourRows();
 	TestClipEditingPatternMode();
 	TestClipEditingUnipolarAndBipolarValues();

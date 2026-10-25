@@ -41,6 +41,7 @@ texts = {
 	["text_launch_labels"] = "Launch Button Labels",
 	["text_back_button"] = "Back Button",
 	["text_back_label"] = "Back Button Label",
+	["text_back_pressed_at"] = "Back Button Pressed At",
 
 	["text_fill_in"] = "Fill-In",
 	["text_fill_in_short"] = "Fill-In",

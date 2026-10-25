@@ -2,7 +2,7 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d22, a development build. Requires Reason 14 or later.
+Version 1.0.0d23, a development build. Requires Reason 14 or later.
 
 ## The panel
 
@@ -136,7 +136,7 @@ The colour and CV rows only show while the launch button holds a clip. A new cli
 5. **Intro editing.** In landing editing the forward button lights up in pink, with SET INTRO, whether or not the clip holds a landing. Click it to set up the clip's **intro**; the logo turns pink. The grid is laid out and lit as before, with SET/CLEAR and 1 BAR PATT for the intro, and a new intro is a copy of its clip's patterns and values, with every transition off, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are pink.
 6. **Outro editing.** In intro editing the forward button lights up in turquoise, with SET OUTRO. Click it to set up the clip's **outro**; the logo turns turquoise, and the labels are turquoise. This is the last step: the forward button is dark.
 
-Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to, with that step lit to its left: vibrant pink in outro editing, it returns to intro editing (SET INTRO); vibrant blue in intro editing, it returns to landing editing (SET LANDING); vibrant orange in landing editing, it returns to fill-in editing (SET FILL-IN); vibrant yellow in fill-in editing, it returns to clip editing (EDIT CLIP); vibrant green in clip editing, it returns to clip picking (PICK CLIP); vibrant white in clip picking, it returns to launch mode (LAUNCH). In launch mode it is dark and does nothing.
+Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to, with that step lit to its left: vibrant pink in outro editing, it returns to intro editing (SET INTRO); vibrant blue in intro editing, it returns to landing editing (SET LANDING); vibrant orange in landing editing, it returns to fill-in editing (SET FILL-IN); vibrant yellow in fill-in editing, it returns to clip editing (EDIT CLIP); vibrant green in clip editing, it returns to clip picking (PICK CLIP); vibrant white in clip picking, it returns to launch mode (LAUNCH). In launch mode it is dark and does nothing. To pick another launch button from fill-in, landing, intro or outro editing, hold the back button down for 200 milliseconds or more before letting go: Launchnik goes straight back to clip picking. The back and forward buttons act when you let go of them, not when you press them, on the front panel and on the Launchpad alike.
 
 ## Clearing clips
 
