@@ -381,6 +381,23 @@ CPress::TChange CPress::BackButton(int iSetup) {
 	return MakeChange(kSetup, 0, inClipPicking ? CLauncher::kSetupLaunchMode : CLauncher::kSetupClipPicking);
 }
 
+CPress::TChange CPress::HeldBackButton(int iSetup) {
+	if (CLauncher::IsFillInEditing(iSetup) || CLauncher::IsLandingEditing(iSetup) || CLauncher::IsIntroEditing(iSetup) || CLauncher::IsOutroEditing(iSetup)) {
+		return MakeChange(kSetup, 0, CLauncher::kSetupClipPicking);
+	}
+	return BackButton(iSetup);
+}
+
+int CPress::PressTime(long long iSystemClockMicroseconds) {
+	const long long milliseconds = iSystemClockMicroseconds / 1000;
+	return static_cast<int>(((milliseconds % kPressTimeSteps) + kPressTimeSteps) % kPressTimeSteps);
+}
+
+bool CPress::IsHold(int iPressTime, int iReleaseTime) {
+	const int held = ((iReleaseTime - iPressTime) % kPressTimeSteps + kPressTimeSteps) % kPressTimeSteps;
+	return held >= kHoldMilliseconds;
+}
+
 CPress::TChange CPress::ForwardButton(int iSetup, bool iPickedHoldsClip) {
 	if (!iPickedHoldsClip) {
 		return kNoChange;

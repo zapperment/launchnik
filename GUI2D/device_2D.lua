@@ -55,6 +55,10 @@ front = {
 		offset = LOGO_OFFSET,
 		{ path = "Logo_14frames", frames = 14 },
 	},
+	click_logo = {
+		offset = LOGO_OFFSET,
+		{ size = { 285, 110 } },
+	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
 		{ path = "TapeHorz" },
@@ -343,6 +347,9 @@ front.caption_setup = {
 	{ path = "Caption_Setup_8frames", frames = 8 },
 }
 
+-- The back panel carries the model label at the top left, with the tape
+-- right below it and centred under it, the sticker at the top right, and the
+-- power label to the left of the power cord (see tools/make-back-decals.sh).
 back = {
 	Bg = {
 		{ path = "Panel_Back_8U" },
@@ -351,9 +358,21 @@ back = {
 		offset = { 0, 0 },
 		{ path = "Labels_Back" },
 	},
+	ModelLabel = {
+		offset = { 260, 75 },
+		{ path = "Model_Label" },
+	},
 	DeviceName = {
-		offset = { 240, 42 },
+		offset = { 335, 455 },
 		{ path = "TapeHorz" },
+	},
+	Sticker = {
+		offset = { 2775, 75 },
+		{ path = "Sticker" },
+	},
+	PowerLabel = {
+		offset = { 2550, 2400 },
+		{ path = "Power_Label" },
 	},
 	PowerCord = {
 		offset = { 3170, 2405 },
@@ -368,7 +387,7 @@ back = {
 -- stand for bipolar, unipolar and pattern. Their captions are in Labels_Back
 -- (see tools/make-cv-labels.py).
 local JACK_LEFT = 840
-local JACK_TOP = 1065
+local JACK_TOP = 965
 local JACK_PITCH = 300
 local OUTPUT_PITCH = 240
 for track = 1, TRACK_COUNT do
@@ -402,6 +421,10 @@ folded_front = {
 		offset = LOGO_OFFSET,
 		{ path = "Logo_14frames", frames = 14 },
 	},
+	click_logo = {
+		offset = LOGO_OFFSET,
+		{ size = { 285, 110 } },
+	},
 	DeviceName = {
 		offset = TAPE_OFFSET,
 		{ path = "TapeHorz" },
@@ -420,6 +443,8 @@ folded_front = {
 	},
 }
 
+-- The folded back panel has the small logo on the right, inside the frame
+-- that keeps clear of the rack rail.
 folded_back = {
 	Bg = {
 		{ path = "Panel_Folded_Back_dark" },
@@ -427,6 +452,10 @@ folded_back = {
 	DeviceName = {
 		offset = { 240, 42 },
 		{ path = "TapeHorz" },
+	},
+	Logo = {
+		offset = { 3285, 30 },
+		{ path = "Launchnik_Logo_small" },
 	},
 	CableOrigin = {
 		offset = { 1885, 75 },

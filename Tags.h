@@ -25,6 +25,7 @@ const TJBox_Tag kCustomPropsTag_ClearCaptionFrame = 85;
 const TJBox_Tag kCustomPropsTag_DuplicateLightFrame = 86;
 const TJBox_Tag kCustomPropsTag_DuplicateCaptionFrame = 87;
 const TJBox_Tag kCustomPropsTag_SetupCaptionFrame = 88;
+const TJBox_Tag kCustomPropsTag_BackPressedAt = 89;
 const TJBox_Tag kCustomPropsTag_TransitionDiagramsFrame = 150;
 
 // Functions are numbered as in Launcher.h.
@@ -96,6 +97,24 @@ inline TJBox_Tag SceneLightTag(int iScene) {
 
 inline TJBox_Tag SceneLightFrameTag(int iScene) {
 	return 2090 + iScene;
+}
+
+// Names, empty while they stand for the default (see docs/adr/0007). Scenes
+// are numbered from 1, like rows; CV outputs from 0, as in Launcher.h.
+inline TJBox_Tag TrackNameTag(int iTrack) {
+	return 400 + (iTrack + 1);
+}
+
+inline TJBox_Tag SceneNameTag(int iScene) {
+	return 410 + iScene;
+}
+
+inline TJBox_Tag OutputNameTag(int iTrack, int iOutput) {
+	return 500 + 10 * (iTrack + 1) + (iOutput + 1);
+}
+
+inline TJBox_Tag ClipNameTag(int iTrack, int iRow) {
+	return 4000 + 10 * (iTrack + 1) + iRow;
 }
 
 // Whether a launch button holds a clip, its colour and one-bar pattern, all

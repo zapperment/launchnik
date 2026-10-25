@@ -97,12 +97,12 @@ DIAGRAM_SETS = [
 ]
 
 # The back panel: the jacks of track 1 start 840 pixels from the left, 300
-# apart, the jacks of output A 1065 pixels from the top, 240 apart; a jack is
+# apart, the jacks of output A 965 pixels from the top, 240 apart; a jack is
 # 80 pixels wide and 90 high. The switches stand 90 pixels left of their
 # jacks.
 PANEL_SIZE = (3770, 2760)
 JACK_LEFT = 840
-JACK_TOP = 1065
+JACK_TOP = 965
 JACK_PITCH = 300
 OUTPUT_PITCH = 240
 JACK_WIDTH = 80

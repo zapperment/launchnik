@@ -405,7 +405,75 @@ TJBox_PropertyBox MakeBox(TJBox_PropertyRef iProperty, TJBox_Coord iLeft, TJBox_
 
 } // namespace
 
+// The back button and the forward button act when they are let go, so that
+// a hold of the back button can be told from a click. The tap only takes the
+// gesture and notes when it began; a cancel does nothing.
+void HandleBackAndForwardGesture(TJBox_GestureArgs& iArgs) {
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+	const bool isBack = iArgs.fDisplayInfo.fID == kDisplayID_BackButton;
+	if (iArgs.fCall == kJBox_OnTap && iArgs.fTap == kJBox_TapRegular) {
+		iArgs.fConsumeFlag = true;
+		if (isBack) {
+			JBox_StoreMOMPropertyByTag(customProps, kCustomPropsTag_BackPressedAt, JBox_MakeNumber(CPress::PressTime(iArgs.fTimeStamp.fSystemClockUS)));
+		}
+		return;
+	}
+	if (iArgs.fCall != kJBox_OnRelease) {
+		return;
+	}
+	const int setup = static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(customProps, kCustomPropsTag_Setup)));
+	if (isBack) {
+		const int pressedAt = static_cast<int>(JBox_GetNumber(JBox_LoadMOMPropertyByTag(customProps, kCustomPropsTag_BackPressedAt)));
+		const bool held = CPress::IsHold(pressedAt, CPress::PressTime(iArgs.fTimeStamp.fSystemClockUS));
+		Apply(held ? CPress::HeldBackButton(setup) : CPress::BackButton(setup), customProps, iArgs);
+		return;
+	}
+	const int picked = CLauncher::PickedButton(setup);
+	const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
+	Apply(CPress::ForwardButton(setup, pickedHoldsClip), customProps, iArgs);
+}
+
+// Gives every name that stands for its default (see docs/adr/0007) a single
+// underscore instead; names the user typed are left as they are.
+void UnderscoreDefaultName(TJBox_ObjectRef iCustomProps, TJBox_Tag iTag) {
+	if (JBox_GetStringLength(JBox_LoadMOMPropertyByTag(iCustomProps, iTag)) == 0) {
+		const TJBox_UInt8 underscore[] = { '_' };
+		JBox_StoreMOMPropertyStringTag(iCustomProps, iTag, 1, underscore);
+	}
+}
+
+// A double-click on the logo underscores every default name at once, one
+// step of the undo history; a single click does nothing.
+void HandleLogoGesture(TJBox_GestureArgs& iArgs) {
+	if (iArgs.fCall != kJBox_OnTap || iArgs.fTap != kJBox_TapRegular || !iArgs.fTapDouble) {
+		return;
+	}
+	iArgs.fConsumeFlag = true;
+	const TJBox_ObjectRef customProps = JBox_GetMotherboardObjectRef("/custom_properties");
+	for (int track = 0; track < CLauncher::kTrackCount; ++track) {
+		UnderscoreDefaultName(customProps, TrackNameTag(track));
+		for (int row = 1; row <= CLauncher::kRowCount; ++row) {
+			UnderscoreDefaultName(customProps, ClipNameTag(track, row));
+		}
+		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+			UnderscoreDefaultName(customProps, OutputNameTag(track, output));
+		}
+	}
+	for (int scene = 1; scene <= CLauncher::kRowCount; ++scene) {
+		UnderscoreDefaultName(customProps, SceneNameTag(scene));
+	}
+	iArgs.fGestureNameKey = "gesture_underscore_names";
+}
+
 void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
+	if (iArgs.fDisplayInfo.fID == kDisplayID_Logo || iArgs.fDisplayInfo.fID == kDisplayID_FoldedLogo) {
+		HandleLogoGesture(iArgs);
+		return;
+	}
+	if (iArgs.fDisplayInfo.fID == kDisplayID_BackButton || iArgs.fDisplayInfo.fID == kDisplayID_ForwardButton) {
+		HandleBackAndForwardGesture(iArgs);
+		return;
+	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_FillInButton) {
 		HandleFillInGesture(iArgs);
 		return;
@@ -444,18 +512,6 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		iArgs.fConsumeFlag = true;
 		Apply(CPress::DuplicateButton(setup), customProps, iArgs);
 		iArgs.fGestureNameKey = "gesture_duplicate_mode";
-		return;
-	}
-	if (iArgs.fDisplayInfo.fID == kDisplayID_BackButton) {
-		iArgs.fConsumeFlag = true;
-		Apply(CPress::BackButton(setup), customProps, iArgs);
-		return;
-	}
-	if (iArgs.fDisplayInfo.fID == kDisplayID_ForwardButton) {
-		iArgs.fConsumeFlag = true;
-		const int picked = CLauncher::PickedButton(setup);
-		const bool pickedHoldsClip = picked >= 0 && HoldsClip(customProps, picked);
-		Apply(CPress::ForwardButton(setup, pickedHoldsClip), customProps, iArgs);
 		return;
 	}
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {

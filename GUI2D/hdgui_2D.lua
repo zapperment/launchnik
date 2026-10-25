@@ -6,12 +6,22 @@ local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
 
 -- The header is the same on the front and the folded front: the tape, the
 -- name of the patch, the buttons for browsing and saving patches, and the
--- logo, which shows the mode colour.
-local function header_widgets()
+-- logo, which shows the mode colour. A transparent display on top of the logo
+-- takes a double-click on it to Panel.cpp, which underscores the default
+-- names; each panel has a display_id of its own for it.
+local function header_widgets(logo_display_id)
 	return {
 		jbox.sequence_meter{
 			graphics = { node = "Logo" },
 			value = "/custom_properties/logo_frame",
+		},
+		jbox.custom_display{
+			graphics = { node = "click_logo" },
+			background = "transparent",
+			display_width_pixels = 285,
+			display_height_pixels = 110,
+			display_id = logo_display_id,
+			values = { "/custom_properties/setup" },
 		},
 		jbox.device_name{
 			graphics = { node = "DeviceName" },
@@ -29,7 +39,7 @@ local function header_widgets()
 	}
 end
 
-local front_widgets = header_widgets()
+local front_widgets = header_widgets(13)
 
 -- Lamps first, whatever takes the clicks afterwards: later widgets are on top.
 table.insert(front_widgets, jbox.sequence_meter{
@@ -336,7 +346,7 @@ back = jbox.panel{
 
 folded_front = jbox.panel{
 	graphics = { node = "Bg" },
-	widgets = header_widgets(),
+	widgets = header_widgets(14),
 }
 
 folded_back = jbox.panel{

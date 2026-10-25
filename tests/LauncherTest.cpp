@@ -1328,12 +1328,40 @@ void TestHoldingTheButtonTriggersOnlyOnce() {
 	launcher.Advance(Playing(kBar));
 	PlayThrough(launcher, kBar + kBatch, kInterval + kBatch);
 	CHECK(!launcher.IsFillInPlaying());
+	// The same value again is no press.
 	launcher.SetFillInPressed(true);
 	launcher.Advance(Playing(kInterval + kBatch));
 	CHECK(!launcher.IsFillInPlaying());
-	launcher.SetFillInPressed(false);
+}
+
+// Letting go of the button while the fill-in it triggered plays does
+// nothing, since a press does nothing then.
+void TestLettingGoWhileTheFillInPlaysDoesNothing() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
 	launcher.SetFillInPressed(true);
-	launcher.Advance(Playing(kInterval + 2 * kBatch));
+	launcher.Advance(Playing(kBar));
+	launcher.SetFillInPressed(false);
+	PlayThrough(launcher, kBar + kBatch, kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+}
+
+// A computer key or a Remote Override that toggles the property, rather than
+// holding it down and letting it go, triggers a fill-in with every press.
+void TestEveryChangeOfTheButtonIsAPress() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetFillInPressed(true);
+	launcher.Advance(Playing(kBar));
+	PlayThrough(launcher, kBar + kBatch, kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+	launcher.SetFillInPressed(false);
+	launcher.Advance(Playing(kInterval + kBatch));
+	CHECK(launcher.IsFillInPlaying());
+	PlayThrough(launcher, kInterval + 2 * kBatch, 2 * kInterval + kBatch);
+	CHECK(!launcher.IsFillInPlaying());
+	launcher.SetFillInPressed(true);
+	launcher.Advance(Playing(2 * kInterval + kBatch));
 	CHECK(launcher.IsFillInPlaying());
 }
 
@@ -3838,6 +3866,8 @@ int main() {
 	TestFillInDoesNotEndOneBatchAfterAPress();
 	TestPressingDuringAFillInDoesNothing();
 	TestHoldingTheButtonTriggersOnlyOnce();
+	TestLettingGoWhileTheFillInPlaysDoesNothing();
+	TestEveryChangeOfTheButtonIsAPress();
 	TestNoFillInWithTheLengthImmediate();
 	TestFillInWaitsWhileTheTransportIsStopped();
 	TestChangesToTheFillInTakeEffectAtOnce();

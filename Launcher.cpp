@@ -562,7 +562,7 @@ int CLauncher::GetCVMode(int iTrack, int iOutput) const {
 }
 
 void CLauncher::SetFillInPressed(bool iPressed) {
-	if (iPressed && !fFillInPressed) {
+	if (iPressed != fFillInPressed) {
 		fFillInTriggered = true;
 	}
 	fFillInPressed = iPressed;

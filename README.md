@@ -2,7 +2,7 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d22, a development build. Requires Reason 14 or later.
+Version 1.0.0d23, a development build. Requires Reason 14 or later.
 
 ## The panel
 
@@ -61,6 +61,8 @@ The meter follows the song position whether the song plays or not, and goes on r
 Every track, launch button, scene and CV output has a name, so that you can tell at a glance what each is for: the instrument a track plays, the pattern a clip sends, the part of the song a scene belongs to, what a CV output controls. A **track name** stands above the track on the front panel and above the track's CV outputs on the back panel; a **clip name** stands above its launch button, a **scene name** above its scene button, and a **CV output name** above its CV output and switch on the back panel. A new device names them Track 1 to Track 8, Clip 1 to Clip 8 (by scene, on every track), Scene 1 to Scene 8, and CV Out 1A to CV Out 8F.
 
 Double-click a name to change it: a text field opens with the name selected. Type the new name and press Return, or press Escape to leave it as it was. Clear the field and press Return to give the name back its default, such as "Track 3". Changing a track name on one panel changes it on the other.
+
+If you would rather see nothing much than "Track 3" or "Clip 5", double-click the Launchnik logo: every name that still shows its default, on tracks, launch buttons, scenes and CV outputs, becomes a single underscore. Names you have typed stay as they are. It is one step in the undo history, and an underscore is a name like any other, so clearing it gives the default back.
 
 About twelve characters fit; a longer name is kept in full, but shown cut off at both ends. Names are not in capitals, unlike the labels.
 
@@ -136,7 +138,7 @@ The colour and CV rows only show while the launch button holds a clip. A new cli
 5. **Intro editing.** In landing editing the forward button lights up in pink, with SET INTRO, whether or not the clip holds a landing. Click it to set up the clip's **intro**; the logo turns pink. The grid is laid out and lit as before, with SET/CLEAR and 1 BAR PATT for the intro, and a new intro is a copy of its clip's patterns and values, with every transition off, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are pink.
 6. **Outro editing.** In intro editing the forward button lights up in turquoise, with SET OUTRO. Click it to set up the clip's **outro**; the logo turns turquoise, and the labels are turquoise. This is the last step: the forward button is dark.
 
-Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to, with that step lit to its left: vibrant pink in outro editing, it returns to intro editing (SET INTRO); vibrant blue in intro editing, it returns to landing editing (SET LANDING); vibrant orange in landing editing, it returns to fill-in editing (SET FILL-IN); vibrant yellow in fill-in editing, it returns to clip editing (EDIT CLIP); vibrant green in clip editing, it returns to clip picking (PICK CLIP); vibrant white in clip picking, it returns to launch mode (LAUNCH). In launch mode it is dark and does nothing.
+Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to, with that step lit to its left: vibrant pink in outro editing, it returns to intro editing (SET INTRO); vibrant blue in intro editing, it returns to landing editing (SET LANDING); vibrant orange in landing editing, it returns to fill-in editing (SET FILL-IN); vibrant yellow in fill-in editing, it returns to clip editing (EDIT CLIP); vibrant green in clip editing, it returns to clip picking (PICK CLIP); vibrant white in clip picking, it returns to launch mode (LAUNCH). In launch mode it is dark and does nothing. To pick another launch button from fill-in, landing, intro or outro editing, hold the back button down for 200 milliseconds or more before letting go: Launchnik goes straight back to clip picking. The back and forward buttons act when you let go of them, not when you press them, on the front panel and on the Launchpad alike.
 
 ## Clearing clips
 
@@ -340,6 +342,12 @@ The labels below the launch buttons in scenes 1 and 2, of the scene buttons and 
 
 ```bash
 ./tools/make-cv-labels.py
+```
+
+The model label, the sticker and the power label of the back panel and the small logo of the folded back panel are copied from `Image_Sources` onto canvases RE2DRender accepts:
+
+```bash
+./tools/make-back-decals.sh
 ```
 
 After changing anything in `GUI2D`, regenerate the panel graphics first, from the `RE2DRender` directory of the SDK download:

@@ -41,6 +41,7 @@ texts = {
 	["text_launch_labels"] = "Launch Button Labels",
 	["text_back_button"] = "Back Button",
 	["text_back_label"] = "Back Button Label",
+	["text_back_pressed_at"] = "Back Button Pressed At",
 
 	["text_fill_in"] = "Fill-In",
 	["text_fill_in_short"] = "Fill-In",
@@ -85,6 +86,7 @@ texts = {
 	["gesture_scene"] = "Launch scene",
 	["gesture_length"] = "Change switch interval",
 	["gesture_setup"] = "Change setup mode",
+	["gesture_underscore_names"] = "Underscore default names",
 	["gesture_clip_present"] = "Switch clip on or off",
 	["gesture_clip_pattern"] = "Change clip pattern",
 	["gesture_clip_unipolar"] = "Change clip unipolar value",
