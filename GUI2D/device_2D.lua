@@ -167,27 +167,31 @@ end
 -- labels of the scene above and the button; a scene name likewise above its
 -- scene button, in a narrower area that keeps clear of the clip names of
 -- track 8. The track names sit above the clip names of scene 1, in a taller
--- area for their larger font.
+-- area for their larger font, moved down by TRACK_NAME_SHIFT to sit closer
+-- to the clip names below them. The clip names and scene names are moved down
+-- by NAME_SHIFT to sit in the bevelled fields of the panel.
 local NAME_WIDTH = 280
 local SCENE_NAME_WIDTH = 250
 local NAME_HEIGHT = 50
 local TRACK_NAME_HEIGHT = 60
 local NAME_INSET = math.floor((BUTTON_WIDTH - NAME_WIDTH) / 2)
+local TRACK_NAME_SHIFT = 5
+local NAME_SHIFT = 5
 local function add_name_areas(panel, name, left, top, path)
 	panel[name .. "_value"] = { offset = { left, top }, { path = path } }
 	panel[name .. "_default"] = { offset = { left, top }, { path = path } }
 end
 for track = 1, TRACK_COUNT do
 	local left = LAUNCH_LEFT + TRACK_PITCH * (track - 1) + NAME_INSET
-	add_name_areas(front, "track" .. track .. "_name", left, LAUNCH_TOP - NAME_HEIGHT - TRACK_NAME_HEIGHT, "Name_Area_Track")
+	add_name_areas(front, "track" .. track .. "_name", left, LAUNCH_TOP - NAME_HEIGHT - TRACK_NAME_HEIGHT + TRACK_NAME_SHIFT, "Name_Area_Track")
 	for row = 1, ROW_COUNT do
-		local top = LAUNCH_TOP + ROW_PITCH * (row - 1) - NAME_HEIGHT
+		local top = LAUNCH_TOP + ROW_PITCH * (row - 1) - NAME_HEIGHT + NAME_SHIFT
 		add_name_areas(front, "track" .. track .. "_clip" .. row .. "_name", left, top, "Name_Area")
 		-- In the editing steps, the clip name of the launch button being edited
 		-- sits above the first launch button of its track, below the track name,
 		-- whatever its row, to leave room for the CV output names.
 		add_name_areas(front, "track" .. track .. "_clip" .. row .. "_name_edit", left,
-			LAUNCH_TOP - NAME_HEIGHT, "Name_Area")
+			LAUNCH_TOP - NAME_HEIGHT + NAME_SHIFT, "Name_Area")
 	end
 end
 -- In the editing steps, the CV output names of the track being edited sit
@@ -197,11 +201,11 @@ end
 for track = 1, TRACK_COUNT do
 	for output, letter in ipairs(OUTPUT_LETTERS) do
 		add_name_areas(front, "track" .. track .. "_output_" .. letter .. "_name_front",
-			LAUNCH_LEFT + NAME_INSET, LAUNCH_TOP + ROW_PITCH * (output + 1) - NAME_HEIGHT, "Name_Area")
+			LAUNCH_LEFT + NAME_INSET, LAUNCH_TOP + ROW_PITCH * (output + 1) - NAME_HEIGHT + NAME_SHIFT, "Name_Area")
 	end
 end
 for scene = 1, ROW_COUNT do
-	local top = LAUNCH_TOP + ROW_PITCH * (scene - 1) - NAME_HEIGHT
+	local top = LAUNCH_TOP + ROW_PITCH * (scene - 1) - NAME_HEIGHT + NAME_SHIFT
 	add_name_areas(front, "scene" .. scene .. "_name", SCENE_LEFT + (SCENE_WIDTH - SCENE_NAME_WIDTH) / 2, top, "Name_Area_Scene")
 end
 
