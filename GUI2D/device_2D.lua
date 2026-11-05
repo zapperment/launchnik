@@ -183,6 +183,21 @@ for track = 1, TRACK_COUNT do
 	for row = 1, ROW_COUNT do
 		local top = LAUNCH_TOP + ROW_PITCH * (row - 1) - NAME_HEIGHT
 		add_name_areas(front, "track" .. track .. "_clip" .. row .. "_name", left, top, "Name_Area")
+		-- In the editing steps, the clip name of the launch button being edited
+		-- sits above the first launch button of its track, below the track name,
+		-- whatever its row, to leave room for the CV output names.
+		add_name_areas(front, "track" .. track .. "_clip" .. row .. "_name_edit", left,
+			LAUNCH_TOP - NAME_HEIGHT, "Name_Area")
+	end
+end
+-- In the editing steps, the CV output names of the track being edited sit
+-- above the first launch button of the rows that set them, rows 3 to 8 (see
+-- "CV output name" in CONTEXT.md), where the clip names of track 1 sit
+-- otherwise.
+for track = 1, TRACK_COUNT do
+	for output, letter in ipairs(OUTPUT_LETTERS) do
+		add_name_areas(front, "track" .. track .. "_output_" .. letter .. "_name_front",
+			LAUNCH_LEFT + NAME_INSET, LAUNCH_TOP + ROW_PITCH * (output + 1) - NAME_HEIGHT, "Name_Area")
 	end
 end
 for scene = 1, ROW_COUNT do

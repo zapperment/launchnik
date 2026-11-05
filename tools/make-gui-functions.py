@@ -6,9 +6,12 @@ name", "Clip name" and "Scene name" in CONTEXT.md, and docs/adr/0007).
 Track names and clip names are shown in launch mode, clear mode, duplicate
 mode and clip picking, and in clip editing, fill-in editing, landing
 editing, intro editing and outro editing only for the launch button being
-edited and its track. A visibility function only gets the values of properties, not the
-widget it belongs to, so each track name and clip name has functions of its
-own, which this script writes out. Each is self-contained, without helpers
+edited and its track: the track name in its place, the clip name in a second
+widget above the first launch button of the track (track1_clip3_name_edit),
+since the CV output names of the track (track1_output_a_name_front) take
+the place of the clip names of track 1 in rows 3 to 8. A visibility function
+only gets the values of properties, not the widget it belongs to, so each of
+these names has functions of its own, which this script writes out. Each is self-contained, without helpers
 or library calls, since the host runs them on its own.
 
 The setup state is 0 in launch mode, 1 in clip picking, 2 + i in clip
@@ -37,7 +40,7 @@ HEADER = """\
 -- mode, 323 and above duplicate mode) and
 -- values[2] the name; on the back panel values[1] is the name.
 
--- Track names on the back panel are always shown.
+-- Names on the back panel are always shown.
 function is_name_shown(values)
 	return values[1] ~= ""
 end
@@ -72,12 +75,25 @@ def main():
 		last = first + ROW_COUNT - 1
 		condition = f"values[1] <= 1 or values[1] >= 322 or ((values[1] - 2) % 64 >= {first} and (values[1] - 2) % 64 <= {last})"
 		parts.append(pair(f"track{track}_name", condition))
-	parts.append("\n-- Clip names: also in the editing of their launch button.\n")
+	parts.append("\n-- Clip names above their launch buttons: not in the editing steps.\n")
+	for track in range(1, TRACK_COUNT + 1):
+		for row in range(1, ROW_COUNT + 1):
+			parts.append(pair(f"track{track}_clip{row}_name", "values[1] <= 1 or values[1] >= 322"))
+	parts.append("\n-- Clip names above the first launch button of their track: in the editing\n"
+		"-- of their launch button.\n")
 	for track in range(1, TRACK_COUNT + 1):
 		for row in range(1, ROW_COUNT + 1):
 			index = ROW_COUNT * (track - 1) + row - 1
-			condition = f"values[1] <= 1 or values[1] >= 322 or (values[1] - 2) % 64 == {index}"
-			parts.append(pair(f"track{track}_clip{row}_name", condition))
+			condition = f"values[1] >= 2 and values[1] < 322 and (values[1] - 2) % 64 == {index}"
+			parts.append(pair(f"track{track}_clip{row}_name_edit", condition))
+	parts.append("\n-- CV output names on the front panel: in the editing of a launch button of\n"
+		"-- their track.\n")
+	for track in range(1, TRACK_COUNT + 1):
+		first = ROW_COUNT * (track - 1)
+		last = first + ROW_COUNT - 1
+		condition = f"values[1] >= 2 and values[1] < 322 and (values[1] - 2) % 64 >= {first} and (values[1] - 2) % 64 <= {last}"
+		for letter in "abcdef":
+			parts.append(pair(f"track{track}_output_{letter}_name_front", condition))
 	target = ROOT / "GUI2D" / "gui_functions.lua"
 	target.write_text("".join(parts))
 	print(f"Wrote {target.relative_to(ROOT)}")

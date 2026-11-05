@@ -249,12 +249,13 @@ local NAME_COLOUR = { 208, 208, 208 }
 local TRACK_NAME_STYLE = "Arial medium small font"
 local NAME_STYLE = "Arial small font"
 
+-- node is the prefix of the two areas in device_2D.lua, name the property;
 -- values are the properties the visibility functions read; shown and
 -- default_shown name those functions.
-local function add_name_widgets(widgets, name, text_style, default_key, values, shown, default_shown)
+local function add_name_widgets(widgets, node, name, text_style, default_key, values, shown, default_shown)
 	local property = "/custom_properties/" .. name
 	table.insert(widgets, jbox.value_display{
-		graphics = { node = name .. "_value" },
+		graphics = { node = node .. "_value" },
 		value = property,
 		text_style = text_style,
 		text_color = NAME_COLOUR,
@@ -264,7 +265,7 @@ local function add_name_widgets(widgets, name, text_style, default_key, values, 
 	})
 	-- A template without ^0 is shown as it is.
 	table.insert(widgets, jbox.value_display{
-		graphics = { node = name .. "_default" },
+		graphics = { node = node .. "_default" },
 		value = property,
 		text_style = text_style,
 		text_color = NAME_COLOUR,
@@ -276,26 +277,37 @@ local function add_name_widgets(widgets, name, text_style, default_key, values, 
 end
 
 -- On the front panel, every name depends on the setup state as well: track
--- names and clip names have functions of their own, since in clip editing,
--- fill-in editing and landing editing only those of the launch button being
--- edited are shown.
-local function add_front_name_widgets(name, text_style, default_key, shown, default_shown)
-	add_name_widgets(front_widgets, name, text_style, default_key,
-		{ "/custom_properties/setup", "/custom_properties/" .. name }, shown, default_shown)
+-- names, clip names and CV output names have functions of their own, since in
+-- the editing steps only those of the launch button being edited and its
+-- track are shown.
+local function add_front_name_widgets(node, name, text_style, default_key)
+	add_name_widgets(front_widgets, node, name, text_style, default_key,
+		{ "/custom_properties/setup", "/custom_properties/" .. name },
+		"is_" .. node .. "_shown", "is_" .. node .. "_default_shown")
 end
 
 for track = 1, TRACK_COUNT do
 	local track_name = "track" .. track .. "_name"
-	add_front_name_widgets(track_name, TRACK_NAME_STYLE, "text_default_track_name" .. track,
-		"is_" .. track_name .. "_shown", "is_" .. track_name .. "_default_shown")
+	add_front_name_widgets(track_name, track_name, TRACK_NAME_STYLE, "text_default_track_name" .. track)
 	for row = 1, ROW_COUNT do
+		-- Above its launch button, and in the editing steps above the first
+		-- launch button of its track
 		local clip_name = "track" .. track .. "_clip" .. row .. "_name"
-		add_front_name_widgets(clip_name, NAME_STYLE, "text_default_clip_name" .. row,
-			"is_" .. clip_name .. "_shown", "is_" .. clip_name .. "_default_shown")
+		add_front_name_widgets(clip_name, clip_name, NAME_STYLE, "text_default_clip_name" .. row)
+		add_front_name_widgets(clip_name .. "_edit", clip_name, NAME_STYLE, "text_default_clip_name" .. row)
+	end
+	-- The same properties as on the back panel, so that a change on either
+	-- panel shows on both
+	for _, letter in ipairs(OUTPUT_LETTERS) do
+		local output_name = "track" .. track .. "_output_" .. letter .. "_name"
+		add_front_name_widgets(output_name .. "_front", output_name, NAME_STYLE,
+			"text_default_output_name" .. track .. "_" .. letter)
 	end
 end
 for scene = 1, ROW_COUNT do
-	add_front_name_widgets("scene" .. scene .. "_name", NAME_STYLE, "text_default_scene_name" .. scene,
+	local scene_name = "scene" .. scene .. "_name"
+	add_name_widgets(front_widgets, scene_name, scene_name, NAME_STYLE, "text_default_scene_name" .. scene,
+		{ "/custom_properties/setup", "/custom_properties/" .. scene_name },
 		"is_name_shown_in_launch_mode", "is_default_name_shown_in_launch_mode")
 end
 
@@ -328,7 +340,7 @@ end
 
 -- The track names and the CV output names on the back panel are always shown.
 local function add_back_name_widgets(name, text_style, default_key)
-	add_name_widgets(back_widgets, name, text_style, default_key,
+	add_name_widgets(back_widgets, name, name, text_style, default_key,
 		{ "/custom_properties/" .. name }, "is_name_shown", "is_default_name_shown")
 end
 for track = 1, TRACK_COUNT do
