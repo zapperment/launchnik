@@ -25,6 +25,8 @@ const TJBox_DisplayID kDisplayID_DuplicateButton = 12;
 // The logo, on the front panel and on the folded front panel.
 const TJBox_DisplayID kDisplayID_Logo = 13;
 const TJBox_DisplayID kDisplayID_FoldedLogo = 14;
+// The big display, which is drawn by BigDisplayPanel.cpp and takes no clicks.
+const TJBox_DisplayID kDisplayID_BigDisplay = 15;
 
 void HandlePanelGesture(TJBox_GestureArgs& iArgs);
 

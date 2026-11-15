@@ -6,10 +6,11 @@ local TRACK_COUNT = 8
 -- above its launch buttons and a row of labels below them, and the first one
 -- the track names above as well; the back button and the forward button sit
 -- right below the header, the function select buttons near the bottom.
--- The grid is centred on the panel: the fill-in button on the left and the
--- scene buttons on the right are 100 pixels from it, and 562 pixels from the
--- edges of the panel (see SIDE_GAP below).
-local LAUNCH_LEFT = 792
+-- The grid sits right of centre, leaving room on the left for the patch name
+-- display and the transition diagrams: the fill-in button on the left and the
+-- scene buttons on the right are 100 pixels from it (see SIDE_GAP below), the
+-- scene buttons 218 pixels from the right edge of the panel.
+local LAUNCH_LEFT = 1136
 local LAUNCH_TOP = 460
 local TRACK_PITCH = 283
 local ROW_PITCH = 250
@@ -28,10 +29,17 @@ local LOGO_OFFSET = { 3385, 20 }
 
 -- The tape, the patch name display and the patch browse group also sit at the
 -- same place on both. The name itself is drawn by the host inside the area.
-local TAPE_OFFSET = { 180, 42 }
-local PATCH_DISPLAY_OFFSET = { 620, 30 }
-local PATCH_NAME_OFFSET = { 635, 50 }
-local PATCH_BROWSE_OFFSET = { 1345, 20 }
+local TAPE_OFFSET = { 1164, 42 }
+local PATCH_DISPLAY_OFFSET = { 176, 30 }
+local PATCH_NAME_OFFSET = { 196, 50 }
+local PATCH_BROWSE_OFFSET = { 837, 20 }
+
+-- The big display sits on the front panel only, below the patch name display
+-- and above the transition diagrams, as wide as the patch name display. Its
+-- image is part of the panel; what it shows is drawn into a display of the
+-- same size on top of it (see BigDisplayPanel.cpp).
+local BIG_DISPLAY_OFFSET = { 176, 193 }
+local BIG_DISPLAY_SIZE = { 625, 1485 }
 
 -- The upper screws sit below the divider, which ends at 160 pixels. The left
 -- screws are 40 pixels from the edge, and the right ones as far from theirs.
@@ -65,7 +73,7 @@ front = {
 	},
 	PatchDisplay = {
 		offset = PATCH_DISPLAY_OFFSET,
-		{ path = "Display_Patch_Name" },
+		{ path = "Patch_Display" },
 	},
 	PatchName = {
 		offset = PATCH_NAME_OFFSET,
@@ -74,6 +82,14 @@ front = {
 	PatchBrowseGroup = {
 		offset = PATCH_BROWSE_OFFSET,
 		{ path = "PatchBrowseGroup" },
+	},
+	BigDisplay = {
+		offset = BIG_DISPLAY_OFFSET,
+		{ path = "Big_Display" },
+	},
+	big_display_area = {
+		offset = BIG_DISPLAY_OFFSET,
+		{ size = BIG_DISPLAY_SIZE },
 	},
 }
 
@@ -141,12 +157,12 @@ for output, letter in ipairs(OUTPUT_LETTERS) do
 	}
 end
 
--- The five sets of transition diagrams, TRANSITION, FILL-IN, LANDING, INTRO
--- and OUTRO, stand one above the other to the right of the scene buttons,
--- centred on the grid. One lamp shows them all grey or one set lit (see
+-- The five sets of transition diagrams stand in two columns: TRANSITION alone
+-- in the first row, FILL-IN and LANDING in the second, INTRO and OUTRO in the
+-- third. One lamp shows them all grey or one set lit (see
 -- tools/make-cv-labels.py).
 front.transition_diagrams = {
-	offset = { 3327, 555 },
+	offset = { 211, 1711 },
 	{ path = "Transition_Diagrams_6frames", frames = 6 },
 }
 for scene = 1, ROW_COUNT do
@@ -450,7 +466,7 @@ folded_front = {
 	},
 	PatchDisplay = {
 		offset = PATCH_DISPLAY_OFFSET,
-		{ path = "Display_Patch_Name" },
+		{ path = "Patch_Display" },
 	},
 	PatchName = {
 		offset = PATCH_NAME_OFFSET,

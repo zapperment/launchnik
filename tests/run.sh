@@ -5,7 +5,9 @@ cd "$(dirname "$0")"
 mkdir -p build
 clang++ -std=c++17 -Wall -Wextra -o build/LauncherTest LauncherTest.cpp ../Launcher.cpp
 clang++ -std=c++17 -Wall -Wextra -o build/PressTest PressTest.cpp ../Press.cpp ../Launcher.cpp
+clang++ -std=c++17 -Wall -Wextra -o build/BigDisplayTest BigDisplayTest.cpp ../BigDisplay.cpp ../Launcher.cpp
 ./build/LauncherTest
 ./build/PressTest
+./build/BigDisplayTest
 cd ..
 luajit tools/check-names.lua

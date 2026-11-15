@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Jukebox.h"
+#include "BigDisplay.h"
 #include "Launcher.h"
 
 // Connects the rules in CLauncher to the host: feeds it selections, clips, CV
@@ -18,6 +19,9 @@ class CLaunchnik {
 	private: void HandleOutputSettingChange(TJBox_Tag iTag, int iValue);
 	private: CLauncher::TTransport ReadTransport() const;
 	private: void WriteOutputs();
+	// Tells the big display what to show, unless it knows already; the host
+	// takes a new string only every 25 milliseconds.
+	private: void WriteBigDisplay();
 	// Stores a number unless it is what was last stored.
 	private: void Write(TJBox_Tag iTag, TJBox_Int32 iValue, TJBox_Int32& ioWritten);
 
@@ -46,6 +50,11 @@ class CLaunchnik {
 	private: TJBox_Int32 fWrittenForwardLightFrame;
 	private: TJBox_Int32 fWrittenForwardLabelFrame;
 	private: TJBox_Int32 fWrittenTransitionDiagramsFrame;
+	private: TJBox_Int32 fWrittenShownClip;
+	private: TJBox_PropertyRef fBigDisplay;
+	private: unsigned char fWrittenBigDisplay[CBigDisplay::kStateSize];
+	private: bool fHasWrittenBigDisplay;
+	private: int fBatchesSinceBigDisplay;
 	private: TJBox_Int32 fWrittenOutputLabelsFrames[CLauncher::kOutputCount];
 	private: TJBox_Int32 fWrittenSceneLabelFrames[CLauncher::kRowCount];
 	private: TJBox_Int32 fWrittenFunctionLights[CLauncher::kTrackCount];

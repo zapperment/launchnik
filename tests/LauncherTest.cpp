@@ -3745,6 +3745,492 @@ void TestOutroLiesOverAFillInAndALanding() {
 }
 
 // The four settings of a CV output are one number, every combination its own.
+// The big display's shown clip is the clip launched last.
+void TestShownClipIsTheClipLaunchedLast() {
+	CLauncher launcher;
+	launcher.SetClipPresent(1, 3, true);
+	launcher.SetClipPresent(2, 5, true);
+	CHECK(launcher.GetShownButton() == -1);
+
+	// At the moment of the selection, not at the switch point.
+	launcher.Advance(Playing(kBatch));
+	launcher.SetSelection(1, 3);
+	launcher.Advance(Playing(kBatch * 2));
+	CHECK(launcher.GetButtonState(1, 3) == CLauncher::kQueued);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+
+	launcher.SetSelection(2, 5);
+	launcher.Advance(Playing(kBatch * 3));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+
+	// Stop and an empty launch button change nothing.
+	launcher.SetSelection(2, CLauncher::kSelectionStop);
+	launcher.Advance(Playing(kBatch * 4));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+	launcher.SetSelection(1, 4);
+	launcher.Advance(Playing(kBatch * 5));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+
+	// Launching the clip that is selected already is a relaunch press.
+	launcher.SetSelection(1, 3);
+	launcher.Advance(Playing(kBatch * 6));
+	launcher.SetSelection(2, 5);
+	launcher.Advance(Playing(kBatch * 7));
+	launcher.SetRelaunchPressed(1, true);
+	launcher.Advance(Playing(kBatch * 8));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+}
+
+void TestSceneButtonShowsTheLeftmostClip() {
+	CLauncher launcher;
+	launcher.SetClipPresent(3, 2, true);
+	launcher.SetClipPresent(6, 2, true);
+	// A scene press writes eight selections; tracks 1 to 3 have no clip there.
+	for (int track = CLauncher::kTrackCount - 1; track >= 0; --track) {
+		launcher.SetSelection(track, 2);
+		launcher.SetRelaunchPressed(track, true);
+	}
+	launcher.Advance(Playing(kBatch));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(3, 2));
+}
+
+void TestShownClipInSetupMode() {
+	CLauncher launcher;
+	launcher.SetClipPresent(1, 3, true);
+	launcher.SetSelection(1, 3);
+	launcher.Advance(Playing(kBatch));
+
+	// Clip picking, clear mode and duplicate mode show the clip launched last.
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+	launcher.SetSetup(CLauncher::kSetupSourcePicking);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+	launcher.SetSetup(CLauncher::SetupForClipDestinationPicking(5, 5));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+
+	// The editing steps show the launch button being set up, empty or not.
+	launcher.SetSetup(CLauncher::SetupForClipEditing(4, 7));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(4, 7));
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(4, 7));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(4, 7));
+	launcher.SetSetup(CLauncher::SetupForOutroEditing(4, 7));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(4, 7));
+
+	launcher.SetSetup(CLauncher::kSetupLaunchMode);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+}
+
+// The shown clip is not saved: a song opens with what is playing.
+void TestOpeningShowsTheLeftmostActiveClip() {
+	CLauncher launcher;
+	launcher.SetClipPresent(2, 4, true);
+	launcher.SetClipPresent(5, 1, true);
+	launcher.SetSelection(5, 1);
+	launcher.SetSelection(2, 4);
+	launcher.SetSelection(0, 6);
+	launcher.Open();
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 4));
+	launcher.Advance(Stopped());
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 4));
+
+	CLauncher silent;
+	silent.Open();
+	CHECK(silent.GetShownButton() == -1);
+}
+
+// The value table of the big display, where the shown clip is being set up.
+void TestValueTableShowsWhatIsSet() {
+	CLauncher launcher;
+	launcher.SetCVMode(2, 0, CLauncher::kCVModePattern);
+	launcher.SetCVMode(2, 1, CLauncher::kCVModeUnipolar);
+	launcher.SetCVMode(2, 2, CLauncher::kCVModeBipolar);
+	launcher.SetClipPresent(2, 4, true);
+	launcher.SetClipPattern(2, 4, 0, 6);
+	launcher.SetClipUnipolar(2, 4, 1, 1);
+	launcher.SetClipBipolar(2, 4, 2, 1);
+	launcher.SetClipTransition(2, 4, 1, CLauncher::kTransitionB);
+	launcher.SetLandingPresent(2, 4, true);
+	launcher.SetLandingPattern(2, 4, 0, 2);
+	launcher.SetLandingOneBarPattern(2, 4, true);
+	launcher.SetLandingUnipolar(2, 4, 1, 5);
+	launcher.SetLandingBipolar(2, 4, 2, 5);
+	launcher.SetLandingTransition(2, 4, 2, CLauncher::kTransitionD);
+	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
+
+	const CLauncher::TValueTable pattern = launcher.GetValueTable(0);
+	CHECK(pattern.fCVMode == CLauncher::kCVModePattern);
+	CHECK(pattern.fColumns[0].fPresent && pattern.fColumns[0].fValue == 7 && pattern.fColumns[0].fMark == 0);
+	CHECK(pattern.fColumns[2].fPresent && pattern.fColumns[2].fValue == 3 && pattern.fColumns[2].fMark == 1);
+	// A fill-in, intro or outro that is not there leaves its column blank.
+	CHECK(!pattern.fColumns[1].fPresent && !pattern.fColumns[3].fPresent && !pattern.fColumns[4].fPresent);
+	// The column being set up is inverted.
+	CHECK(pattern.fColumns[2].fInverted && !pattern.fColumns[0].fInverted);
+
+	// Values are tenths of what the labels say, cut off: 16.6 and 83.3.
+	const CLauncher::TValueTable unipolar = launcher.GetValueTable(1);
+	CHECK(unipolar.fCVMode == CLauncher::kCVModeUnipolar);
+	CHECK(unipolar.fColumns[0].fValue == 166 && unipolar.fColumns[0].fMark == CLauncher::kTransitionB);
+	CHECK(unipolar.fColumns[2].fValue == 833 && unipolar.fColumns[2].fMark == CLauncher::kTransitionOff);
+
+	// -66.6 and +66.6.
+	const CLauncher::TValueTable bipolar = launcher.GetValueTable(2);
+	CHECK(bipolar.fCVMode == CLauncher::kCVModeBipolar);
+	CHECK(bipolar.fColumns[0].fValue == -666);
+	CHECK(bipolar.fColumns[2].fValue == 666 && bipolar.fColumns[2].fMark == CLauncher::kTransitionD);
+
+	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
+	CHECK(launcher.GetValueTable(0).fColumns[0].fInverted && !launcher.GetValueTable(0).fColumns[2].fInverted);
+}
+
+void TestValueTableOfAnEmptyLaunchButtonIsBlank() {
+	CLauncher launcher;
+	launcher.SetCVMode(0, 3, CLauncher::kCVModeBipolar);
+	// No shown clip: the CV modes of the first track, and nothing else.
+	CLauncher::TValueTable table = launcher.GetValueTable(3);
+	CHECK(table.fCVMode == CLauncher::kCVModeBipolar);
+	for (int column = 0; column < CLauncher::kTableColumnCount; ++column) {
+		CHECK(!table.fColumns[column].fPresent && !table.fColumns[column].fInverted);
+	}
+
+	// A launch button keeps its fill-in while it is empty, but shows none.
+	launcher.SetClipPresent(5, 2, true);
+	launcher.SetFillInPresent(5, 2, true);
+	launcher.SetClipPresent(5, 2, false);
+	launcher.SetSetup(CLauncher::SetupForClipEditing(5, 2));
+	table = launcher.GetValueTable(0);
+	for (int column = 0; column < CLauncher::kTableColumnCount; ++column) {
+		CHECK(!table.fColumns[column].fPresent && !table.fColumns[column].fInverted);
+	}
+}
+
+// Which column of the big display's value table is inverted for output
+// iOutput of the shown clip, or -1.
+int InvertedColumn(const CLauncher& iLauncher, int iOutput) {
+	const CLauncher::TValueTable table = iLauncher.GetValueTable(iOutput);
+	int inverted = -1;
+	for (int column = 0; column < CLauncher::kTableColumnCount; ++column) {
+		if (table.fColumns[column].fInverted) {
+			CHECK(inverted == -1);
+			inverted = column;
+		}
+	}
+	return inverted;
+}
+
+// In launch mode the inverted column is what the CV output emits, and shows
+// the value emitted.
+void TestValueTableFollowsWhatIsEmitted() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionA);
+	launcher.Advance(Playing(0.0));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(0, 1));
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 1);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[0].fValue == 0);
+
+	// While row 2 is queued it is the shown clip, but row 1 is emitted:
+	// nothing is inverted. Its clip column shows the value on its way there,
+	// a third of the way after the second of four bars, and its own pattern.
+	PlayThrough(launcher, kBatch, kBar);
+	launcher.SetSelection(0, 2);
+	PlayOnTo(launcher, kBar, kInterval / 2);
+	CHECK(launcher.GetButtonState(0, 2) == CLauncher::kQueued);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(0, 2));
+	CHECK(InvertedColumn(launcher, 0) == -1);
+	CHECK(InvertedColumn(launcher, kOutputB) == -1);
+	const int moving = launcher.GetValueTable(kOutputB).fColumns[0].fValue;
+	CHECK(moving > 300 && moving < 370);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 2);
+
+	// Once row 2 is active, its clip column is inverted.
+	PlayOnTo(launcher, kInterval / 2, kInterval + kBatch);
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[0].fValue == 1000);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 2);
+
+	// A stopped track emits nothing of the shown clip, but goes on emitting
+	// its last value.
+	launcher.SetSelection(0, CLauncher::kSelectionStop);
+	PlayOnTo(launcher, kInterval + kBatch, 2 * kInterval + kBatch);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(0, 2));
+	CHECK(InvertedColumn(launcher, 0) == -1);
+	CHECK(InvertedColumn(launcher, kOutputB) == -1);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[0].fValue == 1000);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 2);
+}
+
+void TestValueTableDuringAFillIn() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetFillInUnipolar(0, 1, kOutputB, 6);
+	launcher.SetFillInTransition(0, 1, kOutputB, CLauncher::kTransitionA);
+	launcher.SetFillInUnipolar(0, 1, 2, 6);
+	launcher.SetFillInTransition(0, 1, 2, CLauncher::kTransitionC);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	CHECK(InvertedColumn(launcher, 0) == 1);
+	CHECK(launcher.GetValueTable(0).fColumns[1].fValue == 6);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 3);
+	// Transition A has the CV output from the press, C only in the last bar.
+	CHECK(InvertedColumn(launcher, kOutputB) == 1);
+	CHECK(InvertedColumn(launcher, 2) == 0);
+	PlayOnTo(launcher, kBar, kBar * 2.5);
+	// Half way from the press to the switch point: between the values set.
+	const int moving = launcher.GetValueTable(kOutputB).fColumns[1].fValue;
+	CHECK(moving > 450 && moving < 550);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[0].fValue == 0);
+	CHECK(InvertedColumn(launcher, 2) == 0);
+	PlayOnTo(launcher, kBar * 2.5, kBar * 3.5);
+	CHECK(InvertedColumn(launcher, 2) == 1);
+	const int late = launcher.GetValueTable(2).fColumns[1].fValue;
+	CHECK(late > 450 && late < 550);
+	// Over at the switch point.
+	PlayOnTo(launcher, kBar * 3.5, kInterval + kBatch);
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+}
+
+void TestValueTableWithAOneBarPatternFillIn() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	launcher.SetFillInOneBarPattern(0, 1, true);
+	PlayThrough(launcher, 0.0, kBar);
+	Press(launcher);
+	launcher.Advance(Playing(kBar));
+	// The pattern output stays with the clip until the last bar, while the
+	// other outputs are the fill-in's from the press.
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 3);
+	CHECK(InvertedColumn(launcher, kOutputB) == 1);
+	launcher.Advance(Playing(kBar * 3));
+	CHECK(InvertedColumn(launcher, 0) == 1);
+	CHECK(launcher.GetValueTable(0).fColumns[1].fValue == 6);
+}
+
+void TestValueTableDuringALanding() {
+	CLauncher launcher;
+	SetUpLanding(launcher, CLauncher::kTransitionC);
+	LandOnRow2(launcher);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(0, 2));
+	CHECK(InvertedColumn(launcher, 0) == 2);
+	CHECK(launcher.GetValueTable(0).fColumns[2].fValue == 8);
+	CHECK(InvertedColumn(launcher, kOutputB) == 2);
+	// Transition C gives the CV output back to the clip after the first bar.
+	PlayOnTo(launcher, kInterval + kBatch, kInterval + kBar * 1.5);
+	CHECK(InvertedColumn(launcher, 0) == 2);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[0].fValue == 1000);
+	PlayOnTo(launcher, kInterval + kBar * 1.5, 2 * kInterval + kBatch);
+	CHECK(InvertedColumn(launcher, 0) == 0);
+}
+
+void TestValueTableDuringAnIntro() {
+	CLauncher launcher;
+	SetUpIntro(launcher, CLauncher::kTransitionOff);
+	launcher.SetIntroOneBarPattern(0, 2, true);
+	QueueRow2(launcher);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(0, 2));
+	CHECK(InvertedColumn(launcher, kOutputB) == 3);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[3].fValue == 0);
+	// The one-bar pattern waits for the last bar; until then no pattern is
+	// emitted, which the clip column says.
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 0);
+	PlayOnTo(launcher, kBar, kBar * 3);
+	CHECK(InvertedColumn(launcher, 0) == 3);
+	CHECK(launcher.GetValueTable(0).fColumns[3].fValue == 8);
+	PlayOnTo(launcher, kBar * 3, kInterval + kBatch);
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 2);
+}
+
+void TestValueTableDuringAnOutro() {
+	CLauncher launcher;
+	SetUpOutro(launcher, CLauncher::kTransitionC);
+	StopRow2(launcher);
+	PlayOnTo(launcher, kInterval, kInterval + kBar / 2);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(0, 2));
+	CHECK(InvertedColumn(launcher, 0) == 4);
+	CHECK(launcher.GetValueTable(0).fColumns[4].fValue == 8);
+	CHECK(InvertedColumn(launcher, kOutputB) == 4);
+	const int moving = launcher.GetValueTable(kOutputB).fColumns[4].fValue;
+	CHECK(moving > 450 && moving < 550);
+	PlayOnTo(launcher, kInterval + kBar / 2, kInterval + 2 * kBar);
+	CHECK(InvertedColumn(launcher, 0) == 4);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+	// Once the outro is over, nothing of the clip is emitted.
+	PlayOnTo(launcher, kInterval + 2 * kBar, 2 * kInterval + kBatch);
+	CHECK(InvertedColumn(launcher, 0) == -1);
+	CHECK(InvertedColumn(launcher, kOutputB) == -1);
+}
+
+// Clip picking, clear mode and duplicate mode show what launch mode shows.
+void TestValueTableOutsideTheEditingSteps() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 3, CLauncher::kTransitionOff);
+	launcher.Advance(Playing(0.0));
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+	launcher.SetSetup(CLauncher::kSetupSourcePicking);
+	CHECK(InvertedColumn(launcher, kOutputB) == 0);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[0].fValue == 500);
+	// A muted track emits no pattern.
+	launcher.SetSetup(CLauncher::kSetupLaunchMode);
+	launcher.SetMutePressed(0, true);
+	launcher.Advance(Playing(kBatch));
+	CHECK(InvertedColumn(launcher, 0) == 0);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 0);
+	CHECK(launcher.GetValueTable(kOutputB).fColumns[0].fValue == 500);
+}
+
+const int kGraphLast = CLauncher::kGraphColumnCount - 1;
+
+// The output graph of a CV output of the shown clip's track.
+struct TGraph {
+	unsigned char fLevels[CLauncher::kGraphColumnCount];
+};
+
+TGraph Graph(const CLauncher& iLauncher, int iOutput) {
+	TGraph graph;
+	iLauncher.GetOutputGraph(iOutput, graph.fLevels);
+	return graph;
+}
+
+void TestGraphLevels() {
+	// Pattern and unipolar: 12 pixels above the line for 0.
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeUnipolar, 0.0) == 0);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeUnipolar, 0.5) == 6);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeUnipolar, 1.0) == 12);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModePattern, 0.0) == 0);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModePattern, 1.0 / 8) == 2);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModePattern, 8.0 / 8) == 12);
+	// Bipolar: 6 pixels each way from the line in the middle.
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeBipolar, 0.0) == 6);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeBipolar, 1.0) == 12);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeBipolar, -1.0) == 0);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeBipolar, -1.0 / 3) == 4);
+	CHECK(CLauncher::GraphLevel(CLauncher::kCVModeBipolar, 1.0 / 3) == 8);
+}
+
+// The graph covers two switch intervals and moves with the song.
+void TestGraphRecordsWhatIsEmitted() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionOff);
+	// Nothing is known of the time before the song was opened.
+	CHECK(Graph(launcher, kOutputB).fLevels[0] == CLauncher::kGraphEmpty);
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast] == CLauncher::kGraphEmpty);
+
+	launcher.Advance(Playing(0.0));
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast] == 0);
+	CHECK(Graph(launcher, 0).fLevels[kGraphLast] == 2);
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 1] == CLauncher::kGraphEmpty);
+
+	// Row 2, at 100, takes over after one switch interval: half the graph.
+	PlayThrough(launcher, kBatch, kBar);
+	launcher.SetSelection(0, 2);
+	PlayOnTo(launcher, kBar, 2 * kInterval - kBatch);
+	const TGraph graph = Graph(launcher, kOutputB);
+	CHECK(graph.fLevels[kGraphLast] == 12);
+	CHECK(graph.fLevels[kGraphLast - 50] == 12);
+	CHECK(graph.fLevels[kGraphLast - 65] == 0);
+	CHECK(graph.fLevels[1] == 0);
+	CHECK(Graph(launcher, 0).fLevels[kGraphLast] == 3);
+	CHECK(Graph(launcher, 0).fLevels[1] == 2);
+
+	// It goes on past its own width: the oldest columns fall off.
+	PlayOnTo(launcher, 2 * kInterval - kBatch, 3 * kInterval - kBatch);
+	CHECK(Graph(launcher, kOutputB).fLevels[0] == 12);
+}
+
+void TestGraphStandsStillWhileTheTransportIsStopped() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 0, CLauncher::kTransitionOff);
+	PlayOnTo(launcher, -kBatch, kInterval / 2);
+	const TGraph before = Graph(launcher, kOutputB);
+	for (int batch = 0; batch < 5000; ++batch) {
+		launcher.Advance(Stopped(kInterval / 2));
+	}
+	// A clip chosen while the transport is stopped is emitted at once, and
+	// the last column follows it.
+	launcher.SetSelection(0, 2);
+	launcher.Advance(Stopped(kInterval / 2));
+	const TGraph after = Graph(launcher, kOutputB);
+	CHECK(after.fLevels[kGraphLast] == 12);
+	for (int column = 0; column < kGraphLast; ++column) {
+		CHECK(after.fLevels[column] == before.fLevels[column]);
+	}
+}
+
+// A jump does not empty the graph: it goes on from the right edge.
+void TestGraphGoesOnAfterAJump() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 3, CLauncher::kTransitionOff);
+	PlayOnTo(launcher, -kBatch, kInterval);
+	const TGraph before = Graph(launcher, kOutputB);
+	launcher.Advance(Playing(40.0 * kInterval));
+	const TGraph after = Graph(launcher, kOutputB);
+	CHECK(after.fLevels[kGraphLast] == 6);
+	for (int column = 0; column < kGraphLast; ++column) {
+		CHECK(after.fLevels[column] == before.fLevels[column + 1]);
+	}
+}
+
+void TestGraphStartsEmptyWhenTheLengthChanges() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 3, CLauncher::kTransitionOff);
+	PlayOnTo(launcher, -kBatch, kInterval);
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 10] == 6);
+	launcher.SetLength(CLauncher::kLengthFirstBars);
+	launcher.Advance(Playing(kInterval + kBatch));
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast] == 6);
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 1] == CLauncher::kGraphEmpty);
+	// One bar or less: two bars across.
+	PlayOnTo(launcher, kInterval + kBatch, kInterval + kBar);
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 50] == 6);
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 65] == CLauncher::kGraphEmpty);
+	// Half a bar is one bar or less too: nothing changes.
+	launcher.SetLength(CLauncher::kLengthHalfBar);
+	launcher.Advance(Playing(kInterval + kBar + kBatch));
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 50] == 6);
+}
+
+void TestChangingTheCVModeEmptiesOneGraph() {
+	CLauncher launcher;
+	SetUpTransition(launcher, 3, CLauncher::kTransitionOff);
+	PlayOnTo(launcher, -kBatch, kInterval);
+	launcher.SetCVMode(0, kOutputB, CLauncher::kCVModeBipolar);
+	launcher.Advance(Playing(kInterval + kBatch));
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 1] == CLauncher::kGraphEmpty);
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast] == 6);
+	CHECK(Graph(launcher, 0).fLevels[kGraphLast - 10] == 2);
+}
+
+// Every track is recorded, so the graph is there when the shown clip moves.
+void TestGraphShowsThePastOfAnotherTrack() {
+	CLauncher launcher;
+	FillGrid(launcher);
+	launcher.SetClipUnipolar(4, 3, kOutputB, 6);
+	launcher.SetSelection(0, 1);
+	launcher.SetSelection(4, 3);
+	launcher.Open();
+	PlayOnTo(launcher, -kBatch, kInterval);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(0, 1));
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 10] == 0);
+	launcher.SetRelaunchPressed(4, true);
+	launcher.Advance(Playing(kInterval + kBatch));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(4, 3));
+	CHECK(Graph(launcher, kOutputB).fLevels[kGraphLast - 10] == 12);
+	CHECK(Graph(launcher, 0).fLevels[kGraphLast - 10] == 5);
+}
+
 void TestOutputSettingsPackIntoOneNumber() {
 	CHECK(CLauncher::kOutputSettingsCount == 1960);
 	bool seen[CLauncher::kOutputSettingsCount] = {};
@@ -3992,6 +4478,26 @@ int main() {
 	TestJumpingDropsTheOutro();
 	TestOutroLiesOverAFillInAndALanding();
 	TestOutputSettingsPackIntoOneNumber();
+	TestShownClipIsTheClipLaunchedLast();
+	TestSceneButtonShowsTheLeftmostClip();
+	TestShownClipInSetupMode();
+	TestOpeningShowsTheLeftmostActiveClip();
+	TestValueTableShowsWhatIsSet();
+	TestValueTableOfAnEmptyLaunchButtonIsBlank();
+	TestValueTableFollowsWhatIsEmitted();
+	TestValueTableDuringAFillIn();
+	TestValueTableWithAOneBarPatternFillIn();
+	TestValueTableDuringALanding();
+	TestValueTableDuringAnIntro();
+	TestValueTableDuringAnOutro();
+	TestValueTableOutsideTheEditingSteps();
+	TestGraphLevels();
+	TestGraphRecordsWhatIsEmitted();
+	TestGraphStandsStillWhileTheTransportIsStopped();
+	TestGraphGoesOnAfterAJump();
+	TestGraphStartsEmptyWhenTheLengthChanges();
+	TestChangingTheCVModeEmptiesOneGraph();
+	TestGraphShowsThePastOfAnotherTrack();
 	TestSwitchesPackIntoOneNumber();
 
 	return ReportChecks("Launcher");

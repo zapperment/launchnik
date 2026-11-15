@@ -17,8 +17,8 @@ CONTEXT.md):
   transitions, and the bipolar values lit with each of the five transitions.
   The six scenes share it.
 - GUI2D/Transition_Diagrams_6frames.png holds the five sets of transition
-  diagrams to the right of the scene buttons, one above the other:
-  TRANSITION, FILL-IN, LANDING, INTRO and OUTRO, each with its letters A to D
+  diagrams in two columns: TRANSITION alone in the first row, FILL-IN and
+  LANDING in the second, INTRO and OUTRO in the third, each with its letters A to D
   and its four diagrams. An intro moves like a clip or a fill-in, towards
   the switch point; an outro like a landing, away from it. In the first
   frame all are grey; in the others one set is lit, TRANSITION in yellow,
@@ -74,26 +74,28 @@ BIPOLAR = ["-100", "-66.6", "-33.3", "0", "+33.3", "+66.6", "+100"]
 TRANSITIONS = ["OFF", "A", "B", "C", "D"]
 
 # The sets of transition diagrams, within a frame of their film strip: the
-# frame's size, and for each set, SET_PITCH pixels apart, where its heading
-# and the middle of its letters go, and where its diagram is, with the middle
-# of its four boxes DIAGRAM_ROWS pixels below its top. The frame sits at
-# 3327, 555 on the front panel (see GUI2D/device_2D.lua).
-DIAGRAMS_SIZE = (250, 1690)
+# frame's size, and for each set, in rows SET_PITCH pixels apart and columns
+# COLUMN_PITCH pixels apart, where its heading and the middle of its letters
+# go, and where its diagram is, with the middle of its four boxes
+# DIAGRAM_ROWS pixels below its top. The frame sits at 211, 1711 on the front
+# panel (see GUI2D/device_2D.lua).
+DIAGRAMS_SIZE = (535, 1000)
 SET_PITCH = 345
+COLUMN_PITCH = 285
 HEADING_LEFT = 16
 HEADING_TOP = 9
 LETTER_CENTRE = 29
 DIAGRAM_LEFT = 60
 DIAGRAM_TOP = 60
 DIAGRAM_ROWS = [28, 92, 156, 219]
-# Each set: its heading, the colour it is lit in, and its diagrams lit and
-# grey.
+# Each set: its heading, the colour it is lit in, its diagrams lit and grey,
+# and its column and row.
 DIAGRAM_SETS = [
-	("TRANSITION", YELLOW, "fill-in"),
-	("FILL-IN", ORANGE, "fill-in"),
-	("LANDING", BLUE, "landing"),
-	("INTRO", PINK, "fill-in"),
-	("OUTRO", TURQUOISE, "landing"),
+	("TRANSITION", YELLOW, "fill-in", 0, 0),
+	("FILL-IN", ORANGE, "fill-in", 0, 1),
+	("LANDING", BLUE, "landing", 1, 1),
+	("INTRO", PINK, "fill-in", 0, 2),
+	("OUTRO", TURQUOISE, "landing", 1, 2),
 ]
 
 # The back panel: the jacks of track 1 start 840 pixels from the left, 300
@@ -174,14 +176,15 @@ def make_transition_diagrams():
 	strip = Image.new("RGBA", (width, height * (1 + len(DIAGRAM_SETS))))
 	draw = ImageDraw.Draw(strip)
 	for frame in range(1 + len(DIAGRAM_SETS)):
-		for index, (heading, colour, kind) in enumerate(DIAGRAM_SETS):
+		for index, (heading, colour, kind, column, row) in enumerate(DIAGRAM_SETS):
 			lit = frame == index + 1
-			top = height * frame + SET_PITCH * index
+			left = COLUMN_PITCH * column
+			top = height * frame + SET_PITCH * row
 			colour = colour if lit else UNLIT
-			draw_text(draw, (HEADING_LEFT, top + HEADING_TOP - cap_top), heading, colour, typeface, "ls")
-			for letter, row in zip("ABCD", DIAGRAM_ROWS):
-				draw_text(draw, (LETTER_CENTRE, top + DIAGRAM_TOP + row), letter, colour, typeface, "mm")
-			strip.alpha_composite(diagrams[(kind, lit)], (DIAGRAM_LEFT, top + DIAGRAM_TOP))
+			draw_text(draw, (left + HEADING_LEFT, top + HEADING_TOP - cap_top), heading, colour, typeface, "ls")
+			for letter, box in zip("ABCD", DIAGRAM_ROWS):
+				draw_text(draw, (left + LETTER_CENTRE, top + DIAGRAM_TOP + box), letter, colour, typeface, "mm")
+			strip.alpha_composite(diagrams[(kind, lit)], (left + DIAGRAM_LEFT, top + DIAGRAM_TOP))
 	target = GUI / f"Transition_Diagrams_{1 + len(DIAGRAM_SETS)}frames.png"
 	strip.save(target)
 	print(f"Wrote {target.relative_to(ROOT)}")
