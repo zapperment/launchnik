@@ -328,6 +328,10 @@ void Apply(const CPress::TChange& iChange, TJBox_ObjectRef iCustomProps, TJBox_G
 			JBox_StoreMOMPropertyByTag(iCustomProps, RelaunchTag(iChange.fIndex), JBox_MakeBoolean(iChange.fValue != 0));
 			iArgs.fGestureNameKey = "gesture_relaunch";
 			break;
+		case CPress::kShow:
+			JBox_StoreMOMPropertyByTag(iCustomProps, kCustomPropsTag_Show, JBox_MakeNumber(iChange.fValue));
+			iArgs.fGestureNameKey = "gesture_show";
+			break;
 		case CPress::kNothing:
 			break;
 	}
@@ -388,6 +392,10 @@ void ReleaseRelaunches(TJBox_GestureArgs& iArgs) {
 		if (JBox_GetBoolean(JBox_LoadMOMPropertyByTag(customProps, RelaunchTag(track)))) {
 			Apply(CPress::RelaunchButton(CLauncher::kSetupLaunchMode, track, false), customProps, iArgs);
 		}
+	}
+	// A show press is let go of in the same way.
+	if (JBox_GetNumber(JBox_LoadMOMPropertyByTag(customProps, kCustomPropsTag_Show)) != 0) {
+		Apply(CPress::ShowButton(CLauncher::kSetupLaunchMode, 0, 1, false, false), customProps, iArgs);
 	}
 }
 
@@ -514,7 +522,15 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		iArgs.fGestureNameKey = "gesture_duplicate_mode";
 		return;
 	}
+	// In launch mode a click with the shift key held launches nothing: on a
+	// launch button that holds a clip it is a show press, and on any other
+	// launch button and on a scene button it does nothing.
+	const bool shiftInLaunchMode = setup == CLauncher::kSetupLaunchMode && iArgs.fCurrentState.fModifierKeys.fShift;
 	if (iArgs.fDisplayInfo.fID == kDisplayID_SceneButtons) {
+		if (shiftInLaunchMode) {
+			iArgs.fConsumeFlag = true;
+			return;
+		}
 		int scene = 0;
 		if (!FindSceneButton(iArgs.fStartState.fPoint, scene)) {
 			return;
@@ -576,6 +592,11 @@ void HandlePanelGesture(TJBox_GestureArgs& iArgs) {
 		return;
 	}
 	iArgs.fConsumeFlag = true;
+
+	if (shiftInLaunchMode) {
+		Apply(CPress::ShowButton(setup, track, row, HoldsClip(customProps, CLauncher::ButtonIndex(track, row)), true), customProps, iArgs);
+		return;
+	}
 
 	// Clearing a launch button and returning to launch mode are one step of
 	// the undo history.

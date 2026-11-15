@@ -240,6 +240,21 @@ void TestLaunchHoldsTheRelaunchPressInLaunchModeOnly() {
 	CHECK(IsNoChange(CPress::RelaunchButton(kLaunchMode, 8, true)));
 }
 
+void TestAShowPressShowsAClipInLaunchModeOnly() {
+	CHECK(IsChange(CPress::ShowButton(kLaunchMode, 2, 5, true, true), CPress::kShow, 0, CLauncher::ButtonIndex(2, 5) + 1));
+	CHECK(IsChange(CPress::ShowButton(kLaunchMode, 0, 1, true, true), CPress::kShow, 0, 1));
+	CHECK(IsChange(CPress::ShowButton(kLaunchMode, 7, 8, true, true), CPress::kShow, 0, 64));
+	// An empty launch button shows nothing.
+	CHECK(IsNoChange(CPress::ShowButton(kLaunchMode, 2, 5, false, true)));
+	CHECK(IsNoChange(CPress::ShowButton(kClipPicking, 2, 5, true, true)));
+	CHECK(IsNoChange(CPress::ShowButton(CLauncher::kSetupClearMode, 2, 5, true, true)));
+	CHECK(IsNoChange(CPress::ShowButton(CLauncher::SetupForClipEditing(3, 6), 2, 5, true, true)));
+	CHECK(IsNoChange(CPress::ShowButton(kLaunchMode, 8, 5, true, true)));
+	CHECK(IsNoChange(CPress::ShowButton(kLaunchMode, 2, 9, true, true)));
+	// Letting go is passed on in every mode.
+	CHECK(IsChange(CPress::ShowButton(kClipPicking, 2, 5, false, false), CPress::kShow, 0, 0));
+}
+
 void TestSceneButtonSelectsItsRowOnEveryTrack() {
 	const bool holdsClip[8] = { true, true, true, true, true, true, true, true };
 	const CPress::TChanges changes = CPress::SceneButton(kLaunchMode, 3, holdsClip, kColours);
@@ -927,6 +942,7 @@ int main() {
 	TestClipEditingUnusedLaunchButtonsDoNothing();
 	TestClipEditingWithoutClipHasNoColourOrCVControls();
 	TestLaunchHoldsTheRelaunchPressInLaunchModeOnly();
+	TestAShowPressShowsAClipInLaunchModeOnly();
 	TestSceneButtonSelectsItsRowOnEveryTrack();
 	TestSceneButtonStopsTracksWithAnEmptyLaunchButton();
 	TestSceneButtonOfAnEmptySceneStopsEveryTrack();

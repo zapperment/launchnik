@@ -3843,6 +3843,56 @@ void TestShownClipInSetupMode() {
 	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
 }
 
+// A show press makes a clip the shown clip without launching it.
+void TestAShowPressShowsAClipWithoutLaunchingIt() {
+	CLauncher launcher;
+	launcher.SetClipPresent(1, 3, true);
+	launcher.SetClipPresent(1, 5, true);
+	launcher.SetClipPresent(2, 5, true);
+	launcher.SetSelection(1, 3);
+	launcher.Advance(Playing(kBatch));
+	const int stateBefore = launcher.GetButtonState(2, 5);
+
+	launcher.Show(CLauncher::ButtonIndex(2, 5));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+	launcher.Advance(Playing(kBatch * 2));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+	CHECK(launcher.GetButtonState(2, 5) == stateBefore);
+
+	// An empty launch button and a show press let go change nothing.
+	launcher.Show(CLauncher::ButtonIndex(4, 4));
+	launcher.Show(-1);
+	launcher.Show(CLauncher::kButtonCount);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+
+	// The next launch takes the big display back, and the next show press
+	// has it again.
+	launcher.SetSelection(1, 5);
+	launcher.Advance(Playing(kBatch * 3));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 5));
+	launcher.Show(CLauncher::ButtonIndex(2, 5));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+
+	// A launch counts over a show press of the same batch.
+	launcher.Show(CLauncher::ButtonIndex(2, 5));
+	launcher.SetSelection(1, 3);
+	launcher.Advance(Playing(kBatch * 4));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+
+	// Only in launch mode; a clip shown there stays the shown clip.
+	launcher.SetSetup(CLauncher::kSetupClipPicking);
+	launcher.Show(CLauncher::ButtonIndex(2, 5));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+	launcher.SetSetup(CLauncher::kSetupClearMode);
+	launcher.Show(CLauncher::ButtonIndex(2, 5));
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(1, 3));
+	launcher.SetSetup(CLauncher::kSetupLaunchMode);
+	launcher.Show(CLauncher::ButtonIndex(2, 5));
+	launcher.SetSetup(CLauncher::SetupForClipEditing(4, 7));
+	launcher.SetSetup(CLauncher::kSetupLaunchMode);
+	CHECK(launcher.GetShownButton() == CLauncher::ButtonIndex(2, 5));
+}
+
 // The shown clip is not saved: a song opens with what is playing.
 void TestOpeningShowsTheLeftmostActiveClip() {
 	CLauncher launcher;
@@ -3951,6 +4001,44 @@ int InvertedColumn(const CLauncher& iLauncher, int iOutput) {
 		}
 	}
 	return inverted;
+}
+
+// A clip that is shown without playing or being queued has the values set in
+// every column, and none inverted.
+void TestValueTableOfAClipThatIsOnlyShown() {
+	CLauncher launcher;
+	launcher.SetCVMode(0, 1, CLauncher::kCVModeUnipolar);
+	launcher.SetCVMode(3, 1, CLauncher::kCVModeUnipolar);
+	launcher.SetClipPresent(0, 1, true);
+	launcher.SetClipUnipolar(0, 1, 1, 6 * kStep);
+	launcher.SetClipPresent(0, 2, true);
+	launcher.SetClipUnipolar(0, 2, 1, 3 * kStep);
+	launcher.SetFillInPresent(0, 2, true);
+	launcher.SetClipPresent(3, 4, true);
+	launcher.SetClipUnipolar(3, 4, 1, 2 * kStep);
+	launcher.SetSelection(0, 1);
+	launcher.Open();
+	launcher.Advance(Playing(0.0));
+	PlayThrough(launcher, kBatch, kBar);
+	CHECK(InvertedColumn(launcher, 1) == 0);
+	CHECK(launcher.GetValueTable(1).fColumns[0].fValue == 1000);
+
+	// Another clip of the playing track: its own value, not the 100 emitted.
+	launcher.Show(CLauncher::ButtonIndex(0, 2));
+	CHECK(InvertedColumn(launcher, 1) == -1);
+	CHECK(launcher.GetValueTable(1).fColumns[0].fValue == 500);
+	CHECK(launcher.GetValueTable(1).fColumns[1].fPresent);
+
+	// A clip of a track that has played nothing: its own value, not the 0
+	// emitted.
+	launcher.Show(CLauncher::ButtonIndex(3, 4));
+	CHECK(InvertedColumn(launcher, 1) == -1);
+	CHECK(launcher.GetValueTable(1).fColumns[0].fValue == 333);
+
+	// The playing clip, shown again, is inverted as after a launch.
+	launcher.Show(CLauncher::ButtonIndex(0, 1));
+	CHECK(InvertedColumn(launcher, 1) == 0);
+	CHECK(launcher.GetValueTable(1).fColumns[0].fValue == 1000);
 }
 
 // In launch mode the inverted column is what the CV output emits, and shows
@@ -4544,6 +4632,8 @@ int main() {
 	TestShownClipIsTheClipLaunchedLast();
 	TestSceneButtonShowsTheLeftmostClip();
 	TestShownClipInSetupMode();
+	TestAShowPressShowsAClipWithoutLaunchingIt();
+	TestValueTableOfAClipThatIsOnlyShown();
 	TestOpeningShowsTheLeftmostActiveClip();
 	TestValueTableShowsWhatIsSet();
 	TestValueTableOfAnEmptyLaunchButtonIsBlank();

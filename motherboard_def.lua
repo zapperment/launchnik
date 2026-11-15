@@ -28,6 +28,7 @@ format_version = "3.0"
 --   film strip frame of the labels of the row of CV output o: 140 + o
 --   film strip frame of the transition diagrams: 150
 --   shown clip of the big display:   151
+--   show press, held down or not:    152
 --   name of track t:                 400 + t
 --   name of the scene of row r:      410 + r
 --   name of a launch button's clip:  4000 + 10 * t + r
@@ -466,6 +467,22 @@ rt_properties.shown_clip = jbox.number{
 	ui_name = jbox.ui_text("text_shown_clip"),
 	ui_type = plain_number(TRACK_COUNT * ROW_COUNT),
 }
+
+-- A show press: the number of the launch button, 1 to 64 as for the shown
+-- clip, while a click on it with the shift key, or a press of its pad with a
+-- control surface's Shift button, is held down, and 0 once it is let go. In
+-- launch mode the realtime code makes the clip of that launch button the
+-- shown clip when it goes down, as it does for a launch. Not saved and not
+-- automatable.
+document_properties.show = jbox.number{
+	property_tag = 152,
+	default = 0,
+	steps = 1 + TRACK_COUNT * ROW_COUNT,
+	persistence = "none",
+	ui_name = jbox.ui_text("text_show"),
+	ui_type = plain_number(TRACK_COUNT * ROW_COUNT),
+}
+add_remote_item("show", "Show Clip")
 
 -- What the big display shows besides names, as the bytes that
 -- CBigDisplay::Encode makes (see docs/adr/0009): for each of the six CV

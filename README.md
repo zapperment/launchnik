@@ -61,6 +61,7 @@ The meter follows the song position whether the song plays or not, and goes on r
 The big display on the left of the panel is for reading only. It is about one clip, the **shown clip**:
 
 - In launch mode it is the clip you launched last, from the moment you launch it, while it is still queued. A scene button shows the clip of the leftmost track that has one in that scene. Stopping a track, or clicking an empty launch button, changes nothing, so you can watch an outro play.
+- To look at a clip without launching it, hold the shift key and click its launch button in launch mode. Nothing is launched, queued or stopped; the display shows that clip until you launch or shift-click another. If the clip is neither playing nor queued, none of its values is inverted and every value is the one you set. A shift-click on an empty launch button or on a scene button does nothing. A shift-click cannot be automated, but each one is a step in the undo history, "Show clip", whose undo changes nothing (see [0011](docs/adr/0011-a-show-press-is-a-step-in-the-undo-history.md)).
 - In setup mode, from step 2 on, it is the clip of the launch button you picked.
 - Step 1 of setup mode, clear mode and duplicate mode show what launch mode shows.
 - After a song is loaded it is the active clip of the leftmost track that is playing one. If no track is playing, the display shows no names and no values.
@@ -303,6 +304,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Mute` (8 items) | Input and output | 1 while the track's mute button is held down, 0 otherwise |
 | `Track N Solo` (8 items) | Input and output | 1 while the track's solo button is held down, 0 otherwise |
 | `Track N Relaunch` (8 items) | Input and output | 1 while a launch on the track is held down, 0 otherwise; a codec holds it down with every launch in launch mode, from a pad or a scene button |
+| `Show Clip` | Input and output | 1–64 while a show press of that launch button is held down, counted down track 1 first, 0 otherwise; in launch mode it makes the button's clip the shown clip of the big display without launching it |
 | `Function` | Input and output | 0 = stop, 1 = mute, 2 = solo |
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
 | `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green, in clip picking 3 = flashing white, 18 = flashing green, in clear mode 6 = flashing red, and in duplicate mode 39 = flashing fuchsia, 38 = vibrant fuchsia |

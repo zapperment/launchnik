@@ -42,7 +42,10 @@ class CPress {
 		kSolo,
 		// fIndex is the track, fValue 1 while a launch on it is held down, 0
 		// once it is let go.
-		kRelaunch
+		kRelaunch,
+		// fValue is the number of the launch button, from 1, while a show press
+		// is held down, 0 once it is let go.
+		kShow
 	};
 
 	// One property and its new value. A press of a launch button outside
@@ -186,6 +189,15 @@ class CPress {
 	// relaunches is up to the realtime code. Elsewhere a press changes nothing
 	// here. Letting go is always passed on.
 	public: static TChange RelaunchButton(int iSetup, int iTrack, bool iPressed);
+
+	// A show press: a click on a launch button with the shift key held, or a
+	// press of a pad with a control surface's Shift button held. In launch
+	// mode, on a launch button that holds a clip, it makes that clip the
+	// shown clip of the big display for the realtime code, and launches
+	// nothing; anywhere else it changes nothing here. It is held down like a
+	// relaunch press, so that a second show press of the same launch button
+	// is a change again; letting go is always passed on.
+	public: static TChange ShowButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, bool iPressed);
 
 	public: static TChange StopButton(int iTrack);
 

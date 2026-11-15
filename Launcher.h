@@ -355,12 +355,19 @@ class CLauncher {
 	// The launch button of the big display's shown clip, as a button index:
 	// in clip editing, fill-in editing, landing editing, intro editing and
 	// outro editing the launch button being set up, otherwise the one whose
-	// clip was launched last, by a selection or a relaunch press; of several
-	// tracks launched in one batch, as by a scene button, the leftmost counts.
-	// Choosing stop or an empty launch button changes nothing. -1 while no
-	// clip has been launched; Open() makes it the active clip of the leftmost
-	// track that is playing one.
+	// clip was launched or shown last: launched by a selection or a relaunch
+	// press, shown by Show(); of several tracks launched in one batch, as by
+	// a scene button, the leftmost counts, and a launch counts over a show
+	// press of the same batch. Choosing stop or an empty launch button
+	// changes nothing. -1 while no clip has been launched or shown; Open()
+	// makes it the active clip of the leftmost track that is playing one.
 	public: int GetShownButton() const;
+	// A show press of a launch button, as a button index: in launch mode it
+	// makes the clip of that launch button the shown clip and launches
+	// nothing. Outside launch mode, and for an empty launch button or
+	// anything that is no button index, such as the -1 of a show press let
+	// go, it does nothing.
+	public: void Show(int iButton);
 
 	// The value table that the big display shows for a CV output of the
 	// shown clip's track: a column each for the clip, its fill-in, landing,
@@ -382,10 +389,13 @@ class CLauncher {
 		// mode 0 to 1000 and in bipolar mode -1000 to 1000, tenths of what
 		// the labels say, cut off towards 0. It is the value set, except in
 		// a column inverted for what the CV output emits: there it is the
-		// value emitted, 0 for no pattern. While no column is inverted
-		// outside the editing steps, the clip's column has the value
-		// emitted in unipolar and bipolar mode, so that it is always in
-		// view; in pattern mode it keeps the clip's pattern.
+		// value emitted, 0 for no pattern. While the shown clip is queued,
+		// or was the last its stopped track played, and no column is
+		// inverted, the clip's column has the value emitted in unipolar and
+		// bipolar mode, so that it is always in view; in pattern mode it
+		// keeps the clip's pattern. A shown clip that is neither playing nor
+		// queued, while its track plays another or has played another last,
+		// has the values set in every column.
 		int fValue;
 	};
 	public: struct TValueTable {
@@ -873,7 +883,7 @@ class CLauncher {
 	// Set by a change of a track's selection and by a relaunch press, until
 	// the next call of Advance().
 	private: bool fLaunched[kTrackCount];
-	// The button index of the clip launched last, or -1.
+	// The button index of the clip launched or shown last, or -1.
 	private: int fLaunchedLast;
 
 	// Moves the output graphs on with the song position and records what

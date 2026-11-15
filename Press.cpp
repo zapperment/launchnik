@@ -276,6 +276,16 @@ CPress::TChange CPress::RelaunchButton(int iSetup, int iTrack, bool iPressed) {
 	return MakeChange(kRelaunch, iTrack, iPressed ? 1 : 0);
 }
 
+CPress::TChange CPress::ShowButton(int iSetup, int iTrack, int iRow, bool iPressedHoldsClip, bool iPressed) {
+	if (!iPressed) {
+		return MakeChange(kShow, 0, 0);
+	}
+	if (iSetup != CLauncher::kSetupLaunchMode || !iPressedHoldsClip || iTrack < 0 || iTrack >= CLauncher::kTrackCount || iRow < 1 || iRow > CLauncher::kRowCount) {
+		return kNoChange;
+	}
+	return MakeChange(kShow, 0, CLauncher::ButtonIndex(iTrack, iRow) + 1);
+}
+
 CPress::TChange CPress::StopButton(int iTrack) {
 	return MakeChange(kSelection, iTrack, CLauncher::kSelectionStop);
 }

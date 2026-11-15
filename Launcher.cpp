@@ -660,6 +660,15 @@ int CLauncher::GetShownButton() const {
 	return picked >= 0 ? picked : fLaunchedLast;
 }
 
+void CLauncher::Show(int iButton) {
+	if (fSetup != kSetupLaunchMode || iButton < 0 || iButton >= kButtonCount) {
+		return;
+	}
+	if (fClips[iButton / kRowCount][iButton % kRowCount].fPresent) {
+		fLaunchedLast = iButton;
+	}
+}
+
 CLauncher::TValueTable CLauncher::GetValueTable(int iOutput) const {
 	TValueTable table;
 	const int shown = GetShownButton();
@@ -688,6 +697,10 @@ CLauncher::TValueTable CLauncher::GetValueTable(int iOutput) const {
 	else {
 		inverted = EmittedColumn(track, shown % kRowCount + 1, iOutput);
 	}
+	// Whether what the track emits is on its way to the shown clip, which is
+	// queued, or left behind by it, the last clip the stopped track played.
+	const int shownRow = shown % kRowCount + 1;
+	const bool emitsForShown = fSelections[track] == shownRow || (fActive[track] == kSelectionStop && fLastActive[track] == shownRow);
 	for (int column = 0; column < kTableColumnCount; ++column) {
 		const TSettings& columnSettings = *settings[column];
 		if (!columnSettings.fPresent) {
@@ -711,8 +724,9 @@ CLauncher::TValueTable CLauncher::GetValueTable(int iOutput) const {
 		// Outside the editing steps the inverted column shows what is
 		// emitted, which a transition puts between the values that can be
 		// set. While the shown clip is queued or its track stopped, no
-		// column is inverted, and the clip's stands in for it.
-		const bool standsIn = inverted < 0 && column == 0 && table.fCVMode != kCVModePattern;
+		// column is inverted, and the clip's stands in for it; not so for a
+		// clip that is only shown, on a track that has to do with another.
+		const bool standsIn = inverted < 0 && column == 0 && table.fCVMode != kCVModePattern && emitsForShown;
 		if ((tableColumn.fInverted || standsIn) && !editing) {
 			const double emitted = GetCVValue(track, iOutput);
 			if (table.fCVMode == kCVModePattern) {

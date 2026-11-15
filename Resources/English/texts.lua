@@ -123,6 +123,7 @@ texts = {
 	["gesture_mute"] = "Mute or unmute track",
 	["gesture_solo"] = "Solo or unsolo track",
 	["gesture_relaunch"] = "Relaunch clip",
+	["gesture_show"] = "Show clip",
 	["gesture_clear_mode"] = "Change clear mode",
 	["gesture_clear_clip"] = "Clear clip",
 	["gesture_clear_scene"] = "Clear scene",
@@ -135,6 +136,9 @@ texts = {
 	["text_cv_mode_pattern"] = "Pattern",
 	["text_transition_diagrams"] = "Transition Diagrams",
 	["text_shown_clip"] = "Shown Clip",
+	["text_show"] = "Show Clip",
+	["text_show_short"] = "Show",
+	["text_show_shortest"] = "Show",
 }
 
 for index, letter in ipairs(OUTPUT_LETTERS) do

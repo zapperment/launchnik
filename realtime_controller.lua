@@ -31,7 +31,7 @@ sample_rate_setup = {
 -- selection, mute, solo and relaunch presses and CV modes, and of what a launch button
 -- holds, whether it comes from a click, automation or a control surface.
 local OUTPUT_LETTERS = { "a", "b", "c", "d", "e", "f" }
-local notify = { "/custom_properties/setup", "/custom_properties/switch_interval", "/custom_properties/fill_in", "/custom_properties/selected_function" }
+local notify = { "/custom_properties/setup", "/custom_properties/switch_interval", "/custom_properties/fill_in", "/custom_properties/selected_function", "/custom_properties/show" }
 for track = 1, 8 do
 	table.insert(notify, "/custom_properties/track" .. track .. "_selection")
 	table.insert(notify, "/custom_properties/track" .. track .. "_mute")
