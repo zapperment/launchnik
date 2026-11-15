@@ -80,11 +80,13 @@ CPress::TChange EditSetting(const TSettingsProperties& iProperties, int iPicked,
 	else if (iTrack == CLauncher::kEditingTransitionTrack) {
 		transition = (transition + 1) % CLauncher::kTransitionCount;
 	}
+	// The button of another step sets that step; the button of the value's
+	// own step raises it by a quarter step.
 	else if (cvMode == CLauncher::kCVModeUnipolar) {
-		unipolar = iTrack;
+		unipolar = CLauncher::PressedValue(unipolar, iTrack);
 	}
 	else {
-		bipolar = iTrack;
+		bipolar = CLauncher::PressedValue(bipolar, iTrack);
 	}
 	return MakeChange(iProperties.fOutput, iPicked, Pack(pattern, unipolar, bipolar, transition), output);
 }
@@ -146,7 +148,7 @@ CPress::TEdited CPress::Edited(bool iPresent) {
 		edited.fCVModes[output] = CLauncher::DefaultCVMode(output);
 		edited.fPatterns[output] = 0;
 		edited.fUnipolar[output] = 0;
-		edited.fBipolar[output] = CLauncher::kBipolarZero;
+		edited.fBipolar[output] = CLauncher::kBipolarZeroValue;
 		edited.fTransitions[output] = CLauncher::kTransitionOff;
 	}
 	edited.fOneBarPattern = false;

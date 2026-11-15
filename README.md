@@ -2,7 +2,7 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d29, a development build. Requires Reason 14 or later.
+Version 1.0.0d30, a development build. Requires Reason 14 or later.
 
 ## The panel
 
@@ -106,8 +106,8 @@ Each track has six CV outputs on the back panel, A to F from the top, each with 
 | CV mode | What the output emits |
 |---|---|
 | Pattern | The pattern of the playing clip, in the steps a Combinator reads as pattern selection; 0 (Off) while the track is stopped, muted or solo-muted. |
-| Unipolar | One of seven values from 0 to 1 (labelled 0 to 100). |
-| Bipolar | One of seven values from −1 to +1 (labelled −100 to +100, 0 in the middle). |
+| Unipolar | One of seven values from 0 to 1 (labelled 0 to 100), which can be raised by quarter steps. |
+| Bipolar | One of seven values from −1 to +1 (labelled −100 to +100, 0 in the middle), which can be raised by quarter steps. |
 
 A new device has output A in pattern mode and B to F in unipolar mode. The CV modes are saved with the song and in patches, but cannot be automated or changed from a control surface. Flipping a switch takes effect at once.
 
@@ -155,6 +155,8 @@ Each CV output's row shows what its CV mode needs:
 | Pattern | Patterns 1–7, dim orange, the chosen one vibrant orange | Pattern 8 |
 | Unipolar | Values 0 to 100: the chosen one vibrant cyan, those to its left dim cyan | The transition |
 | Bipolar | Values −100 to +100: the chosen one vibrant fuchsia, those between it and 0 dim fuchsia, 0 included | The transition |
+
+Clicking the button of a unipolar or bipolar value that is already chosen raises the value by a quarter step, a quarter of the way to the next button: 33.3 becomes 37.5, 41.6 and 45.8 on a unipolar output, +33.3 becomes +41.6, +50 and +58.3 on a bipolar one, and a fourth click goes back to 33.3. The button stays lit as it was; the big display shows the value. Any other button sets its own value again, and 100 cannot be raised.
 
 Clicking the transition button goes round from off through A, B, C and D. It is dim red while off and otherwise vibrant in the colour of its transition in the diagram: lime for A, light blue for B, purple for C, pink for D. The labels below each launch button have two lines: the unipolar value on the left and the bipolar value on the right (in column 8 the transitions OFF A B C D), and the pattern below. Only the labels that go with the output's CV mode are lit, in the mode colour, and of the transitions only the chosen one. Whenever the CV labels are lit, so is the set of transition diagrams for the step: TRANSITION in clip editing, FILL-IN in fill-in editing, LANDING in landing editing, INTRO in intro editing, OUTRO in outro editing.
 
@@ -305,7 +307,7 @@ For control surfaces, Launchnik provides these Remote items (N is the track, M t
 | `Track N Clip M Light` (64 items) | Output only | 0 = unlit, then three values per colour: dim, vibrant, flashing (1–3 white, 4–6 red, … 40–42 pink) |
 | `Scene M Light` (8 items) | Output only | As for a launch button; in practice 0 = unlit, 4 = dim red, 10 = dim yellow, 16 = dim green, in clip picking 3 = flashing white, 18 = flashing green, in clear mode 6 = flashing red, and in duplicate mode 39 = flashing fuchsia, 38 = vibrant fuchsia |
 | `Track N Clip M Switches` (64 items) | Input and output | 1 if the launch button holds a clip, + 2 × its colour (0–13 for white to pink), 0–27; see [0008](docs/adr/0008-settings-and-switches-are-packed.md) |
-| `Track N Clip M Output X` (384 items, X = A–F) | Input and output | The pattern (0–7 for patterns 1–8) + 8 × the unipolar value (0–6 for 0 to 100) + 56 × the bipolar value (0–6 for −100 to +100) + 392 × the transition (0 = off, 1–4 = A–D), 0–1959; see [0008](docs/adr/0008-settings-and-switches-are-packed.md) |
+| `Track N Clip M Output X` (384 items, X = A–F) | Input and output | The pattern (0–7 for patterns 1–8) + 8 × the unipolar value (0–6 for 0 to 100) + 56 × the bipolar value (0–6 for −100 to +100) + 392 × the transition (0 = off, 1–4 = A–D) + 1,960 × the quarter steps of the unipolar value (0–3) + 7,840 × those of the bipolar value (0–3), 0–31359; see [0008](docs/adr/0008-settings-and-switches-are-packed.md) and [0010](docs/adr/0010-quarter-steps-lie-above-the-packed-settings.md) |
 | `Track N Clip M Fill-In Switches` (64 items) | Input and output | 1 if the clip holds a fill-in, + 2 × its colour, + 28 if one-bar pattern is on (the fill-in's patterns play in the last bar only), + 56 if it has been set up before (switched on again, it keeps its settings), 0–111 |
 | `Track N Clip M Fill-In Output X` (384 items) | Input and output | As for the clip |
 | `Track N Clip M Landing Switches` (64 items) | Input and output | As for the fill-in; with one-bar pattern the landing's patterns play for the first bar only |

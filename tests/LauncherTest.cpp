@@ -9,6 +9,9 @@
 
 namespace {
 
+// A step of a unipolar or bipolar value, which is counted in quarter steps.
+const int kStep = CLauncher::kQuarterStepCount;
+
 const double kBatch = 20.0; // about one batch at 120 BPM and 44.1 kHz
 const long long kBar = CLauncher::kPPQPerCrotchet * 4;
 const long long kInterval = kBar * 4;
@@ -584,11 +587,17 @@ void TestPatternsAreOrangeInEveryStep() {
 void TestUnipolarValueLightsTheValuesBelowIt() {
 	CLauncher launcher;
 	launcher.SetClipPresent(0, 3, true);
-	launcher.SetClipUnipolar(0, 3, 1, 5);
+	launcher.SetClipUnipolar(0, 3, 1, 5 * kStep);
 	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 3));
 	for (int column = 0; column < 5; ++column) {
 		CHECK(IsLight(launcher.GetLight(column, 4), CLauncher::kDim, CLauncher::kColourCyan));
 	}
+	CHECK(IsLight(launcher.GetLight(5, 4), CLauncher::kVibrant, CLauncher::kColourCyan));
+	CHECK(IsUnlit(launcher.GetLight(6, 4)));
+
+	// A value raised by quarter steps lights the button of its step.
+	launcher.SetClipUnipolar(0, 3, 1, 5 * kStep + 3);
+	CHECK(IsLight(launcher.GetLight(4, 4), CLauncher::kDim, CLauncher::kColourCyan));
 	CHECK(IsLight(launcher.GetLight(5, 4), CLauncher::kVibrant, CLauncher::kColourCyan));
 	CHECK(IsUnlit(launcher.GetLight(6, 4)));
 }
@@ -609,7 +618,7 @@ void TestBipolarValueLightsTheValuesBackToZero() {
 		}
 	}
 
-	launcher.SetClipBipolar(0, 3, 2, 5);
+	launcher.SetClipBipolar(0, 3, 2, 5 * kStep);
 	CHECK(IsUnlit(launcher.GetLight(2, 5)));
 	CHECK(IsLight(launcher.GetLight(3, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
 	CHECK(IsLight(launcher.GetLight(4, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
@@ -622,6 +631,13 @@ void TestBipolarValueLightsTheValuesBackToZero() {
 	CHECK(IsLight(launcher.GetLight(2, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
 	CHECK(IsLight(launcher.GetLight(3, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
 	CHECK(IsUnlit(launcher.GetLight(4, 5)));
+
+	// A value raised by quarter steps lights the button of its step, below 0
+	// too, where that is the button further from 0.
+	launcher.SetClipBipolar(0, 3, 2, 1 * kStep + 3);
+	CHECK(IsUnlit(launcher.GetLight(0, 5)));
+	CHECK(IsLight(launcher.GetLight(1, 5), CLauncher::kVibrant, CLauncher::kColourFuchsia));
+	CHECK(IsLight(launcher.GetLight(2, 5), CLauncher::kDim, CLauncher::kColourFuchsia));
 }
 
 void TestTransitionButtonShowsTheColourOfItsTransition() {
@@ -1590,8 +1606,8 @@ void TestClearModeLetsTracksPlayOn() {
 void SetUpClipToClear(CLauncher& iLauncher) {
 	iLauncher.SetClipPresent(0, 2, true);
 	iLauncher.SetCVMode(0, 2, CLauncher::kCVModeBipolar);
-	iLauncher.SetClipUnipolar(0, 2, 1, CLauncher::kValueCount - 1);
-	iLauncher.SetClipBipolar(0, 2, 2, CLauncher::kValueCount - 1);
+	iLauncher.SetClipUnipolar(0, 2, 1, (CLauncher::kValueCount - 1) * kStep);
+	iLauncher.SetClipBipolar(0, 2, 2, (CLauncher::kValueCount - 1) * kStep);
 	iLauncher.SetSelection(0, 2);
 	iLauncher.Open();
 }
@@ -1763,11 +1779,11 @@ void TestFillInEditingShowsColoursAndPatterns() {
 	launcher.SetClipPresent(3, 6, true);
 	launcher.SetClipColour(3, 6, 2);
 	launcher.SetClipPattern(3, 6, 0, 4);
-	launcher.SetClipUnipolar(3, 6, 1, 6);
+	launcher.SetClipUnipolar(3, 6, 1, 6 * kStep);
 	launcher.SetFillInPresent(3, 6, true);
 	launcher.SetFillInColour(3, 6, 9);
 	launcher.SetFillInPattern(3, 6, 0, 2);
-	launcher.SetFillInUnipolar(3, 6, 1, 1);
+	launcher.SetFillInUnipolar(3, 6, 1, 1 * kStep);
 	launcher.SetSetup(CLauncher::SetupForFillInEditing(3, 6));
 
 	CHECK(IsLight(launcher.GetLight(7, 1), CLauncher::kVibrant, CLauncher::kColourGreen));
@@ -2110,9 +2126,9 @@ const int kOutputB = 1;
 // iTransition on output B; the clips in rows 2 and 3 have the values 6 and 0.
 void SetUpTransition(CLauncher& iLauncher, int iFrom, int iTransition) {
 	FillGrid(iLauncher);
-	iLauncher.SetClipUnipolar(0, 1, kOutputB, iFrom);
+	iLauncher.SetClipUnipolar(0, 1, kOutputB, iFrom * kStep);
 	iLauncher.SetClipTransition(0, 1, kOutputB, iTransition);
-	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6);
+	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6 * kStep);
 	OpenWith(iLauncher, 0, 1);
 }
 
@@ -2129,20 +2145,25 @@ void TestCVModesOfANewDevice() {
 
 void TestUnipolarAndBipolarSteps() {
 	CHECK(CLauncher::UnipolarCV(0) == 0.0);
-	CHECK(Near(CLauncher::UnipolarCV(1), 1.0 / 6));
-	CHECK(CLauncher::UnipolarCV(6) == 1.0);
+	CHECK(Near(CLauncher::UnipolarCV(1 * kStep), 1.0 / 6));
+	CHECK(CLauncher::UnipolarCV(6 * kStep) == 1.0);
 	CHECK(CLauncher::BipolarCV(0) == -1.0);
-	CHECK(CLauncher::BipolarCV(3) == 0.0);
-	CHECK(Near(CLauncher::BipolarCV(4), 1.0 / 3));
-	CHECK(CLauncher::BipolarCV(6) == 1.0);
+	CHECK(CLauncher::BipolarCV(3 * kStep) == 0.0);
+	CHECK(Near(CLauncher::BipolarCV(4 * kStep), 1.0 / 3));
+	CHECK(CLauncher::BipolarCV(6 * kStep) == 1.0);
+	// A quarter step is a quarter of the way to the next step.
+	CHECK(Near(CLauncher::UnipolarCV(2 * kStep + 1), 0.375));
+	CHECK(Near(CLauncher::UnipolarCV(2 * kStep + 3), 0.375 + 1.0 / 12));
+	CHECK(Near(CLauncher::BipolarCV(1), -1.0 + 1.0 / 12));
+	CHECK(Near(CLauncher::BipolarCV(4 * kStep + 2), 0.5));
 }
 
 void TestOutputsEmitTheValueOfTheirCVMode() {
 	CLauncher launcher;
 	FillGrid(launcher);
 	launcher.SetClipPattern(0, 1, kOutputB, 4);
-	launcher.SetClipUnipolar(0, 1, kOutputB, 3);
-	launcher.SetClipBipolar(0, 1, kOutputB, 1);
+	launcher.SetClipUnipolar(0, 1, kOutputB, 3 * kStep);
+	launcher.SetClipBipolar(0, 1, kOutputB, 1 * kStep);
 	OpenWith(launcher, 0, 1);
 	launcher.Advance(Stopped());
 	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
@@ -2162,7 +2183,7 @@ void TestEditingAValueTakesEffectAtOnce() {
 	CLauncher launcher;
 	SetUpTransition(launcher, 2, CLauncher::kTransitionOff);
 	launcher.Advance(Playing(kBar));
-	launcher.SetClipUnipolar(0, 1, kOutputB, 5);
+	launcher.SetClipUnipolar(0, 1, kOutputB, 5 * kStep);
 	launcher.Advance(Playing(kBar + kBatch));
 	CHECK(Near(launcher.GetCVValue(0, kOutputB), 5.0 / 6));
 }
@@ -2192,7 +2213,7 @@ void TestMuteAndSoloLeaveUnipolarAndBipolarOutputsAlone() {
 	CHECK(launcher.GetCVValue(0, 0) == 0.0);
 	CHECK(Near(launcher.GetCVValue(0, kOutputB), 4.0 / 6));
 	CHECK(launcher.GetCVValue(0, 2) == 0.0);
-	launcher.SetClipBipolar(0, 1, 2, 6);
+	launcher.SetClipBipolar(0, 1, 2, 6 * kStep);
 	launcher.Advance(Playing(kBar + kBatch));
 	CHECK(launcher.GetCVValue(0, 2) == 1.0);
 }
@@ -2355,7 +2376,7 @@ void TestChangingTheCVModeDropsTheTransition() {
 	launcher.Advance(Playing(kBar * 2.5));
 	// In bipolar mode both clips start at 0; the movement starts again from
 	// the active clip's value.
-	launcher.SetClipBipolar(0, 2, kOutputB, 6);
+	launcher.SetClipBipolar(0, 2, kOutputB, 6 * kStep);
 	launcher.SetCVMode(0, kOutputB, CLauncher::kCVModeBipolar);
 	launcher.Advance(Playing(kBar * 2.5));
 	CHECK(launcher.GetCVValue(0, kOutputB) == 0.0);
@@ -2368,7 +2389,7 @@ void TestChangingTheCVModeDropsTheTransition() {
 void SetUpRiser(CLauncher& iLauncher, int iTransition) {
 	SetUpTransition(iLauncher, 0, CLauncher::kTransitionOff);
 	iLauncher.SetFillInPresent(0, 1, true);
-	iLauncher.SetFillInUnipolar(0, 1, kOutputB, 6);
+	iLauncher.SetFillInUnipolar(0, 1, kOutputB, 6 * kStep);
 	iLauncher.SetFillInTransition(0, 1, kOutputB, iTransition);
 }
 
@@ -2395,7 +2416,7 @@ void TestFillInTransitionRisesToTheSwitchPoint() {
 	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.5));
 	// It jumps to whatever was queued meanwhile, without a transition.
 	launcher.SetSelection(0, 3);
-	launcher.SetClipUnipolar(0, 3, kOutputB, 3);
+	launcher.SetClipUnipolar(0, 3, kOutputB, 3 * kStep);
 	launcher.Advance(Playing(kBar * 3.5));
 	CHECK(Near(launcher.GetCVValue(0, kOutputB), 0.75));
 	launcher.Advance(Playing(kInterval - kBatch / 2));
@@ -2711,7 +2732,7 @@ void TestLandingTransitionCWithLessThanTwoBarsIsLikeA() {
 void TestTransitionMovesTowardsTheQueuedClipsLanding() {
 	CLauncher launcher;
 	SetUpLanding(launcher, CLauncher::kTransitionOff);
-	launcher.SetClipUnipolar(0, 1, kOutputB, 3);
+	launcher.SetClipUnipolar(0, 1, kOutputB, 3 * kStep);
 	launcher.SetClipTransition(0, 1, kOutputB, CLauncher::kTransitionA);
 	launcher.Advance(Playing(kBar));
 	launcher.SetSelection(0, 2);
@@ -2754,7 +2775,7 @@ void TestFillInLiesOverALanding() {
 	CLauncher launcher;
 	SetUpLanding(launcher, CLauncher::kTransitionOff);
 	launcher.SetFillInPresent(0, 2, true);
-	launcher.SetFillInUnipolar(0, 2, kOutputB, 3);
+	launcher.SetFillInUnipolar(0, 2, kOutputB, 3 * kStep);
 	launcher.SetFillInPattern(0, 2, 0, 4);
 	launcher.SetFillInColour(0, 2, 12);
 	LandOnRow2(launcher);
@@ -2775,7 +2796,7 @@ void TestChangesToTheLandingTakeEffectAtOnce() {
 	SetUpLanding(launcher, CLauncher::kTransitionOff);
 	LandOnRow2(launcher);
 	launcher.SetLandingPattern(0, 2, 0, 3);
-	launcher.SetLandingUnipolar(0, 2, kOutputB, 3);
+	launcher.SetLandingUnipolar(0, 2, kOutputB, 3 * kStep);
 	launcher.SetLandingColour(0, 2, 9);
 	launcher.Advance(Playing(kInterval + kBatch * 2));
 	CHECK(launcher.GetCVValue(0, 0) == 4.0 / 8);
@@ -3260,7 +3281,7 @@ void TestDuplicateButtonLights() {
 void SetUpIntro(CLauncher& iLauncher, int iTransition) {
 	FillGrid(iLauncher);
 	iLauncher.SetClipPattern(0, 2, 0, 1);
-	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6);
+	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6 * kStep);
 	iLauncher.SetIntroPresent(0, 2, true);
 	iLauncher.SetIntroPattern(0, 2, 0, 7);
 	iLauncher.SetIntroUnipolar(0, 2, kOutputB, 0);
@@ -3364,7 +3385,7 @@ void TestIntroMovesTowardsTheLanding() {
 	CLauncher launcher;
 	SetUpIntro(launcher, CLauncher::kTransitionA);
 	launcher.SetLandingPresent(0, 2, true);
-	launcher.SetLandingUnipolar(0, 2, kOutputB, 3);
+	launcher.SetLandingUnipolar(0, 2, kOutputB, 3 * kStep);
 	QueueRow2(launcher);
 	const double halfway = kBar + (kInterval - kBar) / 2;
 	PlayOnTo(launcher, kBar, halfway);
@@ -3403,7 +3424,7 @@ void TestIntroOneBarPatternPlaysInTheLastBar() {
 void TestMutedTrackPlaysNoIntroPattern() {
 	CLauncher launcher;
 	SetUpIntro(launcher, CLauncher::kTransitionOff);
-	launcher.SetIntroUnipolar(0, 2, kOutputB, 3);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 3 * kStep);
 	QueueRow2(launcher);
 	PressMute(launcher, 0);
 	launcher.Advance(Playing(kBar + kBatch));
@@ -3415,7 +3436,7 @@ void TestMutedTrackPlaysNoIntroPattern() {
 void TestTakingTheClipBackDropsTheIntro() {
 	CLauncher launcher;
 	SetUpIntro(launcher, CLauncher::kTransitionOff);
-	launcher.SetIntroUnipolar(0, 2, kOutputB, 3);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 3 * kStep);
 	QueueRow2(launcher);
 	PlayOnTo(launcher, kBar, 2 * kBar);
 	CHECK(launcher.GetCVValue(0, kOutputB) == 0.5);
@@ -3442,7 +3463,7 @@ void TestQueueingAnotherClipPlaysItsIntroInstead() {
 	SetUpIntro(launcher, CLauncher::kTransitionOff);
 	launcher.SetIntroPresent(0, 3, true);
 	launcher.SetIntroPattern(0, 3, 0, 4);
-	launcher.SetIntroUnipolar(0, 3, kOutputB, 6);
+	launcher.SetIntroUnipolar(0, 3, kOutputB, 6 * kStep);
 	QueueRow2(launcher);
 	launcher.SetSelection(0, 3);
 	launcher.Advance(Playing(kBar + kBatch));
@@ -3461,7 +3482,7 @@ void TestQueueingAnotherClipPlaysItsIntroInstead() {
 void TestJumpingDropsTheIntro() {
 	CLauncher launcher;
 	SetUpIntro(launcher, CLauncher::kTransitionOff);
-	launcher.SetIntroUnipolar(0, 2, kOutputB, 3);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 3 * kStep);
 	QueueRow2(launcher);
 	launcher.Advance(Playing(kBar + kBatch));
 	launcher.Advance(Playing(2 * kBar));
@@ -3482,7 +3503,7 @@ void TestChangesToTheIntroTakeEffectAtOnce() {
 	launcher.Advance(Playing(kBar + kBatch));
 	CHECK(launcher.PlaysIntro(0));
 	launcher.SetIntroPattern(0, 2, 0, 5);
-	launcher.SetIntroUnipolar(0, 2, kOutputB, 6);
+	launcher.SetIntroUnipolar(0, 2, kOutputB, 6 * kStep);
 	launcher.Advance(Playing(kBar + 2 * kBatch));
 	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
 	CHECK(launcher.GetCVValue(0, kOutputB) == 1.0);
@@ -3530,7 +3551,7 @@ void TestOneBarPatternSwitchInIntroAndOutroEditing() {
 void SetUpOutro(CLauncher& iLauncher, int iTransition) {
 	FillGrid(iLauncher);
 	iLauncher.SetClipPattern(0, 2, 0, 1);
-	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6);
+	iLauncher.SetClipUnipolar(0, 2, kOutputB, 6 * kStep);
 	iLauncher.SetOutroPresent(0, 2, true);
 	iLauncher.SetOutroPattern(0, 2, 0, 7);
 	iLauncher.SetOutroUnipolar(0, 2, kOutputB, 0);
@@ -3696,7 +3717,7 @@ void TestLaunchingDuringAnOutro() {
 	SetUpOutro(intro, CLauncher::kTransitionOff);
 	intro.SetIntroPresent(0, 3, true);
 	intro.SetIntroPattern(0, 3, 0, 4);
-	intro.SetIntroUnipolar(0, 3, kOutputB, 3);
+	intro.SetIntroUnipolar(0, 3, kOutputB, 3 * kStep);
 	StopRow2(intro);
 	PlayOnTo(intro, kInterval, kInterval + kBar);
 	intro.SetSelection(0, 3);
@@ -3733,7 +3754,7 @@ void TestOutroLiesOverAFillInAndALanding() {
 	CLauncher launcher;
 	SetUpOutro(launcher, CLauncher::kTransitionA);
 	launcher.SetFillInPresent(0, 2, true);
-	launcher.SetFillInUnipolar(0, 2, kOutputB, 3);
+	launcher.SetFillInUnipolar(0, 2, kOutputB, 3 * kStep);
 	PlayThrough(launcher, 0.0, kBar);
 	launcher.SetSelection(0, CLauncher::kSelectionStop);
 	launcher.SetFillInPressed(true);
@@ -3848,14 +3869,14 @@ void TestValueTableShowsWhatIsSet() {
 	launcher.SetCVMode(2, 2, CLauncher::kCVModeBipolar);
 	launcher.SetClipPresent(2, 4, true);
 	launcher.SetClipPattern(2, 4, 0, 6);
-	launcher.SetClipUnipolar(2, 4, 1, 1);
-	launcher.SetClipBipolar(2, 4, 2, 1);
+	launcher.SetClipUnipolar(2, 4, 1, 1 * kStep);
+	launcher.SetClipBipolar(2, 4, 2, 1 * kStep);
 	launcher.SetClipTransition(2, 4, 1, CLauncher::kTransitionB);
 	launcher.SetLandingPresent(2, 4, true);
 	launcher.SetLandingPattern(2, 4, 0, 2);
 	launcher.SetLandingOneBarPattern(2, 4, true);
-	launcher.SetLandingUnipolar(2, 4, 1, 5);
-	launcher.SetLandingBipolar(2, 4, 2, 5);
+	launcher.SetLandingUnipolar(2, 4, 1, 5 * kStep);
+	launcher.SetLandingBipolar(2, 4, 2, 5 * kStep);
 	launcher.SetLandingTransition(2, 4, 2, CLauncher::kTransitionD);
 	launcher.SetSetup(CLauncher::SetupForLandingEditing(2, 4));
 
@@ -3882,6 +3903,19 @@ void TestValueTableShowsWhatIsSet() {
 
 	launcher.SetSetup(CLauncher::SetupForClipEditing(2, 4));
 	CHECK(launcher.GetValueTable(0).fColumns[0].fInverted && !launcher.GetValueTable(0).fColumns[2].fInverted);
+
+	// Quarter steps: 16.6 becomes 20.8, 25 and 29.1; +66.6 becomes +75; -66.6
+	// becomes -58.3, all cut off.
+	launcher.SetClipUnipolar(2, 4, 1, 1 * kStep + 1);
+	CHECK(launcher.GetValueTable(1).fColumns[0].fValue == 208);
+	launcher.SetClipUnipolar(2, 4, 1, 1 * kStep + 2);
+	CHECK(launcher.GetValueTable(1).fColumns[0].fValue == 250);
+	launcher.SetClipUnipolar(2, 4, 1, 1 * kStep + 3);
+	CHECK(launcher.GetValueTable(1).fColumns[0].fValue == 291);
+	launcher.SetLandingBipolar(2, 4, 2, 5 * kStep + 1);
+	CHECK(launcher.GetValueTable(2).fColumns[2].fValue == 750);
+	launcher.SetClipBipolar(2, 4, 2, 1 * kStep + 1);
+	CHECK(launcher.GetValueTable(2).fColumns[0].fValue == -583);
 }
 
 void TestValueTableOfAnEmptyLaunchButtonIsBlank() {
@@ -3966,9 +4000,9 @@ void TestValueTableFollowsWhatIsEmitted() {
 void TestValueTableDuringAFillIn() {
 	CLauncher launcher;
 	SetUpFillIns(launcher);
-	launcher.SetFillInUnipolar(0, 1, kOutputB, 6);
+	launcher.SetFillInUnipolar(0, 1, kOutputB, 6 * kStep);
 	launcher.SetFillInTransition(0, 1, kOutputB, CLauncher::kTransitionA);
-	launcher.SetFillInUnipolar(0, 1, 2, 6);
+	launcher.SetFillInUnipolar(0, 1, 2, 6 * kStep);
 	launcher.SetFillInTransition(0, 1, 2, CLauncher::kTransitionC);
 	PlayThrough(launcher, 0.0, kBar);
 	CHECK(InvertedColumn(launcher, 0) == 0);
@@ -4217,7 +4251,7 @@ void TestChangingTheCVModeEmptiesOneGraph() {
 void TestGraphShowsThePastOfAnotherTrack() {
 	CLauncher launcher;
 	FillGrid(launcher);
-	launcher.SetClipUnipolar(4, 3, kOutputB, 6);
+	launcher.SetClipUnipolar(4, 3, kOutputB, 6 * kStep);
 	launcher.SetSelection(0, 1);
 	launcher.SetSelection(4, 3);
 	launcher.Open();
@@ -4232,11 +4266,11 @@ void TestGraphShowsThePastOfAnotherTrack() {
 }
 
 void TestOutputSettingsPackIntoOneNumber() {
-	CHECK(CLauncher::kOutputSettingsCount == 1960);
+	CHECK(CLauncher::kOutputSettingsCount == 31360);
 	bool seen[CLauncher::kOutputSettingsCount] = {};
 	for (int pattern = 0; pattern < CLauncher::kPatternCount; ++pattern) {
-		for (int unipolar = 0; unipolar < CLauncher::kValueCount; ++unipolar) {
-			for (int bipolar = 0; bipolar < CLauncher::kValueCount; ++bipolar) {
+		for (int unipolar = 0; unipolar <= CLauncher::kTopValue; ++unipolar) {
+			for (int bipolar = 0; bipolar <= CLauncher::kTopValue; ++bipolar) {
 				for (int transition = 0; transition < CLauncher::kTransitionCount; ++transition) {
 					const CLauncher::TOutputSettings settings = { pattern, unipolar, bipolar, transition };
 					const int packed = CLauncher::PackOutputSettings(settings);
@@ -4249,11 +4283,39 @@ void TestOutputSettingsPackIntoOneNumber() {
 		}
 	}
 	// What a new clip has in row 1, as motherboard_def.lua defaults it.
-	const CLauncher::TOutputSettings fresh = { 0, 0, CLauncher::kBipolarZero, CLauncher::kTransitionOff };
+	const CLauncher::TOutputSettings fresh = { 0, 0, CLauncher::kBipolarZeroValue, CLauncher::kTransitionOff };
 	CHECK(CLauncher::PackOutputSettings(fresh) == 168);
+	// A number saved before there were quarter steps reads as it did: the
+	// pattern, plus 8 times the unipolar step, plus 56 times the bipolar
+	// step, plus 392 times the transition.
+	const CLauncher::TOutputSettings old = CLauncher::UnpackOutputSettings(5 + 8 * 2 + 56 * 6 + 392 * 4);
+	CHECK(old.fPattern == 5 && old.fUnipolar == 2 * kStep && old.fBipolar == 6 * kStep && old.fTransition == 4);
+	// The quarter steps lie above that: 1,960 times the unipolar value's,
+	// plus 7,840 times the bipolar value's.
+	const CLauncher::TOutputSettings raised = { 5, 2 * kStep + 3, 1 * kStep + 2, 4 };
+	CHECK(CLauncher::PackOutputSettings(raised) == 5 + 8 * 2 + 56 * 1 + 392 * 4 + 1960 * 3 + 7840 * 2);
+	// The top step cannot be raised.
+	CHECK(CLauncher::UnpackOutputSettings(8 * 6 + 1960 * 3).fUnipolar == CLauncher::kTopValue);
+	CHECK(CLauncher::UnpackOutputSettings(56 * 6 + 7840 * 3).fBipolar == CLauncher::kTopValue);
 	// A number out of range counts as 0.
 	CHECK(CLauncher::UnpackOutputSettings(-1).fPattern == 0);
 	CHECK(CLauncher::UnpackOutputSettings(CLauncher::kOutputSettingsCount).fTransition == 0);
+}
+
+// A press of the button of another step sets that step; a press of the
+// button of the value's own step raises it by a quarter step, three times,
+// and then goes back to the step. The top step stays.
+void TestAPressOfTheLitButtonRaisesByAQuarterStep() {
+	CHECK(CLauncher::PressedValue(0, 2) == 2 * kStep);
+	CHECK(CLauncher::PressedValue(2 * kStep, 2) == 2 * kStep + 1);
+	CHECK(CLauncher::PressedValue(2 * kStep + 1, 2) == 2 * kStep + 2);
+	CHECK(CLauncher::PressedValue(2 * kStep + 2, 2) == 2 * kStep + 3);
+	CHECK(CLauncher::PressedValue(2 * kStep + 3, 2) == 2 * kStep);
+	CHECK(CLauncher::PressedValue(2 * kStep + 3, 4) == 4 * kStep);
+	CHECK(CLauncher::PressedValue(2 * kStep + 3, 1) == 1 * kStep);
+	CHECK(CLauncher::PressedValue(0, 0) == 1);
+	CHECK(CLauncher::PressedValue(6 * kStep, 6) == 6 * kStep);
+	CHECK(CLauncher::ValueStep(2 * kStep + 3) == 2 && CLauncher::ValueStep(6 * kStep) == 6);
 }
 
 // Whether there is a clip, fill-in, landing, intro or outro, its colour, its
@@ -4478,6 +4540,7 @@ int main() {
 	TestJumpingDropsTheOutro();
 	TestOutroLiesOverAFillInAndALanding();
 	TestOutputSettingsPackIntoOneNumber();
+	TestAPressOfTheLitButtonRaisesByAQuarterStep();
 	TestShownClipIsTheClipLaunchedLast();
 	TestSceneButtonShowsTheLeftmostClip();
 	TestShownClipInSetupMode();

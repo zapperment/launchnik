@@ -48,9 +48,21 @@ class CLauncher {
 
 	// Unipolar and bipolar values are one of seven steps, the columns of the
 	// first seven tracks in clip editing: 0..1 and -1..+1, with bipolar 0 in
-	// the middle.
+	// the middle; each but the top one may be raised by one, two or three
+	// quarter steps. A value is counted in quarter steps, from 0 to
+	// kTopValue, four to a step.
 	public: static const int kValueCount = 7;
 	public: static const int kBipolarZero = 3;
+	public: static const int kQuarterStepCount = 4;
+	public: static const int kTopValue = (kValueCount - 1) * kQuarterStepCount;
+	public: static const int kBipolarZeroValue = kBipolarZero * kQuarterStepCount;
+	// The step of a value, which is the column of its button.
+	public: static int ValueStep(int iValue);
+	// The value that a press of a step's button gives an output whose value
+	// is iValue: the step itself, or, if that is the value's step already,
+	// the value raised by a quarter step, going back to the step after three.
+	// The top step stays as it is.
+	public: static int PressedValue(int iValue, int iStep);
 
 	// Off, then A, B, C and D. A and C move in a straight line, B and D along
 	// an exponential curve; C and D only within the last bar.
@@ -63,15 +75,17 @@ class CLauncher {
 
 	// The four settings of a CV output, as one number, the way the patch,
 	// the panel and control surfaces keep them (see docs/adr/0008): the
-	// pattern, plus 8 times the unipolar value, plus 56 times the bipolar
-	// value, plus 392 times the transition.
+	// pattern, plus 8 times the step of the unipolar value, plus 56 times the
+	// step of the bipolar value, plus 392 times the transition, plus 1,960
+	// times the quarter steps of the unipolar value, plus 7,840 times those of
+	// the bipolar value (see docs/adr/0010).
 	public: struct TOutputSettings {
 		int fPattern;
 		int fUnipolar;
 		int fBipolar;
 		int fTransition;
 	};
-	public: static const int kOutputSettingsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount;
+	public: static const int kOutputSettingsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount * kQuarterStepCount * kQuarterStepCount;
 	public: static int PackOutputSettings(const TOutputSettings& iSettings);
 	public: static TOutputSettings UnpackOutputSettings(int iPacked);
 
