@@ -113,6 +113,9 @@ void TestAHoldLastsAtLeastTheHoldTime() {
 	CHECK(CPress::PressTime(-1000) >= 0);
 }
 
+// A step of a unipolar or bipolar value, which is counted in quarter steps.
+const int kStep = CLauncher::kQuarterStepCount;
+
 // The four settings of a CV output that a change sets, all in one number.
 enum ESetting { kPatternSetting, kUnipolarSetting, kBipolarSetting, kTransitionSetting };
 
@@ -165,10 +168,45 @@ void TestClipEditingUnipolarAndBipolarValues() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	for (int column = 0; column < 7; ++column) {
-		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 4, false, MixedModes(true)), CPress::kClipOutput, kUnipolarSetting, picked, 1, column));
-		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 5, false, MixedModes(true)), CPress::kClipOutput, kBipolarSetting, picked, 2, column));
-		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 8, false, MixedModes(true)), CPress::kClipOutput, kUnipolarSetting, picked, 5, column));
+		// The values are unipolar 0 and bipolar 0, whose own buttons raise
+		// them by a quarter step; the other buttons set their step.
+		const int unipolar = column == 0 ? 1 : column * kStep;
+		const int bipolar = column == CLauncher::kBipolarZero ? CLauncher::kBipolarZeroValue + 1 : column * kStep;
+		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 4, false, MixedModes(true)), CPress::kClipOutput, kUnipolarSetting, picked, 1, unipolar));
+		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 5, false, MixedModes(true)), CPress::kClipOutput, kBipolarSetting, picked, 2, bipolar));
+		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 8, false, MixedModes(true)), CPress::kClipOutput, kUnipolarSetting, picked, 5, unipolar));
 	}
+}
+
+// A press of the button that is lit raises the value by a quarter of the way
+// to the next button, three times, and then goes back; any other button sets
+// its own value; the top button stays as it is. The same goes for a fill-in.
+void TestAPressOfTheLitButtonRaisesTheValue() {
+	const int editing = CLauncher::SetupForClipEditing(3, 6);
+	const int picked = CLauncher::ButtonIndex(3, 6);
+	CPress::TEdited edited = MixedModes(true);
+	edited.fUnipolar[1] = 2 * kStep;
+	edited.fBipolar[2] = 4 * kStep;
+	for (int press = 1; press <= 4; ++press) {
+		const CPress::TChange unipolar = CPress::LaunchButton(editing, 2, 4, false, edited);
+		CHECK(IsSettingChange(unipolar, CPress::kClipOutput, kUnipolarSetting, picked, 1, 2 * kStep + press % 4));
+		edited.fUnipolar[1] = SettingOf(unipolar.fValue, kUnipolarSetting);
+		const CPress::TChange bipolar = CPress::LaunchButton(editing, 4, 5, false, edited);
+		CHECK(IsSettingChange(bipolar, CPress::kClipOutput, kBipolarSetting, picked, 2, 4 * kStep + press % 4));
+		edited.fBipolar[2] = SettingOf(bipolar.fValue, kBipolarSetting);
+	}
+	// Another button forgets the quarter steps.
+	edited.fUnipolar[1] = 2 * kStep + 3;
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 5, 4, false, edited), CPress::kClipOutput, kUnipolarSetting, picked, 1, 5 * kStep));
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 1, 4, false, edited), CPress::kClipOutput, kUnipolarSetting, picked, 1, 1 * kStep));
+	// The top button does not raise, the bottom one of a bipolar output does.
+	edited.fUnipolar[1] = 6 * kStep;
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 6, 4, false, edited), CPress::kClipOutput, kUnipolarSetting, picked, 1, 6 * kStep));
+	edited.fBipolar[2] = 0;
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 0, 5, false, edited), CPress::kClipOutput, kBipolarSetting, picked, 2, 1));
+
+	const CPress::TChanges fillIn = CPress::FillInEditingLaunchButton(CLauncher::SetupForFillInEditing(3, 6), 0, 5, edited, CPress::TClipValues());
+	CHECK(fillIn.fCount == 1 && IsSettingChange(fillIn.fChanges[0], CPress::kFillInOutput, kBipolarSetting, picked, 2, 1));
 }
 
 void TestClipEditingTransitionButtonGoesRound() {
@@ -344,8 +382,8 @@ CPress::TSettings SomeSettings(int iSeed) {
 	settings.fColour = iSeed % CLauncher::kColourCount;
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		settings.fPatterns[output] = (iSeed + output) % CLauncher::kPatternCount;
-		settings.fUnipolar[output] = (iSeed + output + 1) % CLauncher::kValueCount;
-		settings.fBipolar[output] = (iSeed + output + 2) % CLauncher::kValueCount;
+		settings.fUnipolar[output] = (iSeed + output + 1) % (CLauncher::kTopValue + 1);
+		settings.fBipolar[output] = (iSeed * 3 + output + 2) % (CLauncher::kTopValue + 1);
 		settings.fTransitions[output] = (iSeed + output) % CLauncher::kTransitionCount;
 	}
 	settings.fOneBarPattern = iSeed % 3 == 0;
@@ -575,8 +613,9 @@ CPress::TClipValues SomeClipValues() {
 	CPress::TClipValues values;
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		values.fPatterns[output] = output;
-		values.fUnipolar[output] = 6 - output;
-		values.fBipolar[output] = output % 7;
+		// With quarter steps, which are copied too.
+		values.fUnipolar[output] = (6 - output) * kStep + output % 4;
+		values.fBipolar[output] = output * kStep + (output + 1) % 4;
 	}
 	return values;
 }
@@ -601,8 +640,8 @@ void TestFillInEditingToggleSetsUpANewFillIn() {
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		const CPress::TChange* changes = set.fChanges + 1 + output;
 		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kPatternSetting, picked, output, output));
-		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kUnipolarSetting, picked, output, 6 - output));
-		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kBipolarSetting, picked, output, output % 7));
+		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kUnipolarSetting, picked, output, SomeClipValues().fUnipolar[output]));
+		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kBipolarSetting, picked, output, SomeClipValues().fBipolar[output]));
 		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kTransitionSetting, picked, output, CLauncher::kTransitionOff));
 	}
 
@@ -620,9 +659,9 @@ void TestFillInEditingColourAndCVRows() {
 		const CPress::TChanges second = CPress::FillInEditingLaunchButton(editing, column, 2, MixedModes(true), SomeClipValues());
 		CHECK(IsChanges(second, 1) && IsSwitchChange(second.fChanges[0], CPress::kFillInSwitches, kColourSwitch, picked, 7 + column));
 		const CPress::TChanges unipolar = CPress::FillInEditingLaunchButton(editing, column, 4, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kFillInOutput, kUnipolarSetting, picked, 1, column));
+		CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kFillInOutput, kUnipolarSetting, picked, 1, CLauncher::PressedValue(0, column)));
 		const CPress::TChanges bipolar = CPress::FillInEditingLaunchButton(editing, column, 5, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(bipolar, 1) && IsSettingChange(bipolar.fChanges[0], CPress::kFillInOutput, kBipolarSetting, picked, 2, column));
+		CHECK(IsChanges(bipolar, 1) && IsSettingChange(bipolar.fChanges[0], CPress::kFillInOutput, kBipolarSetting, picked, 2, CLauncher::PressedValue(CLauncher::kBipolarZeroValue, column)));
 	}
 	for (int column = 0; column < 8; ++column) {
 		const CPress::TChanges pattern = CPress::FillInEditingLaunchButton(editing, column, 3, MixedModes(true), SomeClipValues());
@@ -663,8 +702,8 @@ void TestLandingEditingToggleSetsUpANewLanding() {
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		const CPress::TChange* changes = set.fChanges + 1 + output;
 		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kPatternSetting, picked, output, output));
-		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kUnipolarSetting, picked, output, 6 - output));
-		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kBipolarSetting, picked, output, output % 7));
+		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kUnipolarSetting, picked, output, SomeClipValues().fUnipolar[output]));
+		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kBipolarSetting, picked, output, SomeClipValues().fBipolar[output]));
 		CHECK(IsSettingChange(changes[0], CPress::kLandingOutput, kTransitionSetting, picked, output, CLauncher::kTransitionOff));
 	}
 
@@ -681,7 +720,7 @@ void TestLandingEditingColourAndCVRows() {
 	const CPress::TChanges pattern = CPress::LandingEditingLaunchButton(editing, 5, 3, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(pattern, 1) && IsSettingChange(pattern.fChanges[0], CPress::kLandingOutput, kPatternSetting, picked, 0, 5));
 	const CPress::TChanges unipolar = CPress::LandingEditingLaunchButton(editing, 4, 4, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kLandingOutput, kUnipolarSetting, picked, 1, 4));
+	CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kLandingOutput, kUnipolarSetting, picked, 1, 4 * kStep));
 	const CPress::TChanges bipolar = CPress::LandingEditingLaunchButton(editing, 0, 5, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(bipolar, 1) && IsSettingChange(bipolar.fChanges[0], CPress::kLandingOutput, kBipolarSetting, picked, 2, 0));
 	const CPress::TChanges transition = CPress::LandingEditingLaunchButton(editing, 7, 6, MixedModes(true), SomeClipValues());
@@ -773,7 +812,7 @@ void TestIntroAndOutroEditing() {
 	const CPress::TChanges colour = CPress::IntroEditingLaunchButton(intro, 2, 2, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(colour, 1) && IsSwitchChange(colour.fChanges[0], CPress::kIntroSwitches, kColourSwitch, picked, 9));
 	const CPress::TChanges unipolar = CPress::OutroEditingLaunchButton(outro, 4, 4, MixedModes(true), SomeClipValues());
-	CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kOutroOutput, kUnipolarSetting, picked, 1, 4));
+	CHECK(IsChanges(unipolar, 1) && IsSettingChange(unipolar.fChanges[0], CPress::kOutroOutput, kUnipolarSetting, picked, 1, 4 * kStep));
 	const CPress::TChanges transition = CPress::IntroEditingLaunchButton(intro, 7, 6, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(transition, 1) && IsSettingChange(transition.fChanges[0], CPress::kIntroOutput, kTransitionSetting, picked, 3, CLauncher::kTransitionOff));
 	const CPress::TChanges oneBar = CPress::OutroEditingLaunchButton(outro, 7, 2, MixedModes(true), SomeClipValues());
@@ -788,19 +827,19 @@ void TestEditingKeepsTheOtherSettingsOfTheOutput() {
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	CPress::TEdited edited = MixedModes(true);
 	edited.fPatterns[1] = 5;
-	edited.fUnipolar[1] = 2;
-	edited.fBipolar[1] = 6;
+	edited.fUnipolar[1] = 2 * kStep;
+	edited.fBipolar[1] = 6 * kStep;
 	edited.fTransitions[1] = CLauncher::kTransitionB;
 	// Output B is unipolar: column 4 sets the unipolar value 3.
 	const CPress::TChange unipolar = CPress::LaunchButton(editing, 3, 4, false, edited);
-	CHECK(IsSettingChange(unipolar, CPress::kClipOutput, kUnipolarSetting, picked, 1, 3));
+	CHECK(IsSettingChange(unipolar, CPress::kClipOutput, kUnipolarSetting, picked, 1, 3 * kStep));
 	CHECK(SettingOf(unipolar.fValue, kPatternSetting) == 5);
-	CHECK(SettingOf(unipolar.fValue, kBipolarSetting) == 6);
+	CHECK(SettingOf(unipolar.fValue, kBipolarSetting) == 6 * kStep);
 	CHECK(SettingOf(unipolar.fValue, kTransitionSetting) == CLauncher::kTransitionB);
 	// The transition button moves the transition on and keeps the values.
 	const CPress::TChange transition = CPress::LaunchButton(editing, 7, 4, false, edited);
 	CHECK(IsSettingChange(transition, CPress::kClipOutput, kTransitionSetting, picked, 1, CLauncher::kTransitionC));
-	CHECK(SettingOf(transition.fValue, kUnipolarSetting) == 2);
+	CHECK(SettingOf(transition.fValue, kUnipolarSetting) == 2 * kStep);
 	CHECK(SettingOf(transition.fValue, kPatternSetting) == 5);
 }
 
@@ -883,6 +922,7 @@ int main() {
 	TestClipEditingColourRows();
 	TestClipEditingPatternMode();
 	TestClipEditingUnipolarAndBipolarValues();
+	TestAPressOfTheLitButtonRaisesTheValue();
 	TestClipEditingTransitionButtonGoesRound();
 	TestClipEditingUnusedLaunchButtonsDoNothing();
 	TestClipEditingWithoutClipHasNoColourOrCVControls();

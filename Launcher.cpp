@@ -41,7 +41,7 @@ bool IsValidOutput(int iOutput) {
 }
 
 bool IsValidValue(int iValue) {
-	return iValue >= 0 && iValue < CLauncher::kValueCount;
+	return iValue >= 0 && iValue <= CLauncher::kTopValue;
 }
 
 bool IsValidTransition(int iTransition) {
@@ -128,7 +128,7 @@ CLauncher::CLauncher()
 			for (int output = 0; output < kOutputCount; ++output) {
 				clip.fPatterns[output] = row - 1;
 				clip.fUnipolar[output] = 0;
-				clip.fBipolar[output] = kBipolarZero;
+				clip.fBipolar[output] = kBipolarZeroValue;
 				clip.fTransitions[output] = kTransitionOff;
 			}
 			clip.fOneBarPattern = false;
@@ -144,21 +144,47 @@ CLauncher::CLauncher()
 	}
 }
 
+int CLauncher::ValueStep(int iValue) {
+	return iValue / kQuarterStepCount;
+}
+
+int CLauncher::PressedValue(int iValue, int iStep) {
+	const int step = iStep * kQuarterStepCount;
+	if (ValueStep(iValue) != iStep || step >= kTopValue) {
+		return step;
+	}
+	return step + (iValue - step + 1) % kQuarterStepCount;
+}
+
+// The quarter steps lie above the settings that were there before them, so
+// that a number saved without them reads as it did.
 int CLauncher::PackOutputSettings(const TOutputSettings& iSettings) {
-	return iSettings.fPattern + kPatternCount * (iSettings.fUnipolar + kValueCount * (iSettings.fBipolar + kValueCount * iSettings.fTransition));
+	const int steps = iSettings.fPattern + kPatternCount * (ValueStep(iSettings.fUnipolar) + kValueCount * (ValueStep(iSettings.fBipolar) + kValueCount * iSettings.fTransition));
+	const int quarterSteps = iSettings.fUnipolar % kQuarterStepCount + kQuarterStepCount * (iSettings.fBipolar % kQuarterStepCount);
+	return steps + kPatternCount * kValueCount * kValueCount * kTransitionCount * quarterSteps;
 }
 
 CLauncher::TOutputSettings CLauncher::UnpackOutputSettings(int iPacked) {
 	if (iPacked < 0 || iPacked >= kOutputSettingsCount) {
 		iPacked = 0;
 	}
+	const int stepsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount;
+	const int quarterSteps = iPacked / stepsCount;
+	iPacked %= stepsCount;
 	TOutputSettings settings;
 	settings.fPattern = iPacked % kPatternCount;
 	iPacked /= kPatternCount;
-	settings.fUnipolar = iPacked % kValueCount;
+	settings.fUnipolar = iPacked % kValueCount * kQuarterStepCount + quarterSteps % kQuarterStepCount;
 	iPacked /= kValueCount;
-	settings.fBipolar = iPacked % kValueCount;
+	settings.fBipolar = iPacked % kValueCount * kQuarterStepCount + quarterSteps / kQuarterStepCount;
 	settings.fTransition = iPacked / kValueCount;
+	// The top step cannot be raised.
+	if (settings.fUnipolar > kTopValue) {
+		settings.fUnipolar = kTopValue;
+	}
+	if (settings.fBipolar > kTopValue) {
+		settings.fBipolar = kTopValue;
+	}
 	return settings;
 }
 
@@ -679,8 +705,8 @@ CLauncher::TValueTable CLauncher::GetValueTable(int iOutput) const {
 			tableColumn.fMark = columnSettings.fTransitions[iOutput];
 			// Cut off, as on the labels: 16.6, not 16.7.
 			tableColumn.fValue = table.fCVMode == kCVModeBipolar
-				? (columnSettings.fBipolar[iOutput] - kBipolarZero) * 1000 / kBipolarZero
-				: columnSettings.fUnipolar[iOutput] * 1000 / (kValueCount - 1);
+				? (columnSettings.fBipolar[iOutput] - kBipolarZeroValue) * 1000 / kBipolarZeroValue
+				: columnSettings.fUnipolar[iOutput] * 1000 / kTopValue;
 		}
 		// Outside the editing steps the inverted column shows what is
 		// emitted, which a transition puts between the values that can be
@@ -1132,11 +1158,11 @@ void CLauncher::GetOutputGraph(int iOutput, unsigned char oLevels[]) const {
 }
 
 double CLauncher::UnipolarCV(int iValue) {
-	return static_cast<double>(iValue) / (kValueCount - 1);
+	return static_cast<double>(iValue) / kTopValue;
 }
 
 double CLauncher::BipolarCV(int iValue) {
-	return static_cast<double>(iValue - kBipolarZero) / kBipolarZero;
+	return static_cast<double>(iValue - kBipolarZeroValue) / kBipolarZeroValue;
 }
 
 double CLauncher::TransitionCurve(int iTransition, double iTime) {
@@ -1731,15 +1757,16 @@ CLauncher::TLight CLauncher::GetEditingLight(int iTrack, int iRow, const TSettin
 	}
 	// A unipolar value is vibrant cyan, with the values below it dim. A
 	// bipolar value is vibrant fuchsia, with the values between it and 0 dim,
-	// 0 included.
+	// 0 included. A value raised by quarter steps lights the button of its
+	// step.
 	if (cvMode == kCVModeUnipolar) {
-		const int value = iSettings.fUnipolar[output];
+		const int value = ValueStep(iSettings.fUnipolar[output]);
 		if (iTrack == value) {
 			return MakeLight(kVibrant, kColourCyan);
 		}
 		return iTrack < value ? MakeLight(kDim, kColourCyan) : kUnlitLight;
 	}
-	const int value = iSettings.fBipolar[output];
+	const int value = ValueStep(iSettings.fBipolar[output]);
 	if (iTrack == value) {
 		return MakeLight(kVibrant, kColourFuchsia);
 	}
