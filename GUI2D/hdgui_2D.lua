@@ -155,6 +155,37 @@ end
 -- function buttons in mute and solo function. The handler reads and
 -- writes properties that are not listed here; the setup state is listed only
 -- because a display needs at least one value.
+-- The big display is drawn by BigDisplayPanel.cpp, which finds its values by
+-- their place in this list: the setup state, the shown clip, the eight track
+-- names, the clip names of each track in turn, what the realtime code has to
+-- say, then the CV output names of each track in turn. One unit of its
+-- coordinate system is five pixels of the panel, the size at which the host
+-- draws its fonts.
+local big_display_values = { "/custom_properties/setup", "/custom_properties/shown_clip" }
+for track = 1, 8 do
+	table.insert(big_display_values, "/custom_properties/track" .. track .. "_name")
+end
+for track = 1, 8 do
+	for row = 1, 8 do
+		table.insert(big_display_values, "/custom_properties/track" .. track .. "_clip" .. row .. "_name")
+	end
+end
+table.insert(big_display_values, "/custom_properties/big_display")
+for track = 1, 8 do
+	for _, letter in ipairs({ "a", "b", "c", "d", "e", "f" }) do
+		table.insert(big_display_values, "/custom_properties/track" .. track .. "_output_" .. letter .. "_name")
+	end
+end
+table.insert(front_widgets, jbox.custom_display{
+	graphics = { node = "big_display_area" },
+	background = "transparent",
+	display_width_pixels = 125,
+	display_height_pixels = 297,
+	display_id = 15,
+	values = big_display_values,
+	show_remote_box = false,
+	show_automation_rect = false,
+})
 table.insert(front_widgets, jbox.custom_display{
 	graphics = { node = "click_grid" },
 	background = "transparent",

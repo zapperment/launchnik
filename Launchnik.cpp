@@ -1,3 +1,4 @@
+#include <cstring>
 #include "Launchnik.h"
 
 #include "Tags.h"
@@ -67,7 +68,11 @@ CLaunchnik::CLaunchnik(TJBox_Float32 iSampleRate)
 	fWrittenForwardLight(kNothingWritten),
 	fWrittenForwardLightFrame(kNothingWritten),
 	fWrittenForwardLabelFrame(kNothingWritten),
-	fWrittenTransitionDiagramsFrame(kNothingWritten)
+	fWrittenTransitionDiagramsFrame(kNothingWritten),
+	fWrittenShownClip(kNothingWritten),
+	fBigDisplay(JBox_MakePropertyRef(fCustomProps, "big_display")),
+	fHasWrittenBigDisplay(false),
+	fBatchesSinceBigDisplay(0)
 {
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		fWrittenOutputLabelsFrames[output] = kNothingWritten;
@@ -288,7 +293,33 @@ void CLaunchnik::Write(TJBox_Tag iTag, TJBox_Int32 iValue, TJBox_Int32& ioWritte
 	}
 }
 
+void CLaunchnik::WriteBigDisplay() {
+	// A little longer than the 25 milliseconds the host asks for.
+	const int minimumBatches = static_cast<int>(0.03 * fSampleRate / kBatchSize) + 1;
+	if (fBatchesSinceBigDisplay < minimumBatches) {
+		++fBatchesSinceBigDisplay;
+		if (fHasWrittenBigDisplay) {
+			return;
+		}
+	}
+	CBigDisplay::TState state;
+	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
+		state.fTables[output] = fLauncher.GetValueTable(output);
+		fLauncher.GetOutputGraph(output, state.fGraphs[output]);
+	}
+	unsigned char bytes[CBigDisplay::kStateSize];
+	CBigDisplay::Encode(state, bytes);
+	if (fHasWrittenBigDisplay && std::memcmp(bytes, fWrittenBigDisplay, CBigDisplay::kStateSize) == 0) {
+		return;
+	}
+	std::memcpy(fWrittenBigDisplay, bytes, CBigDisplay::kStateSize);
+	fHasWrittenBigDisplay = true;
+	fBatchesSinceBigDisplay = 0;
+	JBox_SetRTStringData(fBigDisplay, CBigDisplay::kStateSize, bytes);
+}
+
 void CLaunchnik::WriteOutputs() {
+	WriteBigDisplay();
 	Write(kCustomPropsTag_SetupLightFrame, fLauncher.GetSetupLightFrame(), fWrittenSetupLightFrame);
 	Write(kCustomPropsTag_SetupCaptionFrame, fLauncher.GetSetupCaptionFrame(), fWrittenSetupCaptionFrame);
 
@@ -327,6 +358,8 @@ void CLaunchnik::WriteOutputs() {
 	Write(kCustomPropsTag_ForwardLightFrame, fLauncher.GetForwardLightFrame(), fWrittenForwardLightFrame);
 	Write(kCustomPropsTag_ForwardLabelFrame, fLauncher.GetForwardLabelFrame(), fWrittenForwardLabelFrame);
 	Write(kCustomPropsTag_TransitionDiagramsFrame, fLauncher.GetTransitionDiagramsFrame(), fWrittenTransitionDiagramsFrame);
+	// 0 for no shown clip, otherwise the button index plus one.
+	Write(kCustomPropsTag_ShownClip, fLauncher.GetShownButton() + 1, fWrittenShownClip);
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 		Write(OutputLabelsFrameTag(output), fLauncher.GetOutputLabelsFrame(output), fWrittenOutputLabelsFrames[output]);
 	}

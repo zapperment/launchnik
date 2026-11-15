@@ -27,6 +27,7 @@ format_version = "3.0"
 --   selection of track t:            100 + t
 --   film strip frame of the labels of the row of CV output o: 140 + o
 --   film strip frame of the transition diagrams: 150
+--   shown clip of the big display:   151
 --   name of track t:                 400 + t
 --   name of the scene of row r:      410 + r
 --   name of a launch button's clip:  4000 + 10 * t + r
@@ -450,6 +451,25 @@ rt_properties.transition_diagrams_frame = jbox.number{
 	steps = 1 + EDITING_COLOUR_COUNT,
 	ui_name = jbox.ui_text("text_transition_diagrams"),
 	ui_type = plain_number(EDITING_COLOUR_COUNT),
+}
+
+-- The shown clip of the big display: 0 for none, otherwise 1 to 64 for a
+-- launch button, counted down each track in turn (the button index of
+-- Launcher.h plus one).
+rt_properties.shown_clip = jbox.number{
+	property_tag = 151,
+	default = 0,
+	steps = 1 + TRACK_COUNT * ROW_COUNT,
+	ui_name = jbox.ui_text("text_shown_clip"),
+	ui_type = plain_number(TRACK_COUNT * ROW_COUNT),
+}
+
+-- What the big display shows besides names, as the bytes that
+-- CBigDisplay::Encode makes (see docs/adr/0009): for each of the six CV
+-- outputs of the shown clip's track, 21 for its value table and 117 for its
+-- output graph. A realtime string has no tag.
+rt_properties.big_display = jbox.string{
+	max_size = 6 * (21 + 117),
 }
 
 for scene = 1, ROW_COUNT do

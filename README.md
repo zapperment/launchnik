@@ -2,11 +2,11 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d28, a development build. Requires Reason 14 or later.
+Version 1.0.0d29, a development build. Requires Reason 14 or later.
 
 ## The panel
 
-The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 3 the **clear button**, to the left of scene 4 the **duplicate button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **forward button**, with the steps of setup mode they lead to beside them. To the right of the scene buttons are the **transition diagrams**, one set each for clips, fill-ins, landings, intros and outros. Above every track, launch button and scene button is its name, which you can change. The back panel has six **CV outputs**, A to F from the top, for each track, each with a switch for its **CV mode** and a name, which you can change, and the track names above them.
+The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 3 the **clear button**, to the left of scene 4 the **duplicate button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **forward button**, with the steps of setup mode they lead to beside them. On the left of the panel, below the patch name, is the **big display**, which tells what a clip holds and what its track emits. Below it, left of the fill-in button, are the **transition diagrams**, one set each for clips, fill-ins, landings, intros and outros, in two columns: clips on their own at the top, then fill-ins and landings, then intros and outros. Above every track, launch button and scene button is its name, which you can change. The back panel has six **CV outputs**, A to F from the top, for each track, each with a switch for its **CV mode** and a name, which you can change, and the track names above them.
 
 A launch button either holds a **clip** or is **empty**. A clip has one of fourteen colours and, for each of its track's six CV outputs, a pattern 1–8, a unipolar value, a bipolar value and a transition. A new device has only empty launch buttons.
 
@@ -55,6 +55,33 @@ Clicking a scene button has the same effect as clicking all eight launch buttons
 A scene button does not show which scene was launched; the launch buttons do that. Together, the eight scene buttons are the **interval meter**, which shows how far the song position is into the current switch interval. Each stands for one eighth of the interval, a **segment**: two beats in 4/4 with a switch interval of four bars. They light up from the bottom, the lower five in green, the next two in yellow and the top one in red, so a red button means that the switch point is less than a segment away. At the switch point the meter starts again with the bottom button.
 
 The meter follows the song position whether the song plays or not, and goes on running in clip editing. Before the start of the song, and while the length of the switch interval is "immediate", all scene buttons are unlit.
+
+## The big display
+
+The big display on the left of the panel is for reading only. It is about one clip, the **shown clip**:
+
+- In launch mode it is the clip you launched last, from the moment you launch it, while it is still queued. A scene button shows the clip of the leftmost track that has one in that scene. Stopping a track, or clicking an empty launch button, changes nothing, so you can watch an outro play.
+- In setup mode, from step 2 on, it is the clip of the launch button you picked.
+- Step 1 of setup mode, clear mode and duplicate mode show what launch mode shows.
+- After a song is loaded it is the active clip of the leftmost track that is playing one. If no track is playing, the display shows no names and no values.
+
+From the top, the display shows:
+
+- the names of the shown clip's track and of the clip itself;
+- what Launchnik is doing: `LAUNCH MODE`, `Setup step 1: PICK CLIP` to `Setup step 6: SET OUTRO`, `Clear: PICK CLIP`, `Duplicate: PICK CLIP` or `Duplicate: PICK DEST.`;
+- one block for each CV output of the track, A to F: its name with its CV mode in parentheses, a table of values and a graph.
+
+The table has a column each for the clip and its fill-in, landing, intro and outro, headed `Clip`, `Fill`, `Lnd`, `Int` and `Out`. A column is blank if the clip has none. For a unipolar or bipolar output the heading is followed by the letter of the transition, unless it is off; for a pattern output by a `1` while 1 BAR PATT is on. Below each heading is its value: the number of the pattern, or the value as on the labels, such as 16.6 or +66.6.
+
+One column may be inverted, dark on bright:
+
+- In steps 2 to 6 of setup mode it is the column you are setting up, and every value is the one you set.
+- Otherwise it is the column of what the CV output emits at the moment, and its value is the value emitted, which during a transition lies between those you can set, such as 18.9. With transition C or D, or with 1 BAR PATT, a fill-in, landing, intro or outro has the output for one bar only and the clip has it for the rest, so the blocks of one track may differ. A pattern output that emits no pattern shows 0.
+- While the shown clip is queued, or its track is stopped, no column is inverted. The `Clip` column then shows the unipolar or bipolar value the output emits, so that you always see it.
+
+The graph shows what the CV output has emitted over the last two switch intervals, or over the last two bars if the length is one bar or less, with the present at the right edge. The line for 0 is at the bottom for pattern and unipolar outputs and in the middle for bipolar ones. The graph moves only while the song plays. It starts empty when a song is loaded and when you change the length; changing a CV mode empties the graph of that output.
+
+Names you change on the panel change on the display at once. A name too long for its row is cut off at the right.
 
 ## Naming tracks, clips and scenes
 
@@ -367,7 +394,7 @@ rm -rf ~/Library/Caches/"Reason Recon"/GraphicsCache
 
 ## Testing
 
-The rules for switching, lights and presses can be tested from the command line, without Reason:
+The rules for switching, lights and presses, and what the big display says, can be tested from the command line, without Reason:
 
 ```bash
 ./tests/run.sh
@@ -383,13 +410,15 @@ The panel, the CV output into a Combinator, automation and Remote can only be te
 | `Press.h`, `Press.cpp` | What a press of a button changes, in launch mode and in setup mode. Also free of the SDK. |
 | `Launchnik.h`, `Launchnik.cpp` | Connects the rules to the host: reads selections, clips, CV modes, the setup state and the transport, writes states, lights, lamps, labels and CV. |
 | `Panel.h`, `Panel.cpp` | The click handler of the launch buttons, the scene buttons, the function buttons, the function select buttons and the buttons of setup mode and fill-ins. |
+| `BigDisplay.h`, `BigDisplay.cpp` | What the big display says: its texts, the widths of its font, and the bytes in which the realtime code tells it what to show. Also free of the SDK. |
+| `BigDisplayPanel.h`, `BigDisplayPanel.cpp` | Draws the big display. |
 | `Tags.h` | The property tags shared by the two. |
 | `JukeBoxExports.cpp` | Entry points the host calls. |
 | `motherboard_def.lua` | Properties, Remote items, automation and CV outputs. |
 | `realtime_controller.lua` | Which property changes are passed to the realtime code. |
 | `GUI2D/` | Panel layout and the graphics it uses; `gui_functions.lua`, written by `tools/make-gui-functions.py`, decides when the names are shown. |
 | `Image_Sources/` | Source graphics that are not stock images. |
-| `tools/` | Scripts that build the film strips of the buttons, of the labels and of the logo, and `GUI2D/gui_functions.lua`. |
+| `tools/` | Scripts that build the film strips of the buttons, of the labels and of the logo, and `GUI2D/gui_functions.lua`; `preview.sh` renders the graphics, builds for Recon and clears Recon's graphics cache in one go. |
 | `Resources/English/` | Texts shown by the host. |
 | `Resources/Public/` | The patches that come with the device. |
 | `tests/` | Command-line tests for the rules. |

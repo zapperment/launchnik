@@ -27,6 +27,7 @@ const TJBox_Tag kCustomPropsTag_DuplicateCaptionFrame = 87;
 const TJBox_Tag kCustomPropsTag_SetupCaptionFrame = 88;
 const TJBox_Tag kCustomPropsTag_BackPressedAt = 89;
 const TJBox_Tag kCustomPropsTag_TransitionDiagramsFrame = 150;
+const TJBox_Tag kCustomPropsTag_ShownClip = 151;
 
 // Functions are numbered as in Launcher.h.
 inline TJBox_Tag FunctionSelectLightFrameTag(int iFunction) {

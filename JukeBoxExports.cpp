@@ -1,6 +1,7 @@
 #include <cstring> 
 #include "Jukebox.h"
 #include "Launchnik.h" 
+#include "BigDisplayPanel.h"
 #include "Panel.h"
 
 void* JBox_Export_CreateNativeObject(const char iOperation[], const TJBox_Value iParams[], TJBox_UInt32 iCount) {
@@ -23,11 +24,19 @@ void JBox_Export_RenderRealtime(void* privateState, const TJBox_PropertyDiff iPr
 }
 
 
-// The displays on the front panel are transparent and only take clicks; what
-// lies underneath them is drawn by lamps.
-void JBox_Export_Draw(const TJBox_DisplayArgs* /*iArgs*/) { }
+// All displays on the front panel but the big display are transparent and
+// only take clicks; what lies underneath them is drawn by lamps.
+void JBox_Export_Draw(const TJBox_DisplayArgs* iArgs) {
+	if (iArgs->fDisplayInfo.fID == kDisplayID_BigDisplay) {
+		DrawBigDisplay(*iArgs);
+	}
+}
 
 void JBox_Export_Gesture(TJBox_GestureArgs* iArgs) {
+	// The big display is only for reading.
+	if (iArgs->fDisplayInfo.fID == kDisplayID_BigDisplay) {
+		return;
+	}
 	HandlePanelGesture(*iArgs);
 }
 

@@ -134,6 +134,7 @@ texts = {
 	["text_cv_mode_unipolar"] = "Unipolar",
 	["text_cv_mode_pattern"] = "Pattern",
 	["text_transition_diagrams"] = "Transition Diagrams",
+	["text_shown_clip"] = "Shown Clip",
 }
 
 for index, letter in ipairs(OUTPUT_LETTERS) do

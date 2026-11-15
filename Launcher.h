@@ -14,7 +14,8 @@
 // picking, destination picking, scene,
 // segment, interval meter, function, function button, function select button,
 // stop, muted, soloed, solo-muted, CV output, CV mode, pattern, unipolar value,
-// bipolar value, transition.
+// bipolar value, transition, big display, shown clip, value table, output
+// graph.
 //
 // Tracks are numbered from 0 here. Rows are numbered from 1, so that a row is
 // also the selection that chooses its launch button, and the number of its
@@ -336,6 +337,69 @@ class CLauncher {
 	// Records what the user chose on a track. Call before Advance() for changes
 	// that arrived in the same batch.
 	public: void SetSelection(int iTrack, int iSelection);
+
+	// The launch button of the big display's shown clip, as a button index:
+	// in clip editing, fill-in editing, landing editing, intro editing and
+	// outro editing the launch button being set up, otherwise the one whose
+	// clip was launched last, by a selection or a relaunch press; of several
+	// tracks launched in one batch, as by a scene button, the leftmost counts.
+	// Choosing stop or an empty launch button changes nothing. -1 while no
+	// clip has been launched; Open() makes it the active clip of the leftmost
+	// track that is playing one.
+	public: int GetShownButton() const;
+
+	// The value table that the big display shows for a CV output of the
+	// shown clip's track: a column each for the clip, its fill-in, landing,
+	// intro and outro, in that order.
+	public: static const int kTableColumnCount = 5;
+	public: struct TTableColumn {
+		// Whether the clip, fill-in, landing, intro or outro is there; if
+		// not, the column is left blank.
+		bool fPresent;
+		// Shown dark on bright: in clip editing, fill-in editing, landing
+		// editing, intro editing and outro editing the column being set up,
+		// otherwise the column of what the CV output emits at the moment, if
+		// that is the shown clip or anything it holds.
+		bool fInverted;
+		// What follows the heading: in pattern mode 1 while one-bar pattern
+		// is on and 0 otherwise, in unipolar and bipolar mode the transition.
+		int fMark;
+		// In pattern mode the number of the pattern, 1 to 8; in unipolar
+		// mode 0 to 1000 and in bipolar mode -1000 to 1000, tenths of what
+		// the labels say, cut off towards 0. It is the value set, except in
+		// a column inverted for what the CV output emits: there it is the
+		// value emitted, 0 for no pattern. While no column is inverted
+		// outside the editing steps, the clip's column has the value
+		// emitted in unipolar and bipolar mode, so that it is always in
+		// view; in pattern mode it keeps the clip's pattern.
+		int fValue;
+	};
+	public: struct TValueTable {
+		int fCVMode;
+		TTableColumn fColumns[kTableColumnCount];
+	};
+	// With no shown clip, the CV modes are those of the first track and
+	// every column is blank.
+	public: TValueTable GetValueTable(int iOutput) const;
+
+	// The output graph that the big display shows for a CV output of the
+	// shown clip's track, or of the first track if there is none (see
+	// docs/adr/0009). It is kGraphColumnCount coarse pixels wide and
+	// kGraphRowCount high, and covers two switch intervals, or two bars
+	// while the length is one bar or less, the present in the last column.
+	// Each column is a level: how many pixels are lit above the line for 0
+	// in pattern and unipolar mode, 0 to kGraphRowCount - 1, pattern 8 and
+	// unipolar 100 reaching the top; in bipolar mode kGraphBipolarZero for
+	// 0, more above and less below it. kGraphEmpty stands for a time of
+	// which nothing is known: before the song was opened, the length was
+	// changed or the CV mode was.
+	public: static const int kGraphColumnCount = 117;
+	public: static const int kGraphRowCount = 13;
+	public: static const int kGraphBipolarZero = 6;
+	public: static const unsigned char kGraphEmpty = 255;
+	public: void GetOutputGraph(int iOutput, unsigned char oLevels[]) const;
+	// The level of a value that a CV output emits, in a CV mode.
+	public: static unsigned char GraphLevel(int iCVMode, double iCVValue);
 
 	public: void SetFunction(int iFunction);
 	public: int GetFunction() const;
@@ -707,6 +771,13 @@ class CLauncher {
 	private: bool PlaysOutroPatterns(int iTrack) const;
 	// Whether a stopped track plays the intro of a clip it has queued.
 	private: bool PlaysIntroOf(int iTrack, int iRow) const;
+	// The column of the value table whose settings a CV output emits while
+	// the clip in iRow is the shown clip: 0 for the clip, 1 to 4 for its
+	// fill-in, landing, intro and outro, -1 if the track emits none of them.
+	// A fill-in, landing, intro or outro only counts while it has the CV
+	// output: with a C or D transition, or in pattern mode with one-bar
+	// pattern, that is one bar, and the clip has it for the rest.
+	private: int EmittedColumn(int iTrack, int iRow, int iOutput) const;
 	// Stops emitting what an intro or an outro left behind, when a clip
 	// becomes active or the track is stopped at once.
 	private: void ForgetIntroAndOutro(int iTrack);
@@ -785,6 +856,25 @@ class CLauncher {
 	// Set by a relaunch press, until the next call of Advance().
 	private: bool fRelaunchTriggered[kTrackCount];
 	private: bool fRelaunched[kTrackCount];
+	// Set by a change of a track's selection and by a relaunch press, until
+	// the next call of Advance().
+	private: bool fLaunched[kTrackCount];
+	// The button index of the clip launched last, or -1.
+	private: int fLaunchedLast;
+
+	// Moves the output graphs on with the song position and records what
+	// every CV output emits. Called at the end of Advance().
+	private: void RecordGraphs(const TTransport& iTransport);
+	private: void EmptyGraphs();
+	// The output graphs of every CV output, as rings: fGraphHead is the
+	// column of the present, the one after it the oldest.
+	private: unsigned char fGraphs[kTrackCount][kOutputCount][kGraphColumnCount];
+	private: int fGraphHead;
+	// How much musical time the graphs cover, in PPQ, and which of its
+	// columns, counted from the start of the song, the song position was in
+	// at the last batch that played; 0 and -1 before any.
+	private: double fGraphSpan;
+	private: long long fGraphColumn;
 	private: bool fMutePressed[kTrackCount];
 	private: bool fSoloPressed[kTrackCount];
 	// Set by a press of a mute or solo button, until the next call of

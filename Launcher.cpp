@@ -81,12 +81,18 @@ CLauncher::CLauncher()
 	fFillInTriggered(false),
 	fFillInPlaying(false),
 	fFunction(kFunctionStop),
+	fLaunchedLast(-1),
+	fGraphHead(0),
+	fGraphSpan(0.0),
+	fGraphColumn(-1),
 	fHasPreviousTransport(false)
 {
+	EmptyGraphs();
 	for (int track = 0; track < kTrackCount; ++track) {
 		fRelaunchPressed[track] = false;
 		fRelaunchTriggered[track] = false;
 		fRelaunched[track] = false;
+		fLaunched[track] = false;
 		fMutePressed[track] = false;
 		fSoloPressed[track] = false;
 		fMuteTriggered[track] = false;
@@ -553,6 +559,12 @@ int CLauncher::DefaultCVMode(int iOutput) {
 
 void CLauncher::SetCVMode(int iTrack, int iOutput, int iCVMode) {
 	if (iTrack >= 0 && iTrack < kTrackCount && IsValidOutput(iOutput) && iCVMode >= 0 && iCVMode < kCVModeCount) {
+		// What was recorded in another CV mode is on another scale.
+		if (fCVModes[iTrack][iOutput] != iCVMode) {
+			for (int column = 0; column < kGraphColumnCount; ++column) {
+				fGraphs[iTrack][iOutput][column] = kGraphEmpty;
+			}
+		}
 		fCVModes[iTrack][iOutput] = iCVMode;
 	}
 }
@@ -578,6 +590,7 @@ void CLauncher::SetRelaunchPressed(int iTrack, bool iPressed) {
 	}
 	if (iPressed && !fRelaunchPressed[iTrack]) {
 		fRelaunchTriggered[iTrack] = true;
+		fLaunched[iTrack] = true;
 	}
 	fRelaunchPressed[iTrack] = iPressed;
 }
@@ -610,7 +623,137 @@ void CLauncher::SetSelection(int iTrack, int iSelection) {
 	if (iTrack < 0 || iTrack >= kTrackCount || iSelection < 0 || iSelection >= kSelectionCount) {
 		return;
 	}
+	if (fSelections[iTrack] != iSelection) {
+		fLaunched[iTrack] = true;
+	}
 	fSelections[iTrack] = iSelection;
+}
+
+int CLauncher::GetShownButton() const {
+	const int picked = PickedButton(fSetup);
+	return picked >= 0 ? picked : fLaunchedLast;
+}
+
+CLauncher::TValueTable CLauncher::GetValueTable(int iOutput) const {
+	TValueTable table;
+	const int shown = GetShownButton();
+	const int track = shown >= 0 ? shown / kRowCount : 0;
+	table.fCVMode = fCVModes[track][iOutput];
+	for (int column = 0; column < kTableColumnCount; ++column) {
+		table.fColumns[column].fPresent = false;
+		table.fColumns[column].fInverted = false;
+		table.fColumns[column].fMark = 0;
+		table.fColumns[column].fValue = 0;
+	}
+	if (shown < 0) {
+		return table;
+	}
+	const TClip& clip = fClips[track][shown % kRowCount];
+	// An empty launch button keeps its settings, but has nothing to show.
+	if (!clip.fPresent) {
+		return table;
+	}
+	const TSettings* const settings[kTableColumnCount] = { &clip, &clip.fFillIn, &clip.fLanding, &clip.fIntro, &clip.fOutro };
+	const bool editing = PickedButton(fSetup) >= 0;
+	int inverted;
+	if (editing) {
+		inverted = IsFillInEditing(fSetup) ? 1 : IsLandingEditing(fSetup) ? 2 : IsIntroEditing(fSetup) ? 3 : IsOutroEditing(fSetup) ? 4 : 0;
+	}
+	else {
+		inverted = EmittedColumn(track, shown % kRowCount + 1, iOutput);
+	}
+	for (int column = 0; column < kTableColumnCount; ++column) {
+		const TSettings& columnSettings = *settings[column];
+		if (!columnSettings.fPresent) {
+			continue;
+		}
+		TTableColumn& tableColumn = table.fColumns[column];
+		tableColumn.fPresent = true;
+		tableColumn.fInverted = column == inverted;
+		if (table.fCVMode == kCVModePattern) {
+			// A clip's one-bar pattern means nothing.
+			tableColumn.fMark = column > 0 && columnSettings.fOneBarPattern ? 1 : 0;
+			tableColumn.fValue = columnSettings.fPatterns[iOutput] + 1;
+		}
+		else {
+			tableColumn.fMark = columnSettings.fTransitions[iOutput];
+			// Cut off, as on the labels: 16.6, not 16.7.
+			tableColumn.fValue = table.fCVMode == kCVModeBipolar
+				? (columnSettings.fBipolar[iOutput] - kBipolarZero) * 1000 / kBipolarZero
+				: columnSettings.fUnipolar[iOutput] * 1000 / (kValueCount - 1);
+		}
+		// Outside the editing steps the inverted column shows what is
+		// emitted, which a transition puts between the values that can be
+		// set. While the shown clip is queued or its track stopped, no
+		// column is inverted, and the clip's stands in for it.
+		const bool standsIn = inverted < 0 && column == 0 && table.fCVMode != kCVModePattern;
+		if ((tableColumn.fInverted || standsIn) && !editing) {
+			const double emitted = GetCVValue(track, iOutput);
+			if (table.fCVMode == kCVModePattern) {
+				tableColumn.fValue = static_cast<int>(emitted * kPatternCount + 0.5);
+			}
+			else {
+				// Cut off as well; the nudge keeps a value that is a hair
+				// short of, say, 50 from reading 49.9.
+				const double tenths = emitted * 1000.0;
+				tableColumn.fValue = static_cast<int>(tenths < 0.0 ? tenths - 1e-6 : tenths + 1e-6);
+			}
+		}
+	}
+	return table;
+}
+
+int CLauncher::EmittedColumn(int iTrack, int iRow, int iOutput) const {
+	int column;
+	if (fActive[iTrack] == iRow) {
+		// A fill-in lies over a landing as over a clip.
+		column = PlaysFillIn(iTrack) ? 1 : PlaysLanding(iTrack) ? 2 : 0;
+	}
+	else if (fIntroRows[iTrack] == iRow && PlaysIntro(iTrack)) {
+		column = 3;
+	}
+	else if (fOutroRows[iTrack] == iRow && PlaysOutro(iTrack)) {
+		column = 4;
+	}
+	else {
+		return -1;
+	}
+	const TClip& clip = Clip(iTrack, iRow);
+	const TSettings* const settings[kTableColumnCount] = { &clip, &clip.fFillIn, &clip.fLanding, &clip.fIntro, &clip.fOutro };
+	const double position = fPreviousTransport.fPlayPos;
+	const double barLength = BarLength(fPreviousTransport);
+	while (column != 0) {
+		const TSettings& columnSettings = *settings[column];
+		bool oneBarOnly;
+		if (fCVModes[iTrack][iOutput] == kCVModePattern) {
+			oneBarOnly = columnSettings.fOneBarPattern;
+		}
+		else {
+			const int transition = columnSettings.fTransitions[iOutput];
+			oneBarOnly = transition == kTransitionC || transition == kTransitionD;
+		}
+		if (!oneBarOnly) {
+			break;
+		}
+		// A fill-in and an intro have the last bar before the switch point,
+		// a landing and an outro the first bar after it.
+		bool inBar;
+		if (column == 2) {
+			inBar = position < fLandingStarts[iTrack] + barLength;
+		}
+		else if (column == 4) {
+			inBar = position < fOutroStarts[iTrack] + barLength;
+		}
+		else {
+			inBar = position >= NextSwitchPoint(position, fPreviousTransport) - barLength;
+		}
+		if (inBar) {
+			break;
+		}
+		// Under a fill-in the clip may still be landing.
+		column = column == 1 && PlaysLanding(iTrack) ? 2 : 0;
+	}
+	return column;
 }
 
 void CLauncher::SetFunction(int iFunction) {
@@ -707,9 +850,29 @@ void CLauncher::Switch() {
 
 void CLauncher::Open() {
 	Switch();
+	// Nothing has been launched yet: the big display shows what is playing.
+	fLaunchedLast = -1;
+	for (int track = kTrackCount - 1; track >= 0; --track) {
+		fLaunched[track] = false;
+		if (fActive[track] != kSelectionStop) {
+			fLaunchedLast = ButtonIndex(track, fActive[track]);
+		}
+	}
 }
 
 void CLauncher::Advance(const TTransport& iTransport) {
+	// The clip launched last is the one chosen in this batch, on the leftmost
+	// track if there are several; stop and empty launch buttons do not count.
+	bool launchFound = false;
+	for (int track = 0; track < kTrackCount; ++track) {
+		const int selection = fSelections[track];
+		if (fLaunched[track] && !launchFound && selection != kSelectionStop && Clip(track, selection).fPresent) {
+			fLaunchedLast = ButtonIndex(track, selection);
+			launchFound = true;
+		}
+		fLaunched[track] = false;
+	}
+
 	bool switchNow = true;
 	bool switchPointInBatch = false;
 	const bool switchPointInPreviousBatch = fSwitchPointInPreviousBatch;
@@ -894,6 +1057,78 @@ void CLauncher::Advance(const TTransport& iTransport) {
 		}
 	}
 	UpdateValues(iTransport);
+	RecordGraphs(iTransport);
+}
+
+void CLauncher::EmptyGraphs() {
+	for (int track = 0; track < kTrackCount; ++track) {
+		for (int output = 0; output < kOutputCount; ++output) {
+			for (int column = 0; column < kGraphColumnCount; ++column) {
+				fGraphs[track][output][column] = kGraphEmpty;
+			}
+		}
+	}
+}
+
+unsigned char CLauncher::GraphLevel(int iCVMode, double iCVValue) {
+	if (iCVMode == kCVModeBipolar) {
+		const double steps = iCVValue * kGraphBipolarZero;
+		int level = kGraphBipolarZero + static_cast<int>(steps < 0.0 ? steps - 0.5 : steps + 0.5);
+		if (level < 0) {
+			level = 0;
+		}
+		if (level > kGraphRowCount - 1) {
+			level = kGraphRowCount - 1;
+		}
+		return static_cast<unsigned char>(level);
+	}
+	int level = static_cast<int>(iCVValue * (kGraphRowCount - 1) + 0.5);
+	if (level < 0) {
+		level = 0;
+	}
+	if (level > kGraphRowCount - 1) {
+		level = kGraphRowCount - 1;
+	}
+	return static_cast<unsigned char>(level);
+}
+
+void CLauncher::RecordGraphs(const TTransport& iTransport) {
+	// Two switch intervals, but two bars at least.
+	const double barLength = BarLength(iTransport);
+	double span = 2.0 * static_cast<double>(ComputeSwitchIntervalLength(fLength, iTransport.fTimeSignatureNumerator, iTransport.fTimeSignatureDenominator));
+	if (span < 2.0 * barLength) {
+		span = 2.0 * barLength;
+	}
+	// A graph on another scale starts empty.
+	if (span != fGraphSpan) {
+		EmptyGraphs();
+		fGraphSpan = span;
+		fGraphColumn = -1;
+	}
+	// The graphs move on only while the song plays, one column whenever the
+	// song position enters another; a jump moves them one column too, since
+	// they show what was emitted and not a place in the song.
+	if (iTransport.fPlaying) {
+		const long long column = static_cast<long long>(iTransport.fPlayPos * kGraphColumnCount / span);
+		if (fGraphColumn >= 0 && column != fGraphColumn) {
+			fGraphHead = (fGraphHead + 1) % kGraphColumnCount;
+		}
+		fGraphColumn = column;
+	}
+	// The last column follows what is emitted, whether the song plays or not.
+	for (int track = 0; track < kTrackCount; ++track) {
+		for (int output = 0; output < kOutputCount; ++output) {
+			fGraphs[track][output][fGraphHead] = GraphLevel(fCVModes[track][output], GetCVValue(track, output));
+		}
+	}
+}
+
+void CLauncher::GetOutputGraph(int iOutput, unsigned char oLevels[]) const {
+	const int shown = GetShownButton();
+	const int track = shown >= 0 ? shown / kRowCount : 0;
+	for (int column = 0; column < kGraphColumnCount; ++column) {
+		oLevels[column] = IsValidOutput(iOutput) ? fGraphs[track][iOutput][(fGraphHead + 1 + column) % kGraphColumnCount] : kGraphEmpty;
+	}
 }
 
 double CLauncher::UnipolarCV(int iValue) {
