@@ -192,7 +192,7 @@ table.insert(front_widgets, jbox.custom_display{
 	display_width_pixels = 2190,
 	display_height_pixels = 1885,
 	display_id = 1,
-	values = { "/custom_properties/setup" },
+	values = { "/custom_properties/setup", "/custom_properties/show" },
 })
 table.insert(front_widgets, jbox.custom_display{
 	graphics = { node = "click_scenes" },

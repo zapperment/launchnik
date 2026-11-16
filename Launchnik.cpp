@@ -164,6 +164,10 @@ void CLaunchnik::HandleChange(TJBox_Tag iTag, const TJBox_Value& iValue) {
 		fLauncher.SetFillInPressed(JBox_GetBoolean(iValue));
 		return;
 	}
+	if (iTag == kCustomPropsTag_Show) {
+		fLauncher.Show(static_cast<int>(JBox_GetNumber(iValue)) - 1);
+		return;
+	}
 	if (iTag == kCustomPropsTag_Function) {
 		fLauncher.SetFunction(static_cast<int>(JBox_GetNumber(iValue)));
 		return;
