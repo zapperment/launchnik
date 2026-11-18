@@ -2,13 +2,13 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d31, a development build. Requires Reason 14 or later.
+Version 1.0.0d32, a development build. Requires Reason 14 or later.
 
 ## The panel
 
 The front panel has eight **tracks**, one per column. Each track has eight **launch buttons** and a **function button** underneath, which stops, mutes or solos the track depending on the **function** chosen with the **function select buttons** below: MUTE under track 2, SOLO under track 3 and STOP under track 8. A row of launch buttons is a **scene**, with its **scene button** to the right. To the left of the function buttons is the **setup button**, to the left of scene 3 the **clear button**, to the left of scene 4 the **duplicate button**, to the left of scene 6 the **fill-in button**, and above the first two tracks the **back button** and the **forward button**, with the steps of setup mode they lead to beside them. On the left of the panel, below the patch name, is the **big display**, which tells what a clip holds and what its track emits. Below it, left of the fill-in button, are the **transition diagrams**, one set each for clips, fill-ins, landings, intros and outros, in two columns: clips on their own at the top, then fill-ins and landings, then intros and outros. Above every track, launch button and scene button is its name, which you can change. The back panel has six **CV outputs**, A to F from the top, for each track, each with a switch for its **CV mode** and a name, which you can change, and the track names above them.
 
-A launch button either holds a **clip** or is **empty**. A clip has one of fourteen colours and, for each of its track's six CV outputs, a pattern 1–8, a unipolar value, a bipolar value and a transition. A new device has only empty launch buttons.
+A launch button either holds a **clip** or is **empty**. A clip has one of fourteen colours and, for each of its track's six CV outputs, a pattern 1–8 or no pattern, a unipolar value, a bipolar value and a transition. A new device has only empty launch buttons.
 
 In **launch mode**, the normal way of working, a button is in one of three states:
 
@@ -156,6 +156,8 @@ Each CV output's row shows what its CV mode needs:
 | Pattern | Patterns 1–7, dim orange, the chosen one vibrant orange | Pattern 8 |
 | Unipolar | Values 0 to 100: the chosen one vibrant cyan, those to its left dim cyan | The transition |
 | Bipolar | Values −100 to +100: the chosen one vibrant fuchsia, those between it and 0 dim fuchsia, 0 included | The transition |
+
+Clicking the pattern that is already chosen leaves the output with **no pattern**: all eight buttons turn dim, and the output emits 0, as if the track were stopped, while the clip, fill-in, landing, intro or outro plays. Clicking any of them chooses that pattern again. This silences a Player without giving up one of its eight patterns, for example a fill-in Player during the clip and the main Player during the fill-in. Like any change of the playing clip's pattern, it waits for the switch point. The big display shows no pattern as 0.
 
 Clicking the button of a unipolar or bipolar value that is already chosen raises the value by a quarter step, a quarter of the way to the next button: 33.3 becomes 37.5, 41.6 and 45.8 on a unipolar output, +33.3 becomes +41.6, +50 and +58.3 on a bipolar one, and a fourth click goes back to 33.3. The button stays lit as it was; the big display shows the value. Any other button sets its own value again, and 100 cannot be raised.
 

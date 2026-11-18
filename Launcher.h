@@ -32,6 +32,9 @@ class CLauncher {
 	public: static const int kSelectionCount = 9;
 
 	public: static const int kPatternCount = 8;
+	// The pattern of a CV output that has no pattern and emits 0, as if its
+	// track were stopped; one more than it, as emitted, is 0.
+	public: static const int kNoPattern = -1;
 
 	// Each track has six CV outputs, A to F, numbered from 0 here.
 	public: static const int kOutputCount = 6;
@@ -78,14 +81,16 @@ class CLauncher {
 	// pattern, plus 8 times the step of the unipolar value, plus 56 times the
 	// step of the bipolar value, plus 392 times the transition, plus 1,960
 	// times the quarter steps of the unipolar value, plus 7,840 times those of
-	// the bipolar value (see docs/adr/0010).
+	// the bipolar value (see docs/adr/0010), plus 31,360 if there is no
+	// pattern (see docs/adr/0012).
 	public: struct TOutputSettings {
 		int fPattern;
 		int fUnipolar;
 		int fBipolar;
 		int fTransition;
 	};
-	public: static const int kOutputSettingsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount * kQuarterStepCount * kQuarterStepCount;
+	public: static const int kNoPatternCount = 2;
+	public: static const int kOutputSettingsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount * kQuarterStepCount * kQuarterStepCount * kNoPatternCount;
 	public: static int PackOutputSettings(const TOutputSettings& iSettings);
 	public: static TOutputSettings UnpackOutputSettings(int iPacked);
 

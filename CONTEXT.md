@@ -134,7 +134,8 @@ What a **CV output** emits, chosen with a three-way switch beside it on the back
 _Avoid_: Polarity, output mode, type
 
 **Pattern** (of a CV output):
-In pattern mode, which of the eight patterns of a Player a **clip** selects; the CV output emits it in the steps a Combinator reads as pattern selection, and 0 while the track is stopped, **muted** or **solo-muted**.
+In pattern mode, which of the eight patterns of a Player a **clip** selects, or none; the CV output emits it in the steps a Combinator reads as pattern selection, and 0 while the track is stopped, **muted** or **solo-muted**. A clip, **fill-in**, **landing**, **intro** or **outro** with **no pattern** on a CV output emits 0 there, as if the track were stopped, so that a Player can be silenced without giving up one of the eight patterns. In **clip editing** and the steps after it, clicking the lit pattern of a CV output leaves it with no pattern and all eight of its buttons dim; clicking any of them then chooses that pattern. A copy, a **duplicate** or the first switching-on of a fill-in, landing, intro or outro, keeps no pattern as it is; a new clip has a pattern on every CV output. On the **big display** no pattern reads 0.
+_Avoid_: Pattern off, silent pattern, pattern 0
 
 **Unipolar value**, **bipolar value**:
 In unipolar mode, one of seven evenly spaced values from 0 to 1 (labelled 0 to 100); in bipolar mode, one of seven from −1 to +1 (labelled −100 to +100, 0 in the middle); either may be raised by **quarter steps**. A stopped track goes on emitting the value it last emitted; before any clip has played, and after its active launch button was made **empty**, that is 0.

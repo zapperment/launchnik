@@ -1292,6 +1292,42 @@ void TestFillInPlaysUntilTheNextSwitchPoint() {
 	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
 }
 
+// A clip, fill-in, landing, intro or outro with no pattern on a CV output
+// emits 0 there, as if the track were stopped.
+void TestNoPatternEmitsZero() {
+	CLauncher launcher;
+	SetUpFillIns(launcher);
+	PlayThrough(launcher, 0.0, kBar);
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+
+	// A change of the active clip waits for the switch point, flashing.
+	launcher.SetClipPattern(0, 1, 0, CLauncher::kNoPattern);
+	launcher.Advance(Playing(kBar + kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 3.0 / 8);
+	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kFlashing);
+	PlayThrough(launcher, kBar + 2 * kBatch, kInterval + 2 * kBatch);
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+	CHECK(launcher.GetLight(0, 1).fBrightness == CLauncher::kVibrant);
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 0);
+
+	// The fill-in has a pattern while the clip has none.
+	Press(launcher);
+	launcher.Advance(Playing(kInterval + 2 * kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 6.0 / 8);
+	// And none while it plays: at once.
+	launcher.SetFillInPattern(0, 1, 0, CLauncher::kNoPattern);
+	launcher.Advance(Playing(kInterval + 3 * kBatch));
+	CHECK(launcher.GetCVValue(0, 0) == 0.0);
+
+	// In editing, all eight buttons of the output are dim.
+	launcher.SetSetup(CLauncher::SetupForClipEditing(0, 1));
+	for (int column = 0; column < 8; ++column) {
+		CHECK(IsLight(launcher.GetLight(column, 3), CLauncher::kDim, CLauncher::kColourOrange));
+	}
+	CHECK(launcher.GetValueTable(0).fColumns[0].fValue == 0);
+	CHECK(launcher.GetValueTable(0).fColumns[1].fValue == 0);
+}
+
 void TestFillInGivesWayToWhatIsQueued() {
 	CLauncher launcher;
 	SetUpFillIns(launcher);
@@ -4354,9 +4390,9 @@ void TestGraphShowsThePastOfAnotherTrack() {
 }
 
 void TestOutputSettingsPackIntoOneNumber() {
-	CHECK(CLauncher::kOutputSettingsCount == 31360);
+	CHECK(CLauncher::kOutputSettingsCount == 62720);
 	bool seen[CLauncher::kOutputSettingsCount] = {};
-	for (int pattern = 0; pattern < CLauncher::kPatternCount; ++pattern) {
+	for (int pattern = CLauncher::kNoPattern; pattern < CLauncher::kPatternCount; ++pattern) {
 		for (int unipolar = 0; unipolar <= CLauncher::kTopValue; ++unipolar) {
 			for (int bipolar = 0; bipolar <= CLauncher::kTopValue; ++bipolar) {
 				for (int transition = 0; transition < CLauncher::kTransitionCount; ++transition) {
@@ -4385,6 +4421,11 @@ void TestOutputSettingsPackIntoOneNumber() {
 	// The top step cannot be raised.
 	CHECK(CLauncher::UnpackOutputSettings(8 * 6 + 1960 * 3).fUnipolar == CLauncher::kTopValue);
 	CHECK(CLauncher::UnpackOutputSettings(56 * 6 + 7840 * 3).fBipolar == CLauncher::kTopValue);
+	// No pattern lies above that, 31,360 more, and leaves the rest as it was.
+	const CLauncher::TOutputSettings none = CLauncher::UnpackOutputSettings(31360 + 5 + 8 * 2 + 56 * 6 + 392 * 4 + 1960 * 3);
+	CHECK(none.fPattern == CLauncher::kNoPattern && none.fUnipolar == 2 * kStep + 3 && none.fBipolar == 6 * kStep && none.fTransition == 4);
+	const CLauncher::TOutputSettings silent = { CLauncher::kNoPattern, 0, CLauncher::kBipolarZeroValue, CLauncher::kTransitionOff };
+	CHECK(CLauncher::PackOutputSettings(silent) == 31360 + 168);
 	// A number out of range counts as 0.
 	CHECK(CLauncher::UnpackOutputSettings(-1).fPattern == 0);
 	CHECK(CLauncher::UnpackOutputSettings(CLauncher::kOutputSettingsCount).fTransition == 0);
@@ -4498,6 +4539,7 @@ int main() {
 
 	TestNewFillInHasThePatternOfItsClipInWhite();
 	TestFillInPlaysUntilTheNextSwitchPoint();
+	TestNoPatternEmitsZero();
 	TestFillInGivesWayToWhatIsQueued();
 	TestFillInDoesNotEndOneBatchAfterAPress();
 	TestPressingDuringAFillInDoesNothing();

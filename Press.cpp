@@ -73,8 +73,9 @@ CPress::TChange EditSetting(const TSettingsProperties& iProperties, int iPicked,
 	int bipolar = iEdited.fBipolar[output];
 	int transition = iEdited.fTransitions[output];
 	const int cvMode = iEdited.fCVModes[output];
+	// Clicking the pattern chosen leaves the output with no pattern.
 	if (cvMode == CLauncher::kCVModePattern) {
-		pattern = iTrack;
+		pattern = pattern == iTrack ? CLauncher::kNoPattern : iTrack;
 	}
 	// The transition button goes round from off through A to D.
 	else if (iTrack == CLauncher::kEditingTransitionTrack) {

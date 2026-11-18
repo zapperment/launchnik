@@ -156,12 +156,15 @@ int CLauncher::PressedValue(int iValue, int iStep) {
 	return step + (iValue - step + 1) % kQuarterStepCount;
 }
 
-// The quarter steps lie above the settings that were there before them, so
-// that a number saved without them reads as it did.
+// The quarter steps lie above the settings that were there before them, and
+// whether there is no pattern above those, so that a number saved without
+// them reads as it did.
 int CLauncher::PackOutputSettings(const TOutputSettings& iSettings) {
-	const int steps = iSettings.fPattern + kPatternCount * (ValueStep(iSettings.fUnipolar) + kValueCount * (ValueStep(iSettings.fBipolar) + kValueCount * iSettings.fTransition));
+	const bool noPattern = iSettings.fPattern == kNoPattern;
+	const int steps = (noPattern ? 0 : iSettings.fPattern) + kPatternCount * (ValueStep(iSettings.fUnipolar) + kValueCount * (ValueStep(iSettings.fBipolar) + kValueCount * iSettings.fTransition));
 	const int quarterSteps = iSettings.fUnipolar % kQuarterStepCount + kQuarterStepCount * (iSettings.fBipolar % kQuarterStepCount);
-	return steps + kPatternCount * kValueCount * kValueCount * kTransitionCount * quarterSteps;
+	const int stepsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount;
+	return steps + stepsCount * quarterSteps + (noPattern ? stepsCount * kQuarterStepCount * kQuarterStepCount : 0);
 }
 
 CLauncher::TOutputSettings CLauncher::UnpackOutputSettings(int iPacked) {
@@ -169,10 +172,13 @@ CLauncher::TOutputSettings CLauncher::UnpackOutputSettings(int iPacked) {
 		iPacked = 0;
 	}
 	const int stepsCount = kPatternCount * kValueCount * kValueCount * kTransitionCount;
+	const int quarterStepsCount = stepsCount * kQuarterStepCount * kQuarterStepCount;
+	const bool noPattern = iPacked >= quarterStepsCount;
+	iPacked %= quarterStepsCount;
 	const int quarterSteps = iPacked / stepsCount;
 	iPacked %= stepsCount;
 	TOutputSettings settings;
-	settings.fPattern = iPacked % kPatternCount;
+	settings.fPattern = noPattern ? kNoPattern : iPacked % kPatternCount;
 	iPacked /= kPatternCount;
 	settings.fUnipolar = iPacked % kValueCount * kQuarterStepCount + quarterSteps % kQuarterStepCount;
 	iPacked /= kValueCount;
@@ -359,7 +365,7 @@ void CLauncher::SetClipColour(int iTrack, int iRow, int iColour) {
 
 void CLauncher::SetClipPattern(int iTrack, int iRow, int iOutput, int iPattern) {
 	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, kClipSettings);
-	if (settings && iPattern >= 0 && iPattern < kPatternCount) {
+	if (settings && iPattern >= kNoPattern && iPattern < kPatternCount) {
 		settings->fPatterns[iOutput] = iPattern;
 	}
 }
@@ -399,7 +405,7 @@ void CLauncher::SetFillInColour(int iTrack, int iRow, int iColour) {
 
 void CLauncher::SetFillInPattern(int iTrack, int iRow, int iOutput, int iPattern) {
 	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, kFillInSettings);
-	if (settings && iPattern >= 0 && iPattern < kPatternCount) {
+	if (settings && iPattern >= kNoPattern && iPattern < kPatternCount) {
 		settings->fPatterns[iOutput] = iPattern;
 	}
 }
@@ -441,7 +447,7 @@ void CLauncher::SetLandingColour(int iTrack, int iRow, int iColour) {
 
 void CLauncher::SetLandingPattern(int iTrack, int iRow, int iOutput, int iPattern) {
 	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, kLandingSettings);
-	if (settings && iPattern >= 0 && iPattern < kPatternCount) {
+	if (settings && iPattern >= kNoPattern && iPattern < kPatternCount) {
 		settings->fPatterns[iOutput] = iPattern;
 	}
 }
@@ -497,7 +503,7 @@ void CLauncher::SetIntroColour(int iTrack, int iRow, int iColour) {
 
 void CLauncher::SetIntroPattern(int iTrack, int iRow, int iOutput, int iPattern) {
 	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, kIntroSettings);
-	if (settings && iPattern >= 0 && iPattern < kPatternCount) {
+	if (settings && iPattern >= kNoPattern && iPattern < kPatternCount) {
 		settings->fPatterns[iOutput] = iPattern;
 	}
 }
@@ -546,7 +552,7 @@ void CLauncher::SetOutroColour(int iTrack, int iRow, int iColour) {
 
 void CLauncher::SetOutroPattern(int iTrack, int iRow, int iOutput, int iPattern) {
 	TSettings* settings = EditableSettings(iTrack, iRow, iOutput, kOutroSettings);
-	if (settings && iPattern >= 0 && iPattern < kPatternCount) {
+	if (settings && iPattern >= kNoPattern && iPattern < kPatternCount) {
 		settings->fPatterns[iOutput] = iPattern;
 	}
 }
