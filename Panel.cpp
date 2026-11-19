@@ -18,6 +18,16 @@ const char* const kSelectionKeys[CLauncher::kTrackCount] = {
 	"track5_selection", "track6_selection", "track7_selection", "track8_selection",
 };
 
+// The names of the tracks' mute and solo presses in motherboard_def.lua.
+const char* const kMuteKeys[CLauncher::kTrackCount] = {
+	"track1_mute", "track2_mute", "track3_mute", "track4_mute",
+	"track5_mute", "track6_mute", "track7_mute", "track8_mute",
+};
+const char* const kSoloKeys[CLauncher::kTrackCount] = {
+	"track1_solo", "track2_solo", "track3_solo", "track4_solo",
+	"track5_solo", "track6_solo", "track7_solo", "track8_solo",
+};
+
 // The size of the fill-in button's display.
 const TJBox_Float32 kFillInWidth = 130.0f;
 const TJBox_Float32 kFillInHeight = 135.0f;
@@ -685,11 +695,19 @@ void SetUpPanelDisplay(const TJBox_DisplayArgs& iArgs) {
 		JBox_SetPropertyInfo(&info);
 		return;
 	}
+	// A function button stands for what it changes in the selected function,
+	// which is the display's only value: the selection in stop function, the
+	// mute or solo press in the others, so that the context menu edits the
+	// automation of that.
 	if (iArgs.fDisplayInfo.fID == kDisplayID_FunctionButtons) {
+		const int function = static_cast<int>(JBox_GetNumber(iArgs.fParams[0]));
+		const char* const* keys = function == CLauncher::kFunctionMute ? kMuteKeys
+			: function == CLauncher::kFunctionSolo ? kSoloKeys
+			: kSelectionKeys;
 		TJBox_PropertyBox boxes[CLauncher::kTrackCount];
 		for (int track = 0; track < CLauncher::kTrackCount; ++track) {
-			const TJBox_PropertyRef selection = JBox_MakePropertyRef(customProps, kSelectionKeys[track]);
-			boxes[track] = MakeBox(selection, track * kTrackPitch, 0.0f, kFunctionButtonWidth, kFunctionButtonHeight);
+			const TJBox_PropertyRef property = JBox_MakePropertyRef(customProps, keys[track]);
+			boxes[track] = MakeBox(property, track * kTrackPitch, 0.0f, kFunctionButtonWidth, kFunctionButtonHeight);
 		}
 		TJBox_PropertyInfo info;
 		info.fBoxes = boxes;
