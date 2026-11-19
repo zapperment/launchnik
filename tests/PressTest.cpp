@@ -159,8 +159,20 @@ void TestClipEditingPatternMode() {
 	const int editing = CLauncher::SetupForClipEditing(3, 6);
 	const int picked = CLauncher::ButtonIndex(3, 6);
 	// Output A, in row 3, is in pattern mode: all eight columns are patterns.
-	for (int column = 0; column < 8; ++column) {
+	// The first is the one chosen, and clicking it leaves no pattern.
+	CHECK(IsSettingChange(CPress::LaunchButton(editing, 0, 3, false, MixedModes(true)), CPress::kClipOutput, kPatternSetting, picked, 0, CLauncher::kNoPattern));
+	for (int column = 1; column < 8; ++column) {
 		CHECK(IsSettingChange(CPress::LaunchButton(editing, column, 3, false, MixedModes(true)), CPress::kClipOutput, kPatternSetting, picked, 0, column));
+	}
+	// With no pattern, any column chooses its pattern, the first included,
+	// and the other settings stay.
+	CPress::TEdited none = MixedModes(true);
+	none.fPatterns[0] = CLauncher::kNoPattern;
+	none.fUnipolar[0] = 9;
+	for (int column = 0; column < 8; ++column) {
+		const CPress::TChange change = CPress::LaunchButton(editing, column, 3, false, none);
+		CHECK(IsSettingChange(change, CPress::kClipOutput, kPatternSetting, picked, 0, column));
+		CHECK(IsSettingChange(change, CPress::kClipOutput, kUnipolarSetting, picked, 0, 9));
 	}
 }
 
@@ -660,6 +672,12 @@ void TestFillInEditingToggleSetsUpANewFillIn() {
 		CHECK(IsSettingChange(changes[0], CPress::kFillInOutput, kTransitionSetting, picked, output, CLauncher::kTransitionOff));
 	}
 
+	// A clip's output with no pattern is copied as it is.
+	CPress::TClipValues silent = SomeClipValues();
+	silent.fPatterns[1] = CLauncher::kNoPattern;
+	const CPress::TChanges copied = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(false), silent);
+	CHECK(IsSettingChange(copied.fChanges[2], CPress::kFillInOutput, kPatternSetting, picked, 1, CLauncher::kNoPattern));
+
 	const CPress::TChanges clear = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(clear, 1));
 	CHECK(IsSwitchChange(clear.fChanges[0], CPress::kFillInSwitches, kPresentSwitch, picked, 0));
@@ -678,9 +696,10 @@ void TestFillInEditingColourAndCVRows() {
 		const CPress::TChanges bipolar = CPress::FillInEditingLaunchButton(editing, column, 5, MixedModes(true), SomeClipValues());
 		CHECK(IsChanges(bipolar, 1) && IsSettingChange(bipolar.fChanges[0], CPress::kFillInOutput, kBipolarSetting, picked, 2, CLauncher::PressedValue(CLauncher::kBipolarZeroValue, column)));
 	}
+	// The fill-in's first pattern is the one chosen; clicking it leaves none.
 	for (int column = 0; column < 8; ++column) {
 		const CPress::TChanges pattern = CPress::FillInEditingLaunchButton(editing, column, 3, MixedModes(true), SomeClipValues());
-		CHECK(IsChanges(pattern, 1) && IsSettingChange(pattern.fChanges[0], CPress::kFillInOutput, kPatternSetting, picked, 0, column));
+		CHECK(IsChanges(pattern, 1) && IsSettingChange(pattern.fChanges[0], CPress::kFillInOutput, kPatternSetting, picked, 0, column == 0 ? CLauncher::kNoPattern : column));
 	}
 	const CPress::TChanges transition = CPress::FillInEditingLaunchButton(editing, 7, 5, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(transition, 1) && IsSettingChange(transition.fChanges[0], CPress::kFillInOutput, kTransitionSetting, picked, 2, CLauncher::kTransitionC));

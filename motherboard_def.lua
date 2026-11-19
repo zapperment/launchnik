@@ -77,13 +77,15 @@ local BIPOLAR_ZERO = 3
 -- 8 times the step of the unipolar value, plus 56 times the step of the bipolar
 -- value, plus 392 times the transition, as CLauncher::PackOutputSettings has
 -- it; the quarter steps of the two values lie above that, 16 times as many
--- numbers in all (see docs/adr/0010).
+-- numbers in all (see docs/adr/0010); whether there is no pattern lies above
+-- that, twice as many numbers again (see docs/adr/0012).
 -- Whether a clip, fill-in, landing, intro or outro is there, its colour, its
 -- one-bar pattern and whether it has been set up before, as one number (see
 -- docs/adr/0008).
 local SWITCHES_COUNT = 2 * COLOUR_COUNT * 2 * 2
 local QUARTER_STEP_COUNT = 4
-local OUTPUT_SETTINGS_COUNT = PATTERN_COUNT * VALUE_COUNT * VALUE_COUNT * TRANSITION_COUNT * QUARTER_STEP_COUNT * QUARTER_STEP_COUNT
+local NO_PATTERN_COUNT = 2
+local OUTPUT_SETTINGS_COUNT = PATTERN_COUNT * VALUE_COUNT * VALUE_COUNT * TRANSITION_COUNT * QUARTER_STEP_COUNT * QUARTER_STEP_COUNT * NO_PATTERN_COUNT
 local function pack_output_settings(pattern, unipolar, bipolar, transition)
 	return pattern + PATTERN_COUNT * (unipolar + VALUE_COUNT * (bipolar + VALUE_COUNT * transition))
 end
