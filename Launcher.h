@@ -798,6 +798,7 @@ class CLauncher {
 	// outro's first bar.
 	private: bool PlaysIntroPatterns(int iTrack) const;
 	private: bool PlaysOutroPatterns(int iTrack) const;
+	private: bool BatchReaches(double iPosition) const;
 	// Whether a stopped track plays the intro of a clip it has queued.
 	private: bool PlaysIntroOf(int iTrack, int iRow) const;
 	// The column of the value table whose settings a CV output emits while

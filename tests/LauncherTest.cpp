@@ -3680,6 +3680,68 @@ void TestOutroOneBarPatternPlaysInTheFirstBar() {
 	CHECK(IsLight(launcher.GetLight(0, 2), CLauncher::kVibrant, 4));
 }
 
+// Which column of the big display's value table is inverted for output
+// iOutput of the shown clip, or -1.
+int InvertedColumn(const CLauncher& iLauncher, int iOutput) {
+	const CLauncher::TValueTable table = iLauncher.GetValueTable(iOutput);
+	int inverted = -1;
+	for (int column = 0; column < CLauncher::kTableColumnCount; ++column) {
+		if (table.fColumns[column].fInverted) {
+			CHECK(inverted == -1);
+			inverted = column;
+		}
+	}
+	return inverted;
+}
+
+// With Ableton Link, and at most tempos, a bar line falls inside a batch. A
+// Player picks up the pattern for a bar only if it is there in the batch that
+// reaches the bar line, as at a switch point, not in the batch after it.
+void TestOneBarPatternsChangeInTheBatchThatReachesTheBarLine() {
+	const double before = kBatch + kBatch / 2;
+	const double across = kBatch / 2;
+
+	CLauncher landing;
+	SetUpLanding(landing, CLauncher::kTransitionOff);
+	landing.SetLandingOneBarPattern(0, 2, true);
+	LandOnRow2(landing);
+	PlayOnTo(landing, kInterval, kInterval + kBar - before);
+	CHECK(landing.GetCVValue(0, 0) == 8.0 / 8);
+	landing.Advance(Playing(kInterval + kBar - across));
+	CHECK(landing.GetCVValue(0, 0) == 2.0 / 8);
+	CHECK(InvertedColumn(landing, 0) == 0);
+
+	CLauncher fillIn;
+	SetUpFillIns(fillIn);
+	fillIn.SetFillInOneBarPattern(0, 1, true);
+	PlayThrough(fillIn, 0.0, kBar);
+	Press(fillIn);
+	fillIn.Advance(Playing(kBar));
+	fillIn.Advance(Playing(kBar * 3 - before));
+	CHECK(fillIn.GetCVValue(0, 0) == 3.0 / 8);
+	fillIn.Advance(Playing(kBar * 3 - across));
+	CHECK(fillIn.GetCVValue(0, 0) == 6.0 / 8);
+	CHECK(InvertedColumn(fillIn, 0) == 1);
+
+	CLauncher intro;
+	SetUpIntro(intro, CLauncher::kTransitionOff);
+	intro.SetIntroOneBarPattern(0, 2, true);
+	QueueRow2(intro);
+	PlayOnTo(intro, kBar, kInterval - kBar - before);
+	CHECK(intro.GetCVValue(0, 0) == 0.0);
+	intro.Advance(Playing(kInterval - kBar - across));
+	CHECK(intro.GetCVValue(0, 0) == 8.0 / 8);
+
+	CLauncher outro;
+	SetUpOutro(outro, CLauncher::kTransitionOff);
+	outro.SetOutroOneBarPattern(0, 2, true);
+	StopRow2(outro);
+	PlayOnTo(outro, kInterval, kInterval + kBar - before);
+	CHECK(outro.GetCVValue(0, 0) == 8.0 / 8);
+	outro.Advance(Playing(kInterval + kBar - across));
+	CHECK(outro.GetCVValue(0, 0) == 0.0);
+}
+
 void TestNoOutroWhenAnotherClipTakesOver() {
 	CLauncher launcher;
 	SetUpOutro(launcher, CLauncher::kTransitionOff);
@@ -4023,20 +4085,6 @@ void TestValueTableOfAnEmptyLaunchButtonIsBlank() {
 	for (int column = 0; column < CLauncher::kTableColumnCount; ++column) {
 		CHECK(!table.fColumns[column].fPresent && !table.fColumns[column].fInverted);
 	}
-}
-
-// Which column of the big display's value table is inverted for output
-// iOutput of the shown clip, or -1.
-int InvertedColumn(const CLauncher& iLauncher, int iOutput) {
-	const CLauncher::TValueTable table = iLauncher.GetValueTable(iOutput);
-	int inverted = -1;
-	for (int column = 0; column < CLauncher::kTableColumnCount; ++column) {
-		if (table.fColumns[column].fInverted) {
-			CHECK(inverted == -1);
-			inverted = column;
-		}
-	}
-	return inverted;
 }
 
 // A clip that is shown without playing or being queued has the values set in
@@ -4663,6 +4711,7 @@ int main() {
 	TestOutroTransitionBLeavesQuickly();
 	TestOutroTransitionCMovesOnlyInTheFirstBar();
 	TestOutroOneBarPatternPlaysInTheFirstBar();
+	TestOneBarPatternsChangeInTheBatchThatReachesTheBarLine();
 	TestNoOutroWhenAnotherClipTakesOver();
 	TestNoOutroWithoutASwitchPoint();
 	TestOutroWaitsWhileTheTransportIsStopped();
