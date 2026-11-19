@@ -658,10 +658,10 @@ void TestFillInEditingToggleSetsUpANewFillIn() {
 	const int picked = CLauncher::ButtonIndex(3, 6);
 
 	// A new fill-in is a copy of its clip's values, with every transition
-	// off, in white.
+	// off and one-bar pattern on, in white.
 	const CPress::TChanges set = CPress::FillInEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
 	CHECK(IsChanges(set, 1 + CLauncher::kOutputCount));
-	CHECK(IsSwitchChange(set.fChanges[0], CPress::kFillInSwitches, kOneBarPatternSwitch, picked, 0));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kFillInSwitches, kOneBarPatternSwitch, picked, 1));
 	CHECK(IsSwitchChange(set.fChanges[0], CPress::kFillInSwitches, kPresentSwitch, picked, 1));
 	CHECK(IsSwitchChange(set.fChanges[0], CPress::kFillInSwitches, kColourSwitch, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
@@ -727,10 +727,10 @@ void TestLandingEditingToggleSetsUpANewLanding() {
 	const int picked = CLauncher::ButtonIndex(3, 6);
 
 	// A new landing is a copy of its clip's values, with every transition
-	// off, in white, like a new fill-in.
+	// off and one-bar pattern on, in white, like a new fill-in.
 	const CPress::TChanges set = CPress::LandingEditingLaunchButton(editing, 7, 1, MixedModes(false), SomeClipValues());
 	CHECK(IsChanges(set, 1 + CLauncher::kOutputCount));
-	CHECK(IsSwitchChange(set.fChanges[0], CPress::kLandingSwitches, kOneBarPatternSwitch, picked, 0));
+	CHECK(IsSwitchChange(set.fChanges[0], CPress::kLandingSwitches, kOneBarPatternSwitch, picked, 1));
 	CHECK(IsSwitchChange(set.fChanges[0], CPress::kLandingSwitches, kPresentSwitch, picked, 1));
 	CHECK(IsSwitchChange(set.fChanges[0], CPress::kLandingSwitches, kColourSwitch, picked, CLauncher::kColourWhite));
 	for (int output = 0; output < CLauncher::kOutputCount; ++output) {
@@ -834,11 +834,11 @@ void TestIntroAndOutroEditing() {
 	CHECK(IsSwitchChange(setIntro.fChanges[0], CPress::kIntroSwitches, kColourSwitch, picked, CLauncher::kColourWhite));
 	CHECK(IsSettingChange(setIntro.fChanges[1], CPress::kIntroOutput, kPatternSetting, picked, 0, 0));
 	CHECK(IsSettingChange(setIntro.fChanges[1], CPress::kIntroOutput, kTransitionSetting, picked, 0, CLauncher::kTransitionOff));
-	CHECK(IsSwitchChange(setIntro.fChanges[0], CPress::kIntroSwitches, kOneBarPatternSwitch, picked, 0));
+	CHECK(IsSwitchChange(setIntro.fChanges[0], CPress::kIntroSwitches, kOneBarPatternSwitch, picked, 1));
 	const CPress::TChanges setOutro = CPress::OutroEditingLaunchButton(outro, 7, 1, MixedModes(false), SomeClipValues());
 	CHECK(IsChanges(setOutro, 1 + CLauncher::kOutputCount));
 	CHECK(IsSwitchChange(setOutro.fChanges[0], CPress::kOutroSwitches, kPresentSwitch, picked, 1));
-	CHECK(IsSwitchChange(setOutro.fChanges[0], CPress::kOutroSwitches, kOneBarPatternSwitch, picked, 0));
+	CHECK(IsSwitchChange(setOutro.fChanges[0], CPress::kOutroSwitches, kOneBarPatternSwitch, picked, 1));
 	const CPress::TChanges clearOutro = CPress::OutroEditingLaunchButton(outro, 7, 1, MixedModes(true), SomeClipValues());
 	CHECK(IsChanges(clearOutro, 1) && IsSwitchChange(clearOutro.fChanges[0], CPress::kOutroSwitches, kPresentSwitch, picked, 0));
 
@@ -930,12 +930,14 @@ void TestSwitchingAnOverlayOnAgainKeepsItsSettings() {
 	CHECK(IsChanges(on, 1) && IsSwitchChange(on.fChanges[0], CPress::kFillInSwitches, kPresentSwitch, picked, 1));
 	const CLauncher::TSwitches onSwitches = CLauncher::UnpackSwitches(on.fChanges[0].fValue);
 	CHECK(onSwitches.fColour == 9 && onSwitches.fOneBarPattern && onSwitches.fSetUp);
-	// The first time it is a copy, in white, and set up from then on.
+	// The first time it is a copy, in white, with one-bar pattern on, and set
+	// up from then on.
 	fillIn.fSetUp = false;
+	fillIn.fOneBarPattern = false;
 	const CPress::TChanges first = CPress::FillInEditingLaunchButton(editing, 7, 1, fillIn, SomeClipValues());
 	CHECK(IsChanges(first, 1 + CLauncher::kOutputCount));
 	const CLauncher::TSwitches firstSwitches = CLauncher::UnpackSwitches(first.fChanges[0].fValue);
-	CHECK(firstSwitches.fPresent && firstSwitches.fColour == CLauncher::kColourWhite && !firstSwitches.fOneBarPattern && firstSwitches.fSetUp);
+	CHECK(firstSwitches.fPresent && firstSwitches.fColour == CLauncher::kColourWhite && firstSwitches.fOneBarPattern && firstSwitches.fSetUp);
 	// Editing keeps the flag, and so does a duplicate.
 	fillIn.fPresent = true;
 	fillIn.fSetUp = true;

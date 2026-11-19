@@ -2,7 +2,7 @@
 
 Launchnik is a utility Rack Extension for Reason that launches Player patterns the way clips are launched in the session view of Ableton Live. It sends pattern-selecting CV to Combinators that wrap Player devices, and changes patterns only at regular points in the song, every four bars unless set otherwise, so that everything stays in time. Each track has six CV outputs: one or more of them select patterns, the others send unipolar or bipolar values that can glide from clip to clip, for filter sweeps or risers. What each launch button sends, and in which colour it shows, is set up on the panel itself.
 
-Version 1.0.0d34, a development build. Requires Reason 14 or later.
+Version 1.0.0d35, a development build. Requires Reason 14 or later.
 
 ## The panel
 
@@ -165,9 +165,9 @@ Clicking the transition button goes round from off through A, B, C and D. It is 
 
 The colour and CV rows only show while the launch button holds a clip. A new clip has the colour of its track (red, orange, yellow, green, cyan, blue, purple, pink for tracks 1 to 8) and, on every CV output, the pattern of its row, unipolar and bipolar value 0 and transition off. A clip that is switched off and on again comes back with all its settings. Changing a unipolar or bipolar value of the playing clip takes effect at once.
 
-3. **Fill-in editing.** While the launch button holds a clip, the **forward button** beside the back button lights up in orange, with SET FILL-IN to its right. Click it to set up the clip's **fill-in**; the logo turns orange. The grid is laid out and lit as in clip editing: SET/CLEAR switches the fill-in on and off, and the colour and CV rows only show while there is one. A new fill-in is a copy of its clip's patterns and values, with every transition off, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are orange instead of yellow. Row 2, column 8, labelled 1 BAR PATT, switches the fill-in's **one-bar pattern** on and off, as in landing editing (below).
-4. **Landing editing.** In fill-in editing the forward button lights up in blue, with SET LANDING, whether or not the clip holds a fill-in. Click it to set up the clip's **landing**; the logo turns blue. The grid is laid out and lit as before, with SET/CLEAR for the landing, and a new landing is likewise a copy of its clip's patterns and values, with every transition off, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are blue. Row 2, column 8, labelled 1 BAR PATT, switches **one-bar pattern** on and off: vibrant green when on, dim red when off, like SET/CLEAR.
-5. **Intro editing.** In landing editing the forward button lights up in pink, with SET INTRO, whether or not the clip holds a landing. Click it to set up the clip's **intro**; the logo turns pink. The grid is laid out and lit as before, with SET/CLEAR and 1 BAR PATT for the intro, and a new intro is a copy of its clip's patterns and values, with every transition off, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are pink.
+3. **Fill-in editing.** While the launch button holds a clip, the **forward button** beside the back button lights up in orange, with SET FILL-IN to its right. Click it to set up the clip's **fill-in**; the logo turns orange. The grid is laid out and lit as in clip editing: SET/CLEAR switches the fill-in on and off, and the colour and CV rows only show while there is one. A new fill-in is a copy of its clip's patterns and values, with every transition off and 1 BAR PATT on, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are orange instead of yellow. Row 2, column 8, labelled 1 BAR PATT, switches the fill-in's **one-bar pattern** on and off, as in landing editing (below).
+4. **Landing editing.** In fill-in editing the forward button lights up in blue, with SET LANDING, whether or not the clip holds a fill-in. Click it to set up the clip's **landing**; the logo turns blue. The grid is laid out and lit as before, with SET/CLEAR for the landing, and a new landing is likewise a copy of its clip's patterns and values, with every transition off and 1 BAR PATT on, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are blue. Row 2, column 8, labelled 1 BAR PATT, switches **one-bar pattern** on and off: vibrant green when on, dim red when off, like SET/CLEAR.
+5. **Intro editing.** In landing editing the forward button lights up in pink, with SET INTRO, whether or not the clip holds a landing. Click it to set up the clip's **intro**; the logo turns pink. The grid is laid out and lit as before, with SET/CLEAR and 1 BAR PATT for the intro, and a new intro is a copy of its clip's patterns and values, with every transition off and 1 BAR PATT on, in white, the first time it is switched on; switched off and on again with SET/CLEAR, it keeps its settings, as a clip does. The labels are pink.
 6. **Outro editing.** In intro editing the forward button lights up in turquoise, with SET OUTRO. Click it to set up the clip's **outro**; the logo turns turquoise, and the labels are turquoise. This is the last step: the forward button is dark.
 
 Click the setup button again to return to launch mode, from any step. The back button above the first track goes back one step instead, and shows the colour of the step it returns to, with that step lit to its left: vibrant pink in outro editing, it returns to intro editing (SET INTRO); vibrant blue in intro editing, it returns to landing editing (SET LANDING); vibrant orange in landing editing, it returns to fill-in editing (SET FILL-IN); vibrant yellow in fill-in editing, it returns to clip editing (EDIT CLIP); vibrant green in clip editing, it returns to clip picking (PICK CLIP); vibrant white in clip picking, it returns to launch mode (LAUNCH). In launch mode it is dark and does nothing. To pick another launch button from fill-in, landing, intro or outro editing, hold the back button down for 200 milliseconds or more before letting go: Launchnik goes straight back to clip picking. The back and forward buttons act when you let go of them, not when you press them, on the front panel and on the Launchpad alike.
@@ -202,7 +202,7 @@ A fill-in is a pattern that a clip plays for a short while instead of its own, s
 
 The fill-in button is dim white, and vibrant orange, with its caption, from the click until the switch point, whether or not any track has a fill-in to play. It works in launch mode, setup mode, clear mode and duplicate mode alike. A click while a fill-in is playing does nothing, and so does a click while the switch interval is "immediate", which has no switch point to end the fill-in at. With the transport stopped, a fill-in goes on until the song plays through the next switch point.
 
-With **one-bar pattern** on, the outputs in pattern mode play the fill-in's patterns only in the last bar before the switch point, or from the click if that comes later, and the clip's until then; a drum fill one bar long thus leads straight into the switch point. The unipolar and bipolar outputs and the flashing launch button start at the click as usual. A new fill-in has it off.
+With **one-bar pattern** on, the outputs in pattern mode play the fill-in's patterns only in the last bar before the switch point, or from the click if that comes later, and the clip's until then; a drum fill one bar long thus leads straight into the switch point. The unipolar and bipolar outputs and the flashing launch button start at the click as usual. A new fill-in has it on; switch it off for a fill-in whose patterns should play from the click.
 
 Changing a playing clip's fill-in takes effect at once. A launch button keeps its fill-in while it is empty, so that it comes back with the clip; fill-ins are part of a patch.
 
@@ -224,7 +224,7 @@ On unipolar and bipolar outputs a landing's transition works the other way round
 
 With a switch interval of one bar or less, C and D behave like A and B.
 
-With **one-bar pattern** on, the outputs in pattern mode play the landing's patterns for the first bar only, then the clip's, so that a one-bar pattern such as a crash cymbal sounds once even with a longer switch interval. The unipolar and bipolar outputs and the launch button's colour go on with the landing until the switch point. A new landing has it off; switching the landing off and on again keeps it.
+With **one-bar pattern** on, the outputs in pattern mode play the landing's patterns for the first bar only, then the clip's, so that a one-bar pattern such as a crash cymbal sounds once even with a longer switch interval. The unipolar and bipolar outputs and the launch button's colour go on with the landing until the switch point. A new landing has it on; switching the landing off and on again keeps it.
 
 While a clip that holds a landing is queued, the playing clip's transition moves towards the landing's value. If another clip is queued while a landing plays, the landing's movement stops and the playing clip's own transition moves on from where the output is. A fill-in lies over a landing as it does over a clip. Changing a playing landing takes effect at once. A launch button keeps its landing while it is empty; landings are part of a patch.
 
@@ -234,7 +234,7 @@ An intro is what a clip plays from the moment it is queued on a stopped track un
 
 On unipolar and bipolar outputs an intro's transition moves from the intro's value towards the clip's, or towards its landing's, like a clip's transition: A and B from the moment of queueing to the switch point, C and D within the last bar only. With transition off the intro's value holds until the switch point.
 
-With **one-bar pattern** on, the outputs in pattern mode play the intro's patterns only in the last bar before the switch point (from the queueing, if that comes later) and nothing before that. The unipolar and bipolar outputs start at the queueing all the same. A new intro has it off.
+With **one-bar pattern** on, the outputs in pattern mode play the intro's patterns only in the last bar before the switch point (from the queueing, if that comes later) and nothing before that. The unipolar and bipolar outputs start at the queueing all the same. A new intro has it on.
 
 ## Outros
 
@@ -242,7 +242,7 @@ An outro is what a clip plays for one switch interval after it stops at a switch
 
 On unipolar and bipolar outputs an outro's transition moves from the value emitted before the switch point towards the outro's value, like a landing's: A and B across the whole switch interval, B and D quickly at first, C and D within the first bar only. With transition off the value jumps to the outro's at the switch point.
 
-With **one-bar pattern** on, the outputs in pattern mode play the outro's patterns for the first bar only and nothing after that. A new outro has it off.
+With **one-bar pattern** on, the outputs in pattern mode play the outro's patterns for the first bar only and nothing after that. A new outro has it on.
 
 Changing a playing intro or outro takes effect at once. A launch button keeps its intro and outro while it is empty; both are part of a patch.
 
