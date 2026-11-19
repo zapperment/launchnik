@@ -785,13 +785,13 @@ int CLauncher::EmittedColumn(int iTrack, int iRow, int iOutput) const {
 		// a landing and an outro the first bar after it.
 		bool inBar;
 		if (column == 2) {
-			inBar = position < fLandingStarts[iTrack] + barLength;
+			inBar = !BatchReaches(fLandingStarts[iTrack] + barLength);
 		}
 		else if (column == 4) {
-			inBar = position < fOutroStarts[iTrack] + barLength;
+			inBar = !BatchReaches(fOutroStarts[iTrack] + barLength);
 		}
 		else {
-			inBar = position >= NextSwitchPoint(position, fPreviousTransport) - barLength;
+			inBar = BatchReaches(NextSwitchPoint(position, fPreviousTransport) - barLength);
 		}
 		if (inBar) {
 			break;
@@ -1514,7 +1514,7 @@ bool CLauncher::PlaysIntroPatterns(int iTrack) const {
 		return true;
 	}
 	const double position = fPreviousTransport.fPlayPos;
-	return position >= NextSwitchPoint(position, fPreviousTransport) - BarLength(fPreviousTransport);
+	return BatchReaches(NextSwitchPoint(position, fPreviousTransport) - BarLength(fPreviousTransport));
 }
 
 bool CLauncher::PlaysOutroPatterns(int iTrack) const {
@@ -1524,7 +1524,7 @@ bool CLauncher::PlaysOutroPatterns(int iTrack) const {
 	if (!Clip(iTrack, fOutroRows[iTrack]).fOutro.fOneBarPattern) {
 		return true;
 	}
-	return fPreviousTransport.fPlayPos < fOutroStarts[iTrack] + BarLength(fPreviousTransport);
+	return !BatchReaches(fOutroStarts[iTrack] + BarLength(fPreviousTransport));
 }
 
 bool CLauncher::PlaysLandingPatterns(int iTrack) const {
@@ -1534,7 +1534,7 @@ bool CLauncher::PlaysLandingPatterns(int iTrack) const {
 	if (!Clip(iTrack, fActive[iTrack]).fLanding.fOneBarPattern) {
 		return true;
 	}
-	return fPreviousTransport.fPlayPos < fLandingStarts[iTrack] + BarLength(fPreviousTransport);
+	return !BatchReaches(fLandingStarts[iTrack] + BarLength(fPreviousTransport));
 }
 
 bool CLauncher::PlaysFillInPatterns(int iTrack) const {
@@ -1545,7 +1545,15 @@ bool CLauncher::PlaysFillInPatterns(int iTrack) const {
 		return true;
 	}
 	const double position = fPreviousTransport.fPlayPos;
-	return position >= NextSwitchPoint(position, fPreviousTransport) - BarLength(fPreviousTransport);
+	return BatchReaches(NextSwitchPoint(position, fPreviousTransport) - BarLength(fPreviousTransport));
+}
+
+// A Player picks up the pattern for a bar only if it is there in the batch
+// that reaches the bar line, so one-bar patterns start and end in that batch,
+// as switches do at a switch point. With Ableton Link, and at most tempos, the
+// bar line falls inside a batch rather than at its start.
+bool CLauncher::BatchReaches(double iPosition) const {
+	return fPreviousTransport.fPlayPos + fPreviousTransport.fBatchLength > iPosition;
 }
 
 bool CLauncher::PlaysFillIn(int iTrack) const {
