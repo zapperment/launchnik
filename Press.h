@@ -151,7 +151,7 @@ class CPress {
 	// fill-in being edited, iClip the values of its clip. SET/CLEAR switches
 	// the fill-in off and on, keeping its settings; one that has never been
 	// set up starts as a copy of its clip's values, with every transition off
-	// and one-bar pattern off, in white. Outside fill-in editing a press
+	// and one-bar pattern on, in white. Outside fill-in editing a press
 	// changes nothing here.
 	public: static TChanges FillInEditingLaunchButton(int iSetup, int iTrack, int iRow, const TEdited& iFillIn, const TClipValues& iClip);
 	// The same in landing editing, for the landing, in intro editing, for the

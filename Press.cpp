@@ -107,8 +107,8 @@ CPress::TChanges EditOverlay(const TSettingsProperties& iProperties, int iSetup,
 		}
 		// The first time, a fill-in, landing, intro or outro starts as a copy
 		// of its clip's values, with every transition off and one-bar pattern
-		// off, in white.
-		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fSwitches, picked, Switches(true, CLauncher::kColourWhite, false, true));
+		// on, in white: a one-bar pattern is what it is mostly wanted for.
+		changes.fChanges[changes.fCount++] = MakeChange(iProperties.fSwitches, picked, Switches(true, CLauncher::kColourWhite, true, true));
 		for (int output = 0; output < CLauncher::kOutputCount; ++output) {
 			const int settings = Pack(iClip.fPatterns[output], iClip.fUnipolar[output], iClip.fBipolar[output], CLauncher::kTransitionOff);
 			changes.fChanges[changes.fCount++] = MakeChange(iProperties.fOutput, picked, settings, output);
